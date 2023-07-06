@@ -1,0 +1,18 @@
+https://wikidocs.net/125301
+
+https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=kkrdiamond77&logNo=221276401746
+
+
+https://mawile.tistory.com/64
+
+
+-번외- class란
+
+https://engineer-mole.tistory.com/190
+
+
+
+
+쓰레드와 소켓으로 2개이상 게임 룸을 만듬
+
+메인 서버 >> 방 하나 씩 만들어서, 플레이어 배치 >> 소켓에서 플레이어의 정보 주고받게 함.
