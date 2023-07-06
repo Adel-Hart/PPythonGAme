@@ -3,3 +3,14 @@
 게임---
 모듈 : pygame 2.5.0,
     tkinker 0.1.0,
+    numpy 1.21.6
+
+
+
+
+https://soma0sd.tistory.com/162
+이분 강의가 pygame으로 sideview 3d를 만드는거임
+이걸 기본으로 합시다
+>> 취소 게임 취지와 맞지 않음
+
+

@@ -32,6 +32,5 @@ clock.tick(120) # ! must multiply fps to move speed (cause difference of speed) 
 while not done : # loop the game
 
 
-
-
+    print("not")
 
