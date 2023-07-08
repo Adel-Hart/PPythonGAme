@@ -18,6 +18,12 @@ import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 -김동훈
 
 
+
+헷갈리는 것들
+RGBlist : 현재 화면 색 (이 화면색과 같은 타일들은 무시됨)
+
+0,0이 맨쪽 위다.
+
 '''
 
 
@@ -31,28 +37,28 @@ pygame.init() # initialize pygame
 
 
 user32 = ctypes.windll.user32
-SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기
-SCRSIZEY = user32.GetSystemMetrics(1)
+SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
+SCRSIZEY = user32.GetSystemMetrics(1) #세로
 
 
 
 
 
 #맵의 크기 지정 (총 타일 개수!!!!)
-MAPSIZEX = 60
+MAPSIZEX = 60 #나중에 외부 파일로 바꿀수 있게 할거 quick fix
 MAPSIZEY = 40
 
 MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
 #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
 
-class pos: # 좌표값 class
+class pos: # 좌표값 class, 오브젝트마다 pos가 필요해서, 클래스화
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
 #맵의 원점(0,0)의 편향값, 이 값만큼 편향돼서 출력됨으로써 좌우대칭을 맞춘다
 ORIGINPOINT = pos(SCRSIZEX/2-MAPTILESIZE*MAPSIZEX/2, 0) if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else pos(0,SCRSIZEY/2-MAPTILESIZE*MAPSIZEY/2)
-
+#만약, 해상도가 X축이 길면, 보류
 
 
 size = [SCRSIZEX, SCRSIZEY] # set screen size
@@ -64,7 +70,7 @@ done = False # set shutdown triger
 
 clock = pygame.time.Clock() # set fps
 
-COLORON = 150 # 켜질 때의 밝기
+COLORON = 150 # 켜질 때의 밝기 이것도 조정가능하게 할거임
 #RGB 색상표 사전 지정
 WHITE = [COLORON,COLORON,COLORON]
 BLACK = [0,0,0]
@@ -85,7 +91,7 @@ COLORLIST = [RED, GREEN, BLUE, YELLOW, MAGENTA, CYAN, WHITE] # 모든 색상의 
 
 
 
-class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
+class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
     def __init__(self, cx, cy, sx, sy, zx, zy, image): #오브젝트의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
         self.coordX = MAPTILESIZE*cx
@@ -100,7 +106,7 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
         self.sizeY = MAPTILESIZE*zy
         self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
-        self.realimage = self.image
+        self.realimage = self.image #realimage는 원본imgae(blockimg)를 변화시키는거라 따로 제작
 
 
 blockimg = pygame.image.load("./images/Player.png") #테스트용 임시 이미지
@@ -112,7 +118,7 @@ maincharacter = MovingObject(5, 5, 0, 0, 2, 3, blockimg) #MovingObject 주인공
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
 
-class initMap():
+class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
 
     def __init__(self, MAPSIZEX, MAPSIZEY, MAPTILESIZE, ORIGINPOINT):
         self.MAPSIZEX = MAPSIZEX
@@ -120,17 +126,18 @@ class initMap():
         self.MAPTILESIZE = MAPTILESIZE
         self.ORIGINPOINT = ORIGINPOINT #맵이 스테이지 마다 바뀌기 때문 + 가독성 >> 클래스로 정리
 
-    def makeTiles(self):
+    def makeTiles(self): #타일을 그리는 함수가 X, 타일 배치를 만드는 함수
         global TileList # Tile의 집합, 즉 맵
         TileList = [[BLACK if random.randrange(10) else [[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)]] for j in range(self.MAPSIZEY)] for i in range(self.MAPSIZEX)] # 맵 크기만큼의 2차원 배열 생성
         #삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
 
-        global RGBList
+        global RGBList #현재 화면 상태
         RGBList = [False, False, False] # RGB 모두 켜져 있다
 
 
         for i in range(self.MAPSIZEX): #바닥 채우기
-            TileList[i][self.MAPSIZEY-1] = WALL
+            TileList[i][self.MAPSIZEY-1] = WALL  
+            #0,0이 왼쪽 위라서, MAPSIZEY가 가장 하단임 하단보다 1올라가서 벽을 만듬
 
         for i in range(self.MAPSIZEX): #천장 채우기
             TileList[i][0] = BLACK
@@ -140,7 +147,7 @@ class initMap():
         for y in range(self.MAPSIZEY):
             for x in range(self.MAPSIZEX):
                 pygame.draw.rect(screen, self.RGBTile(x,y), [x*self.MAPTILESIZE+self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y,self.MAPTILESIZE+1,self.MAPTILESIZE+1]) # 정사각형으로 타일 색칠
-
+    #pygame.draw.rect(화면크기, 색[rgbTile이라는 타일에대한 색 정보에서 해당 타일 색을 가져옴], [x위치(한 열마다, 타일의 크기를 곱하면, 타일의 위치가 나옴 혹시 모를 편차 때문에 수정된 원점(왼쪽 위)를 더해서 수정), y위치, x크기, y크기])
     
 
     def RGBTile(self, x, y):
@@ -153,7 +160,8 @@ class initMap():
                     properTile[i] = properTile[i]//2 # 끈다
             return properTile
         elif TileList[x][y] == BLACK: # 검은색일시 배경색 그대로 출력            
-            return list(map(lambda x: COLORON if x else 0, RGBList)) # RGBlist(bool)을 실제 RGB(int)로 전환
+            return list(map(lambda x: COLORON if x else 0, RGBList)) # RGBlist(bool)을 실제 RGB(int)로 전환 
+            #추가 설명, map(함수, 값) 값들이 함수로 가 함수대로 변형, 즉 RGBList의 값들이 lamda에 x가 되어 바뀌어 나온다.
         else: return TileList[x][y] # 색이 있을시 원래 색으로 출력
 
     def drawGrids(self): # 그리드 그리기
