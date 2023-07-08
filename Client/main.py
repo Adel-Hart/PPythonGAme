@@ -105,7 +105,7 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
         self.realimage = self.image
 
 
-blockimg = pygame.image.load(originDir + "/Client/images/Block.jpg") #테스트용 임시 이미지
+blockimg = pygame.image.load(originDir + "/Client/images/Player.png") #테스트용 임시 이미지
 
 mObjects = [] #움직이는 오브젝트 리스트
 
