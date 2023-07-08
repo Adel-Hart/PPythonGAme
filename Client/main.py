@@ -39,8 +39,8 @@ SCRSIZEY = user32.GetSystemMetrics(1)
 
 
 #맵의 크기 지정 (총 타일 개수!!!!)
-MAPSIZEX = 30
-MAPSIZEY = 20
+MAPSIZEX = 60
+MAPSIZEY = 40
 
 MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
 #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
@@ -64,12 +64,10 @@ done = False # set shutdown triger
 
 clock = pygame.time.Clock() # set fps
 
-COLORON = 255 # 켜질 때의 색상
-COLOROFF = 90
+COLORON = 150 # 켜질 때의 밝기
 #RGB 색상표 사전 지정
 WHITE = [COLORON,COLORON,COLORON]
 BLACK = [0,0,0]
-GRAY = [COLOROFF,COLOROFF,COLOROFF]
 
 RED = [COLORON,0,0]
 GREEN = [0,COLORON,0]
@@ -109,7 +107,7 @@ blockimg = pygame.image.load("./images/Player.png") #테스트용 임시 이미�
 
 mObjects = [] #움직이는 오브젝트 리스트
 
-maincharacter = MovingObject(5, 5, 0, 0, 1, 1.5, blockimg) #MovingObject 주인공을 maincharacter로 선언
+maincharacter = MovingObject(5, 5, 0, 0, 2, 3, blockimg) #MovingObject 주인공을 maincharacter로 선언
 
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
