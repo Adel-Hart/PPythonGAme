@@ -4,6 +4,7 @@ import os
 import math
 import random
 import time
+import sys
 
 import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
@@ -17,16 +18,14 @@ import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
 '''
-'''
+
+
+
+#현재 경로 저장
+originDir = os.getcwd().replace("\\", "/")
+print(originDir)
 
 pygame.init() # initialize pygame
-
-def setScreen():
-
-
-'''
-
-
 
 
 user32 = ctypes.windll.user32
@@ -37,9 +36,25 @@ SCRSIZEY = user32.GetSystemMetrics(1)
 
 
 
+
+
+
+
+
+
+
+ 
+
+
+
+
 #맵의 크기 지정 (총 타일 개수!!!!)
 MAPSIZEX = 40 
 MAPSIZEY = 10
+
+
+
+# // : 정수 나누기, /실수 나누기
 
 MAPTILESIZE = SCRSIZEY // MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX // MAPSIZEX #맵의 한 타일이 차지할 픽셀
 #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
@@ -102,7 +117,7 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
         self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
 
-blockimg = pygame.image.load("./images/Block.jpg") #테스트용 임시 이미지
+blockimg = pygame.image.load(originDir + "/Client/images/Block.jpg") #테스트용 임시 이미지
 
 mObjects = [] #움직이는 오브젝트 리스트
 
@@ -111,56 +126,58 @@ maincharacter = MovingObject(3, 4, 0, 0, 1.5, 2.5, blockimg) #MovingObject 주�
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
 
-global TileList # Tile의 집합, 즉 맵
-TileList = [[BLACK if random.randrange(10) else [[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)]] for j in range(MAPSIZEY)] for i in range(MAPSIZEX)] # 맵 크기만큼의 2차원 배열 생성
-#삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
+class initMap():
+
+    def __init__(self, MAPSIZEX, MAPSIZEY, MAPTILESIZE, ORIGINPOINT):
+        self.MAPSIZEX = MAPSIZEX
+        self.MAPSIZEY = MAPSIZEY
+        self.MAPTILESIZE = MAPTILESIZE
+        self.ORIGINPOINT = ORIGINPOINT #맵이 스테이지 마다 바뀌기 때문 + 가독성 >> 클래스로 정리
+
+    def makeTiles(self):
+        global TileList # Tile의 집합, 즉 맵
+        TileList = [[BLACK if random.randrange(10) else [[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)]] for j in range(self.MAPSIZEY)] for i in range(self.MAPSIZEX)] # 맵 크기만큼의 2차원 배열 생성
+        #삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
+
+        global RGBList
+        RGBList = [False, False, False] # RGB 모두 켜져 있다
 
 
+        for i in range(self.MAPSIZEX): #바닥 채우기
+            TileList[i][self.MAPSIZEY-1] = WALL
+
+        for i in range(self.MAPSIZEX): #천장 채우기
+            TileList[i][0] = BLACK
 
 
-for i in range(MAPSIZEX): #바닥 채우기
-    TileList[i][MAPSIZEY-1] = WALL
+    def displayTiles(self): #타일 그리기
+        for y in range(self.MAPSIZEY):
+            for x in range(self.MAPSIZEX):
+                pygame.draw.rect(screen, self.RGBTile(x,y), [x*self.MAPTILESIZE+self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y,self.MAPTILESIZE,self.MAPTILESIZE]) # 정사각형으로 타일 색칠
 
-for i in range(MAPSIZEX): #천장 채우기
-    TileList[i][0] = BLACK
+    
 
+    def RGBTile(self, x, y):
+        if TileList[x][y] == WHITE:
+            if RGBList == [False,False,False]: # 하얀색이고 모두 꺼져있다면
+                return GRAY
+            else:
+                return WHITE
+        elif TileList[x][y] == BLACK:
+            return BLACK
+        else:       
+            properTile = list(TileList[x][y]) # 임시 타일
+            for i in range(3): # R G B 에 대해          
+                if properTile[i] == COLORON: # 그 타일에 포함된 색상이라면
+                    if RGBList[i] == False: #RGBList에서는 꺼져있고 타일에서는 켜져있다면
+                        properTile[i] = COLOROFF # 끈다
+            return properTile
 
-def displayTiles(): #타일 그리기
-    for y in range(MAPSIZEY):
-        for x in range(MAPSIZEX):
-            pygame.draw.rect(screen, RGBTile(x,y), [x*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y,MAPTILESIZE,MAPTILESIZE]) # 정사각형으로 타일 색칠
-
-global RGBList
-RGBList = [False, False, False] # RGB 모두 켜져 있다
-
-def RGBTile(x, y):
-    if TileList[x][y] == WHITE:
-        if RGBList == [False,False,False]: # 하얀색이고 모두 꺼져있다면
-            return GRAY
-        else:
-            return WHITE
-    elif TileList[x][y] == BLACK:
-        return BLACK
-    else:       
-        properTile = list(TileList[x][y]) # 임시 타일
-        for i in range(3): # R G B 에 대해          
-            if properTile[i] == COLORON: # 그 타일에 포함된 색상이라면
-                if RGBList[i] == False: #RGBList에서는 꺼져있고 타일에서는 켜져있다면
-                    properTile[i] = COLOROFF # 끈다
-        return properTile
-
-def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
-    if COLOR == WALL: # 벽으로 지정된 색깔
-        return True
-    for i in range(3): # R G B 에 대해 
-        if COLOR[i] == COLORON and RGBList[i]: # 켜져있는 색깔이 있다면
-            return True
-    return False # 다 꺼져있다면
-
-def changeRGB(changedRGB): #RGB 변경 시
-    RGBList[changedRGB] = not RGBList[changedRGB]
-    print(RGBList)
-
+    def drawGrids(self): # 그리드 그리기
+        for x in range(self.MAPSIZEX):
+            pygame.draw.line(screen, WHITE, [x*self.MAPTILESIZE+self.ORIGINPOINT.x,self.ORIGINPOINT.y], [x*self.MAPTILESIZE+self.ORIGINPOINT.x,self.MAPSIZEY*self.MAPTILESIZE+self.ORIGINPOINT.y])
+        for y in range(self.MAPSIZEY):
+            pygame.draw.line(screen, WHITE, [self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y], [self.MAPSIZEX*self.MAPTILESIZE+self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y])
 
 
 
@@ -175,14 +192,19 @@ def changeRGB(changedRGB): #RGB 변경 시
 
 
 
+def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
+        if COLOR == WALL: # 벽으로 지정된 색깔
+            return True
+        for i in range(3): # R G B 에 대해 
+            if COLOR[i] == COLORON and RGBList[i]: # 켜져있는 색깔이 있다면
+                return True
+        return False # 다 꺼져있다면
+
+def changeRGB(changedRGB): #RGB 변경 시
+    RGBList[changedRGB] = not RGBList[changedRGB]
+    print(RGBList)
 
 
-
-def drawGrids(): # 그리드 그리기
-    for x in range(MAPSIZEX):
-        pygame.draw.line(screen, WHITE, [x*MAPTILESIZE+ORIGINPOINT.x,ORIGINPOINT.y], [x*MAPTILESIZE+ORIGINPOINT.x,MAPSIZEY*MAPTILESIZE+ORIGINPOINT.y])
-    for y in range(MAPSIZEY):
-        pygame.draw.line(screen, WHITE, [ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y], [MAPSIZEX*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y])
 
 def onGround(object): #바닥에 붙어있는지 여부 판정
     if checkEscapeY(object): #맵탈출이라면
@@ -306,14 +328,22 @@ def runGame(): # 게임 실행 함수
     global wantToJump # 위 방향키를 누르고 있는지 여부(True, False)
     wantToJump = False
 
+
+    Map = initMap(MAPSIZEX, MAPSIZEY, MAPTILESIZE, ORIGINPOINT)
+    #맵이 바뀌기 때문에, 맵 인스턴스 생성
+    Map.makeTiles() #타일 생성 (타일 목록작성과 타일의 무작위화를 한뒤 타일 생성기로 넘김)
+
     while not done: # loop the game
+
+        
         clock.tick(60) # ! must multiply fps to move speed (cause difference of speed) !
        
         screen.fill(WHITE) # 배경색
 
-        displayTiles() # 타일 모두 출력
+        
+        Map.displayTiles() # 타일 모두 출력
 
-        drawGrids() # 그리드 그리기
+        Map.drawGrids() # 그리드 그리기
 
         displayMovingObjects() # 움직이는 오브젝트 일괄 출력
 
