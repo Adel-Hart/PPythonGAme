@@ -20,10 +20,10 @@ import time
 pygame.init() # initialize pygame
 
 #맵의 크기 지정
-MAPSIZEX = 25
-MAPSIZEY = 15
+MAPSIZEX = 50
+MAPSIZEY = 10
 
-MAPTILESIZE = 40 #맵의 한 타일이 차지할 픽셀
+MAPTILESIZE = 30 #맵의 한 타일이 차지할 픽셀
 
 size = [MAPSIZEX*MAPTILESIZE, MAPSIZEY*MAPTILESIZE] # set screen size
 screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
@@ -62,9 +62,9 @@ blockimg = pygame.image.load("./images/Block.jpg") #테스트용 임시 이미�
 
 mObjects = [] #움직이는 오브젝트 리스트
 
-mainchracter = MovingObject(MAPSIZEX/2, MAPSIZEY/2, 0, 0, 2, 2, blockimg) #MovingObject 주인공을 mainchracter로 선언
+maincharacter = MovingObject(MAPSIZEX/2, MAPSIZEY/2, 0, 0, 2, 2, blockimg) #MovingObject 주인공을 maincharacter로 선언
 
-mObjects.append(mainchracter) #오브젝트 목록에 추가
+mObjects.append(maincharacter) #오브젝트 목록에 추가
 
 
 global TileList # Tile의 집합, 즉 맵
@@ -191,7 +191,7 @@ def runGame(): # 게임 실행 함수
 
         moveObjects() # 움직이는 오브젝트 일괄 이동
         
-        print(onGround(mainchracter), mainchracter.speedY)
+        print(onGround(maincharacter), maincharacter.speedY)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # 종료 이벤트
@@ -225,12 +225,12 @@ def runGame(): # 게임 실행 함수
             
             
         
-        mainchracter.speedX = wantToMoveX*moveSpeed*MAPTILESIZE # 이동속도만큼 X좌표 속도 설정
+        maincharacter.speedX = wantToMoveX*moveSpeed*MAPTILESIZE # 이동속도만큼 X좌표 속도 설정
 
         
-        if wantToJump and onGround(mainchracter) and mainchracter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
+        if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
             print("JUMP!")
-            mainchracter.speedY = -1 * jumpPower
+            maincharacter.speedY = -1 * jumpPower
 
 
         pygame.display.update()
