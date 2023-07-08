@@ -1,9 +1,11 @@
 import pygame
+from pygame.locals import *
 import os
 import math
 import random
 import time
 
+import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
 '''
@@ -15,17 +17,34 @@ import time
 
 
 '''
-
+'''
 
 pygame.init() # initialize pygame
 
-#맵의 크기 지정
-MAPSIZEX = 40
+def setScreen():
+
+
+'''
+
+
+
+
+user32 = ctypes.windll.user32
+SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기
+SCRSIZEY = user32.GetSystemMetrics(1)
+
+
+
+
+
+#맵의 크기 지정 (총 타일 개수!!!!)
+MAPSIZEX = 40 
 MAPSIZEY = 20
 
-MAPTILESIZE = 20 #맵의 한 타일이 차지할 픽셀
+MAPTILESIZE = SCRSIZEY // MAPSIZEY if SCRSIZEX > SCRSIZEY else SCRSIZEX // MAPSIZEX #맵의 한 타일이 차지할 픽셀
+#만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
 
-size = [MAPSIZEX*MAPTILESIZE, MAPSIZEY*MAPTILESIZE] # set screen size
+size = [SCRSIZEX, SCRSIZEY] # set screen size
 screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
 
 pygame.display.set_caption("AL1S") # set window's name a "AL1s" (quick fix)
@@ -73,7 +92,7 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
         self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
 
-blockimg = pygame.image.load("./images/Block.jpg") #테스트용 임시 이미지
+blockimg = pygame.image.load("C:\\Users\\bepue\\Desktop\\Task\\PPythonGAme\\Client\\images\\Block.jpg") #테스트용 임시 이미지
 
 mObjects = [] #움직이는 오브젝트 리스트
 
@@ -84,13 +103,17 @@ mObjects.append(maincharacter) #오브젝트 목록에 추가
 
 global TileList # Tile의 집합, 즉 맵
 TileList = [[BLACK if random.randrange(10) else [[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)]] for j in range(MAPSIZEY)] for i in range(MAPSIZEX)] # 맵 크기만큼의 2차원 배열 생성
+#삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
+
+
+
 
 for i in range(MAPSIZEX): #바닥 채우기
     TileList[i][MAPSIZEY-1] = WALL
 
 for i in range(MAPSIZEX): #천장 채우기
     TileList[i][0] = BLACK
-#for i in range
+
 
 def displayTiles(): #타일 그리기
     for y in range(MAPSIZEY):
@@ -127,6 +150,20 @@ def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
 def changeRGB(changedRGB): #RGB 변경 시
     RGBList[changedRGB] = not RGBList[changedRGB]
     print(RGBList)
+
+
+
+
+'''
+김동훈 프로토 타입
+'''
+
+
+
+
+
+
+
 
 
 
