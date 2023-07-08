@@ -161,7 +161,7 @@ class initMap():
                         properTile[i] = COLOROFF # 끈다
             return properTile
 
-    def drawGrids(): # 그리드 그리기
+    def drawGrids(self): # 그리드 그리기
         for x in range(MAPSIZEX):
             pygame.draw.line(screen, WHITE, [x*MAPTILESIZE+ORIGINPOINT.x,ORIGINPOINT.y], [x*MAPTILESIZE+ORIGINPOINT.x,MAPSIZEY*MAPTILESIZE+ORIGINPOINT.y])
         for y in range(MAPSIZEY):
