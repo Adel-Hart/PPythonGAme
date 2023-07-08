@@ -79,7 +79,7 @@ YELLOW = [COLORON,COLORON,0]
 MAGENTA = [COLORON,0,COLORON]
 CYAN = [0,COLORON,COLORON]
 
-WALL = [150,150,150]
+WALL = [COLORON//2,COLORON//2,COLORON//2]
 
 COLORLIST = [RED, GREEN, BLUE, YELLOW, MAGENTA, CYAN, WHITE] # 모든 색상의 리스트
 
@@ -105,11 +105,11 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
         self.realimage = self.image
 
 
-blockimg = pygame.image.load(originDir + "/Client/images/Player.png") #테스트용 임시 이미지
+blockimg = pygame.image.load("./images/Player.png") #테스트용 임시 이미지
 
 mObjects = [] #움직이는 오브젝트 리스트
 
-maincharacter = MovingObject(5, 5, 0, 0, 3, 5, blockimg) #MovingObject 주인공을 maincharacter로 선언
+maincharacter = MovingObject(5, 5, 0, 0, 1, 1.5, blockimg) #MovingObject 주인공을 maincharacter로 선언
 
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
@@ -146,20 +146,17 @@ class initMap():
     
 
     def RGBTile(self, x, y):
-        if TileList[x][y] == WHITE:
-            if RGBList == [False,False,False]: # 하얀색이고 모두 꺼져있다면
-                return GRAY
-            else:
-                return WHITE
-        elif TileList[x][y] == BLACK:
-            return BLACK
-        else:       
+        if TileList[x][y] == WALL: # 벽의 색 어중간한 색으로 조정
             properTile = list(TileList[x][y]) # 임시 타일
             for i in range(3): # R G B 에 대해          
-                if properTile[i] == COLORON: # 그 타일에 포함된 색상이라면
-                    if RGBList[i] == False: #RGBList에서는 꺼져있고 타일에서는 켜져있다면
-                        properTile[i] = COLOROFF # 끈다
+                if RGBList[i]: #RGBList에서는 꺼져있다면
+                    properTile[i] = (properTile[i]+COLORON)//2 # 색깔의 평균값 대입
+                else:
+                    properTile[i] = properTile[i]//2 # 끈다
             return properTile
+        elif TileList[x][y] == BLACK: # 검은색일시 배경색 그대로 출력            
+            return list(map(lambda x: COLORON if x else 0, RGBList)) # RGBlist(bool)을 실제 RGB(int)로 전환
+        else: return TileList[x][y] # 색이 있을시 원래 색으로 출력
 
     def drawGrids(self): # 그리드 그리기
         for x in range(MAPSIZEX):
@@ -173,18 +170,13 @@ class initMap():
 김동훈 프로토 타입
 '''
 
-
-
-
-
-
 def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
-    if COLOR == WALL: # 벽으로 지정된 색깔
-        return True
-    for i in range(3): # R G B 에 대해 
-        if COLOR[i] == COLORON and RGBList[i]: # 켜져있는 색깔이 있다면
-            return True
-    return False # 다 꺼져있다면
+    print(list(map(lambda x: COLORON if x else 0, RGBList)))
+    if COLOR == BLACK: # 검은색일 경우
+        return False
+    elif COLOR == list(map(lambda x: COLORON if x else 0, RGBList)): # 배경색과 같을 경우
+        return False
+    return True # 배경색과 다를 경우
 
 
 def changeRGB(changedRGB): #RGB 변경 시
@@ -236,6 +228,7 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
     for x in range(xStart, xEnd+1): # x범위
         for y in range(yStart, yEnd+1): # y범위
             if isWall(TileList[x][y]): 
+                print(x,y,TileList[x][y] )
                 return [True, [x,y]]
     return [False,[]]
 
