@@ -9,6 +9,7 @@ import sys
 import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
+
 '''
 파이썬 게임 개발
 ! 2023 07 22 start
@@ -28,6 +29,7 @@ print(originDir)
 pygame.init() # initialize pygame
 
 
+
 user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기
 SCRSIZEY = user32.GetSystemMetrics(1)
@@ -36,27 +38,11 @@ SCRSIZEY = user32.GetSystemMetrics(1)
 
 
 
-
-
-
-
-
-
-
- 
-
-
-
-
 #맵의 크기 지정 (총 타일 개수!!!!)
-MAPSIZEX = 40 
-MAPSIZEY = 10
+MAPSIZEX = 30
+MAPSIZEY = 20
 
-
-
-# // : 정수 나누기, /실수 나누기
-
-MAPTILESIZE = SCRSIZEY // MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX // MAPSIZEX #맵의 한 타일이 차지할 픽셀
+MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
 #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
 
 class pos: # 좌표값 class
@@ -116,12 +102,14 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
         self.sizeY = MAPTILESIZE*zy
         self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
+        self.realimage = self.image
+
 
 blockimg = pygame.image.load(originDir + "/Client/images/Block.jpg") #테스트용 임시 이미지
 
 mObjects = [] #움직이는 오브젝트 리스트
 
-maincharacter = MovingObject(3, 4, 0, 0, 1.5, 2.5, blockimg) #MovingObject 주인공을 maincharacter로 선언
+maincharacter = MovingObject(5, 5, 0, 0, 3, 5, blockimg) #MovingObject 주인공을 maincharacter로 선언
 
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
@@ -153,7 +141,7 @@ class initMap():
     def displayTiles(self): #타일 그리기
         for y in range(self.MAPSIZEY):
             for x in range(self.MAPSIZEX):
-                pygame.draw.rect(screen, self.RGBTile(x,y), [x*self.MAPTILESIZE+self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y,self.MAPTILESIZE,self.MAPTILESIZE]) # 정사각형으로 타일 색칠
+                pygame.draw.rect(screen, self.RGBTile(x,y), [x*self.MAPTILESIZE+self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y,self.MAPTILESIZE+1,self.MAPTILESIZE+1]) # 정사각형으로 타일 색칠
 
     
 
@@ -173,11 +161,11 @@ class initMap():
                         properTile[i] = COLOROFF # 끈다
             return properTile
 
-    def drawGrids(self): # 그리드 그리기
-        for x in range(self.MAPSIZEX):
-            pygame.draw.line(screen, WHITE, [x*self.MAPTILESIZE+self.ORIGINPOINT.x,self.ORIGINPOINT.y], [x*self.MAPTILESIZE+self.ORIGINPOINT.x,self.MAPSIZEY*self.MAPTILESIZE+self.ORIGINPOINT.y])
-        for y in range(self.MAPSIZEY):
-            pygame.draw.line(screen, WHITE, [self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y], [self.MAPSIZEX*self.MAPTILESIZE+self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y])
+    def drawGrids(): # 그리드 그리기
+        for x in range(MAPSIZEX):
+            pygame.draw.line(screen, WHITE, [x*MAPTILESIZE+ORIGINPOINT.x,ORIGINPOINT.y], [x*MAPTILESIZE+ORIGINPOINT.x,MAPSIZEY*MAPTILESIZE+ORIGINPOINT.y])
+        for y in range(MAPSIZEY):
+            pygame.draw.line(screen, WHITE, [ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y], [MAPSIZEX*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y])
 
 
 
@@ -190,19 +178,28 @@ class initMap():
 
 
 
-
-
 def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
-        if COLOR == WALL: # 벽으로 지정된 색깔
+    if COLOR == WALL: # 벽으로 지정된 색깔
+        return True
+    for i in range(3): # R G B 에 대해 
+        if COLOR[i] == COLORON and RGBList[i]: # 켜져있는 색깔이 있다면
             return True
-        for i in range(3): # R G B 에 대해 
-            if COLOR[i] == COLORON and RGBList[i]: # 켜져있는 색깔이 있다면
-                return True
-        return False # 다 꺼져있다면
+    return False # 다 꺼져있다면
+
 
 def changeRGB(changedRGB): #RGB 변경 시
     RGBList[changedRGB] = not RGBList[changedRGB]
     print(RGBList)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -216,26 +213,25 @@ def onGround(object): #바닥에 붙어있는지 여부 판정
 
 def displayMovingObjects():# 움직이는 오브젝트 표시
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기
-
-        rect = object.image.get_rect() 
+       
+        rect = object.image.get_rect()
         rect.center = (object.coordX+ORIGINPOINT.x,object.coordY+ORIGINPOINT.y) #중심좌표 설정
-
-        screen.blit(object.image, rect) #스크린에 출력
+        screen.blit(object.realimage, rect) #스크린에 출력
 
 def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있으면 True, 없으면 False 그 벽의 좌표를 List로 반환
-    xStart = int(xLeft // MAPTILESIZE)
+    xStart = int((xLeft+0.001) // MAPTILESIZE)
     xEnd = int((xRight-0.001) // MAPTILESIZE)
-    yStart = int(yUp // MAPTILESIZE)
+    yStart = int((yUp+0.001) // MAPTILESIZE)
     yEnd = int((yDown-0.001) // MAPTILESIZE)
-
     if xStart < 0:
         xStart = 0
     elif xEnd >= MAPSIZEX:
         xEnd = MAPSIZEX-1
-    elif yStart < 0:
+
+    if yStart < 0:
         yStart = 0
-    elif yEnd >= MAPSIZEX:
-        yEnd = MAPSIZEX-1
+    elif yEnd >= MAPSIZEY:
+        yEnd = MAPSIZEY-1
 
     for x in range(xStart, xEnd+1): # x범위
         for y in range(yStart, yEnd+1): # y범위
@@ -244,7 +240,7 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
     return [False,[]]
 
 def checkClip(object): # 오브젝트가 꼈는지 확인
-    return findWall(object.coordX - object.sizeX/2, object.coordX + object.sizeX/2, object.coordY - object.sizeY/2, object.coordY + object.sizeY/2)[0]
+    return findWall(object.coordX - object.sizeX/2+1, object.coordX + object.sizeX/2-1, object.coordY - object.sizeY/2+1, object.coordY + object.sizeY/2-1)[0]
 def moveObjects(): # 움직이는 오브젝트 이동
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기
 
@@ -268,6 +264,10 @@ def moveObjects(): # 움직이는 오브젝트 이동
                 
             if nextX - object.sizeX/2 < 0 or nextX + object.sizeX/2 > MAPTILESIZE*MAPSIZEX: # 맵탈출 여부
                 object.speedX = 0
+                if nextX - object.sizeX/2 < 0:
+                    object.coordX = object.sizeX/2
+                else:
+                    object.coordX = MAPTILESIZE*MAPSIZEX-object.sizeX/2
             elif findWall(xLeft, xRight, yUp, yDown)[0]: # 충돌 시 속도 0으로
                 object.speedX = 0
             else: # 충돌 아니라면 이동
@@ -288,16 +288,18 @@ def moveObjects(): # 움직이는 오브젝트 이동
             elif findWall(xLeft, xRight, yUp, yDown)[0]:
                 if object.speedY > 0: # 바닥에 막힐 경우
                     print("바닥")
+                    object.speedY = 0
                     object.coordY = findWall(xLeft, xRight, yUp, yDown)[1][1]*MAPTILESIZE - object.sizeY/2 # 바닥에 딱 붙이기
                 elif object.speedY < 0: # 천장에 막힐 경우
                     print("천장")
-                    object.coordY = (findWall(xLeft, xRight, yUp, yDown)[1][1]+1)*MAPTILESIZE + object.sizeY/2 # 바닥에 딱 붙이기
-                object.speedY = 0
-            else: # 충돌 아니라면 이동
-                object.coordY += object.speedY 
+                    object.coordY = (findWall(xLeft, xRight, yUp, yDown)[1][1]+1)*MAPTILESIZE + object.sizeY/2 # 천장에 딱 붙이기
+                    object.speedY = 0
+                
+            object.coordY += object.speedY 
 
 global gravity
 gravity = 0.02 #중력가속도
+
 global jumpPower
 jumpPower = 0.5 #점프 가속도
 
@@ -339,6 +341,8 @@ def runGame(): # 게임 실행 함수
         clock.tick(60) # ! must multiply fps to move speed (cause difference of speed) !
        
         screen.fill(WHITE) # 배경색
+        
+
 
         
         Map.displayTiles() # 타일 모두 출력
@@ -350,6 +354,8 @@ def runGame(): # 게임 실행 함수
         gravityObjects() #중력 적용
     
         moveObjects() # 움직이는 오브젝트 일괄 이동
+
+        displayMovingObjects() # 움직이는 오브젝트 일괄 출력
 
         if checkClip(maincharacter): # 오브젝트에 낄시 사망판정
             gameOver()
@@ -374,9 +380,11 @@ def runGame(): # 게임 실행 함수
             if event.type == pygame.KEYDOWN: # 방향키 누르기
                 if event.key == pygame.K_LEFT:
                     wantToMoveX = -1
+                    maincharacter.realimage = pygame.transform.flip(maincharacter.image,True,False)
 
                 elif event.key == pygame.K_RIGHT:
                     wantToMoveX = 1
+                    maincharacter.realimage = maincharacter.image
                 
                 if event.key == pygame.K_UP:
                     wantToJump = True
@@ -390,14 +398,14 @@ def runGame(): # 게임 실행 함수
                     changeRGB(1)
                 elif event.key == pygame.K_b: # B 변경
                     changeRGB(2)
-            
-        
+
         maincharacter.speedX = wantToMoveX*moveSpeed*MAPTILESIZE # 이동속도만큼 X좌표 속도 설정
 
         
         if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
             print("JUMP!")
             maincharacter.speedY = -1 * jumpPower * MAPTILESIZE
+
 
 
         pygame.display.update()
@@ -409,4 +417,3 @@ def gameOver(): # 사망시
 
 runGame() 
 pygame.quit() #게임 종료
-
