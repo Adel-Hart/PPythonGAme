@@ -131,7 +131,7 @@ def displayTiles(): #타일 그리기
             pygame.draw.rect(screen, RGBTile(x,y), [x*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y,MAPTILESIZE+1,MAPTILESIZE+1]) # 정사각형으로 타일 색칠
 
 global RGBList
-RGBList = [False, False, False] # RGB 모두 켜져 있다
+RGBList = [False, False, False] # RGB 모두 꺼져 있다
 
 def RGBTile(x, y):
     if TileList[x][y] == WHITE:
@@ -205,12 +205,13 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
     xEnd = int((xRight-0.001) // MAPTILESIZE)
     yStart = int(yUp // MAPTILESIZE)
     yEnd = int((yDown-0.001) // MAPTILESIZE)
-
+    print(yStart, yEnd)
     if xStart < 0:
         xStart = 0
     elif xEnd >= MAPSIZEX:
         xEnd = MAPSIZEX-1
-    elif yStart < 0:
+
+    if yStart < 0:
         yStart = 0
     elif yEnd >= MAPSIZEY:
         yEnd = MAPSIZEY-1
@@ -222,7 +223,7 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
     return [False,[]]
 
 def checkClip(object): # 오브젝트가 꼈는지 확인
-    return findWall(object.coordX - object.sizeX/2, object.coordX + object.sizeX/2, object.coordY - object.sizeY/2, object.coordY + object.sizeY/2)[0]
+    return findWall(object.coordX - object.sizeX/2+1, object.coordX + object.sizeX/2-1, object.coordY - object.sizeY/2+1, object.coordY + object.sizeY/2-1)[0]
 def moveObjects(): # 움직이는 오브젝트 이동
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기
 
@@ -266,13 +267,14 @@ def moveObjects(): # 움직이는 오브젝트 이동
             elif findWall(xLeft, xRight, yUp, yDown)[0]:
                 if object.speedY > 0: # 바닥에 막힐 경우
                     print("바닥")
+                    object.speedY = 0
                     object.coordY = findWall(xLeft, xRight, yUp, yDown)[1][1]*MAPTILESIZE - object.sizeY/2 # 바닥에 딱 붙이기
                 elif object.speedY < 0: # 천장에 막힐 경우
                     print("천장")
-                    object.coordY = (findWall(xLeft, xRight, yUp, yDown)[1][1]+1)*MAPTILESIZE + object.sizeY/2 # 바닥에 딱 붙이기
-                object.speedY = 0
-            else: # 충돌 아니라면 이동
-                object.coordY += object.speedY 
+                    object.coordY = (findWall(xLeft, xRight, yUp, yDown)[1][1]+1)*MAPTILESIZE + object.sizeY/2 # 천장에 딱 붙이기
+                    object.speedY = 0
+                
+            object.coordY += object.speedY 
 
 global gravity
 gravity = 0.02 #중력가속도
@@ -317,11 +319,11 @@ def runGame(): # 게임 실행 함수
 
         drawGrids() # 그리드 그리기
 
-        displayMovingObjects() # 움직이는 오브젝트 일괄 출력
-
         gravityObjects() #중력 적용
     
         moveObjects() # 움직이는 오브젝트 일괄 이동
+
+        displayMovingObjects() # 움직이는 오브젝트 일괄 출력
 
         if checkClip(maincharacter): # 오브젝트에 낄시 사망판정
             gameOver()
