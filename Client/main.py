@@ -38,10 +38,10 @@ SCRSIZEY = user32.GetSystemMetrics(1)
 
 
 #맵의 크기 지정 (총 타일 개수!!!!)
-MAPSIZEX = 20
-MAPSIZEY = 30
+MAPSIZEX = 30
+MAPSIZEY = 15
 
-MAPTILESIZE = SCRSIZEY // MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX // MAPSIZEX #맵의 한 타일이 차지할 픽셀
+MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
 #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
 
 class pos: # 좌표값 class
@@ -106,7 +106,7 @@ blockimg = pygame.image.load("./images/Block.jpg") #테스트용 임시 이미�
 
 mObjects = [] #움직이는 오브젝트 리스트
 
-maincharacter = MovingObject(3, 4, 0, 0, 1.5, 2.5, blockimg) #MovingObject 주인공을 maincharacter로 선언
+maincharacter = MovingObject(1, 1, 0, 0, 1, 2, blockimg) #MovingObject 주인공을 maincharacter로 선언
 
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
@@ -128,7 +128,7 @@ for i in range(MAPSIZEX): #천장 채우기
 def displayTiles(): #타일 그리기
     for y in range(MAPSIZEY):
         for x in range(MAPSIZEX):
-            pygame.draw.rect(screen, RGBTile(x,y), [x*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y,MAPTILESIZE,MAPTILESIZE]) # 정사각형으로 타일 색칠
+            pygame.draw.rect(screen, RGBTile(x,y), [x*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y,MAPTILESIZE+1,MAPTILESIZE+1]) # 정사각형으로 타일 색칠
 
 global RGBList
 RGBList = [False, False, False] # RGB 모두 켜져 있다
@@ -310,6 +310,8 @@ def runGame(): # 게임 실행 함수
         clock.tick(60) # ! must multiply fps to move speed (cause difference of speed) !
        
         screen.fill(WHITE) # 배경색
+        
+
 
         displayTiles() # 타일 모두 출력
 
