@@ -1,9 +1,11 @@
 import pygame
+from pygame.locals import *
 import os
 import math
 import random
 import time
 
+import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
 '''
@@ -15,17 +17,44 @@ import time
 
 
 '''
-
+'''
 
 pygame.init() # initialize pygame
 
-#맵의 크기 지정
-MAPSIZEX = 40
-MAPSIZEY = 20
+def setScreen():
 
-MAPTILESIZE = 20 #맵의 한 타일이 차지할 픽셀
 
-size = [MAPSIZEX*MAPTILESIZE, MAPSIZEY*MAPTILESIZE] # set screen size
+'''
+
+
+
+
+user32 = ctypes.windll.user32
+SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기
+SCRSIZEY = user32.GetSystemMetrics(1)
+
+
+
+
+
+#맵의 크기 지정 (총 타일 개수!!!!)
+MAPSIZEX = 20
+MAPSIZEY = 30
+
+MAPTILESIZE = SCRSIZEY // MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX // MAPSIZEX #맵의 한 타일이 차지할 픽셀
+#만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
+
+class pos: # 좌표값 class
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+#맵의 원점(0,0)의 편향값, 이 값만큼 편향돼서 출력됨으로써 좌우대칭을 맞춘다
+ORIGINPOINT = pos(SCRSIZEX/2-MAPTILESIZE*MAPSIZEX/2, 0) if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else pos(0,SCRSIZEY/2-MAPTILESIZE*MAPSIZEY/2)
+
+
+
+size = [SCRSIZEX, SCRSIZEY] # set screen size
 screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
 
 pygame.display.set_caption("AL1S") # set window's name a "AL1s" (quick fix)
@@ -84,21 +113,25 @@ mObjects.append(maincharacter) #오브젝트 목록에 추가
 
 global TileList # Tile의 집합, 즉 맵
 TileList = [[BLACK if random.randrange(10) else [[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)]] for j in range(MAPSIZEY)] for i in range(MAPSIZEX)] # 맵 크기만큼의 2차원 배열 생성
+#삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
+
+
+
 
 for i in range(MAPSIZEX): #바닥 채우기
     TileList[i][MAPSIZEY-1] = WALL
 
 for i in range(MAPSIZEX): #천장 채우기
     TileList[i][0] = BLACK
-#for i in range
+
 
 def displayTiles(): #타일 그리기
     for y in range(MAPSIZEY):
         for x in range(MAPSIZEX):
-            pygame.draw.rect(screen, RGBTile(x,y), [x*MAPTILESIZE,y*MAPTILESIZE,MAPTILESIZE,MAPTILESIZE]) # 정사각형으로 타일 색칠
+            pygame.draw.rect(screen, RGBTile(x,y), [x*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y,MAPTILESIZE,MAPTILESIZE]) # 정사각형으로 타일 색칠
 
 global RGBList
-RGBList = [True, True, True] # RGB 모두 켜져 있다
+RGBList = [False, False, False] # RGB 모두 켜져 있다
 
 def RGBTile(x, y):
     if TileList[x][y] == WHITE:
@@ -131,11 +164,25 @@ def changeRGB(changedRGB): #RGB 변경 시
 
 
 
+'''
+김동훈 프로토 타입
+'''
+
+
+
+
+
+
+
+
+
+
+
 def drawGrids(): # 그리드 그리기
     for x in range(MAPSIZEX):
-        pygame.draw.line(screen, WHITE, [x*MAPTILESIZE,0], [x*MAPTILESIZE,MAPSIZEY*MAPTILESIZE])
+        pygame.draw.line(screen, WHITE, [x*MAPTILESIZE+ORIGINPOINT.x,ORIGINPOINT.y], [x*MAPTILESIZE+ORIGINPOINT.x,MAPSIZEY*MAPTILESIZE+ORIGINPOINT.y])
     for y in range(MAPSIZEY):
-        pygame.draw.line(screen, WHITE, [0,y*MAPTILESIZE], [MAPSIZEX*MAPTILESIZE,y*MAPTILESIZE])
+        pygame.draw.line(screen, WHITE, [ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y], [MAPSIZEX*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y])
 
 def onGround(object): #바닥에 붙어있는지 여부 판정
     if checkEscapeY(object): #맵탈출이라면
@@ -149,7 +196,7 @@ def displayMovingObjects():# 움직이는 오브젝트 표시
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기
 
         rect = object.image.get_rect() 
-        rect.center = (object.coordX,object.coordY) #중심좌표 설정
+        rect.center = (object.coordX+ORIGINPOINT.x,object.coordY+ORIGINPOINT.y) #중심좌표 설정
 
         screen.blit(object.image, rect) #스크린에 출력
 
@@ -165,8 +212,8 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
         xEnd = MAPSIZEX-1
     elif yStart < 0:
         yStart = 0
-    elif yEnd >= MAPSIZEX:
-        yEnd = MAPSIZEX-1
+    elif yEnd >= MAPSIZEY:
+        yEnd = MAPSIZEY-1
 
     for x in range(xStart, xEnd+1): # x범위
         for y in range(yStart, yEnd+1): # y범위
@@ -228,16 +275,16 @@ def moveObjects(): # 움직이는 오브젝트 이동
                 object.coordY += object.speedY 
 
 global gravity
-gravity = 0.2 #중력가속도
+gravity = 0.02 #중력가속도
 global jumpPower
-jumpPower = 8 #점프 가속도
+jumpPower = 0.5 #점프 가속도
 
 def gravityObjects(): #중력 적용
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기     
         if checkEscapeY(object):# 맵탈출이라면
             object.speedY = 0
         elif onGround(object) == False: # 공중에 있다면?
-            object.speedY += gravity # y속도에 중력값을 더한다
+            object.speedY += gravity * MAPTILESIZE # y속도에 중력값을 더한다
 
 def checkEscapeY(object): # Y방향 맵탈출 여부 True or False
     if object.coordY+object.speedY+object.sizeY/2 >= MAPTILESIZE*MAPSIZEY:
@@ -320,7 +367,7 @@ def runGame(): # 게임 실행 함수
         
         if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
             print("JUMP!")
-            maincharacter.speedY = -1 * jumpPower
+            maincharacter.speedY = -1 * jumpPower * MAPTILESIZE
 
 
         pygame.display.update()
@@ -332,4 +379,3 @@ def gameOver(): # 사망시
 
 runGame() 
 pygame.quit() #게임 종료
-
