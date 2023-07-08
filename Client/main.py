@@ -38,8 +38,8 @@ SCRSIZEY = user32.GetSystemMetrics(1)
 
 
 #맵의 크기 지정 (총 타일 개수!!!!)
-MAPSIZEX = 15
-MAPSIZEY = 30
+MAPSIZEX = 30
+MAPSIZEY = 20
 
 MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
 #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
@@ -101,12 +101,14 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트
         self.sizeY = MAPTILESIZE*zy
         self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
+        self.realimage = self.image
 
-blockimg = pygame.image.load("./images/Block.jpg") #테스트용 임시 이미지
+
+blockimg = pygame.image.load("./images/다운로드-removebg-preview-removebg-preview.png") #테스트용 임시 이미지
 
 mObjects = [] #움직이는 오브젝트 리스트
 
-maincharacter = MovingObject(1, 1, 0, 0, 1, 2, blockimg) #MovingObject 주인공을 maincharacter로 선언
+maincharacter = MovingObject(5, 5, 0, 0, 3, 5, blockimg) #MovingObject 주인공을 maincharacter로 선언
 
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
@@ -194,11 +196,10 @@ def onGround(object): #바닥에 붙어있는지 여부 판정
 
 def displayMovingObjects():# 움직이는 오브젝트 표시
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기
-
-        rect = object.image.get_rect() 
+       
+        rect = object.image.get_rect()
         rect.center = (object.coordX+ORIGINPOINT.x,object.coordY+ORIGINPOINT.y) #중심좌표 설정
-
-        screen.blit(object.image, rect) #스크린에 출력
+        screen.blit(object.realimage, rect) #스크린에 출력
 
 def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있으면 True, 없으면 False 그 벽의 좌표를 List로 반환
     xStart = int((xLeft+0.001) // MAPTILESIZE)
@@ -351,9 +352,11 @@ def runGame(): # 게임 실행 함수
             if event.type == pygame.KEYDOWN: # 방향키 누르기
                 if event.key == pygame.K_LEFT:
                     wantToMoveX = -1
+                    maincharacter.realimage = pygame.transform.flip(maincharacter.image,True,False)
 
                 elif event.key == pygame.K_RIGHT:
                     wantToMoveX = 1
+                    maincharacter.realimage = maincharacter.image
                 
                 if event.key == pygame.K_UP:
                     wantToJump = True
@@ -367,8 +370,7 @@ def runGame(): # 게임 실행 함수
                     changeRGB(1)
                 elif event.key == pygame.K_b: # B 변경
                     changeRGB(2)
-            
-        
+
         maincharacter.speedX = wantToMoveX*moveSpeed*MAPTILESIZE # 이동속도만큼 X좌표 속도 설정
 
         
