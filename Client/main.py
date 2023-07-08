@@ -38,8 +38,8 @@ SCRSIZEY = user32.GetSystemMetrics(1)
 
 
 #맵의 크기 지정 (총 타일 개수!!!!)
-MAPSIZEX = 30
-MAPSIZEY = 15
+MAPSIZEX = 15
+MAPSIZEY = 30
 
 MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
 #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
@@ -201,11 +201,10 @@ def displayMovingObjects():# 움직이는 오브젝트 표시
         screen.blit(object.image, rect) #스크린에 출력
 
 def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있으면 True, 없으면 False 그 벽의 좌표를 List로 반환
-    xStart = int(xLeft // MAPTILESIZE)
+    xStart = int((xLeft+0.001) // MAPTILESIZE)
     xEnd = int((xRight-0.001) // MAPTILESIZE)
-    yStart = int(yUp // MAPTILESIZE)
+    yStart = int((yUp+0.001) // MAPTILESIZE)
     yEnd = int((yDown-0.001) // MAPTILESIZE)
-    print(yStart, yEnd)
     if xStart < 0:
         xStart = 0
     elif xEnd >= MAPSIZEX:
@@ -247,6 +246,10 @@ def moveObjects(): # 움직이는 오브젝트 이동
                 
             if nextX - object.sizeX/2 < 0 or nextX + object.sizeX/2 > MAPTILESIZE*MAPSIZEX: # 맵탈출 여부
                 object.speedX = 0
+                if nextX - object.sizeX/2 < 0:
+                    object.coordX = object.sizeX/2
+                else:
+                    object.coordX = MAPTILESIZE*MAPSIZEX-object.sizeX/2
             elif findWall(xLeft, xRight, yUp, yDown)[0]: # 충돌 시 속도 0으로
                 object.speedX = 0
             else: # 충돌 아니라면 이동
