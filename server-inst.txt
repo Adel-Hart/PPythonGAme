@@ -16,3 +16,15 @@ https://engineer-mole.tistory.com/190
 쓰레드와 소켓으로 2개이상 게임 룸을 만듬
 
 메인 서버 >> 방 하나 씩 만들어서, 플레이어 배치 >> 소켓에서 플레이어의 정보 주고받게 함.
+
+
+https://docs.python.org/3/library/socketserver.html#SocketServer.RequestHandler.handle
+socketserver의 정보 (requset 핸들러 정보 !!!!ㄴ)
+
+
+https://scribblinganything.tistory.com/570
+스레드 변수 공유
+
+
+주의!! socketserver에 쓰레드 내장됨 >> 속도 저하가 있을 수 있음 
+속도저하가 있으면 socket + thread하거나, 내장 쓰레드 쓰기@
