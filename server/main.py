@@ -3,7 +3,7 @@ import sys
 import threading
 import socket
 
-HOST = "192.168.50.47"
+HOST = "192.168.1.17"
 PORT = 7777
 
 
@@ -36,6 +36,8 @@ class MyTcpHandler(socketserver.BaseRequestHandler):
     '''
 
     def handle(self):
+        global Players  #전역변수의 player을 사용할거라 선언 필요 (모든 스레드는 플레이어 내용이 같아야함)
+        global Rooms
         print('{} is connected'.format(self.client_address[0])) #접속 ip출력
 
         self.flagRoomList = True # 현재 방 목록창인가
@@ -45,42 +47,47 @@ class MyTcpHandler(socketserver.BaseRequestHandler):
 
         self.msg = ""
 
+        player = self.client_address[0]
+        Players.append(player)
+        print("추가완료")
+        
+        self.request.sendall("connected with server".encode('utf-8')) #접속자에게 연결완료 메세지 보내기
+        print("문자 보냄, 반복 시작")
+
         try: #오류 검사
             while not self.Exit:
-                global Players  #전역변수의 player을 사용할거라 선언 필요 (모든 스레드는 플레이어 내용이 같아야함)
-                global Rooms
-                player = self.client_address[0]
-                Players.append(player)
-                print("추가완료")
-                
-                self.request.sendall("connected with server".encode('utf-8')) #접속자에게 연결완료 메세지 보내기
-
-                print("문자 보냄")
+             
                 self.msg = self.request.recv(1024).decode('utf-8') #메세지 오면 읽기
                 print("메세지 받음")
 
                 if self.flagRoomList: #방 목록 있을때
+                    R = Room()
 
 
                     if self.msg == "quit":
                         print("disconnected by user")
                         return #종료
+                    
                     elif self.msg == "showRooms": #방 목록 요청처리
-                        self.request.sendall(','.join(Rooms.keys())) #방코드,방코드,방코드 형식으로 보내기
-                    elif "createRooms" in self.msg: #방생성 요청 (요청 형식 = createRooms-방코드)
-                        roomcode = self.msg.split('-')[1]
+                        print("request show Rooms")
+                        self.request.sendall(','.join(Rooms.keys()).encode('utf-8')) #방코드,방코드,방코드 형식으로 보내기
 
-                        Room.makeRoom(roomcode, player) #makeRoom 실행
-                        self.request.sendall(roomcode) #정보(방 코드)를 보냄
+                    elif "createRooms" in self.msg: #방생성 요청 (요청 형식 = createRooms-방코드)
+                        print("request create Rooms")
+                        roomcode = self.msg.split('-')[1]
+                        print("add " + player)
+                        R.makeRoom(roomcode, player) #makeRoom 실행
+                        self.request.sendall(roomcode.encode('utf-8')) #정보(방 코드)를 보냄
                         self.flagRoomList = False
                         self.flagRoom = roomcode # 방에 들어온 상태 지정
+                        
                     elif "joinRooms" in self.msg: #방참여 요청 (요청 형식 = createRooms-방코드)
                         roomcode = self.msg.split('-')[1]
 
-                        if(Room.joinRoom(roomcode, player)): #조인 실행 하면서 오류검사
-                            self.request.sendall('Ok-'+roomcode) #참여 완료 코드 (싸인-방코드)
+                        if(R.joinRoom(roomcode, player)): #조인 실행 하면서 오류검사
+                            self.request.sendall(('Ok-'+roomcode).encode('utf-8')) #참여 완료 코드 (싸인-방코드)
                         else:
-                            self.request.sendall('Error')
+                            self.request.sendall('Error'.encode('utf-8'))
 
 
                 elif self.flagRoom:
