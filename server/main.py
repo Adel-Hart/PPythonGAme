@@ -3,7 +3,7 @@ import sys
 import threading
 import socket
 
-HOST = "192.168.1.17"
+HOST = "192.168.1.43"
 PORT = 7777
 
 
@@ -86,12 +86,15 @@ class MyTcpHandler(socketserver.BaseRequestHandler):
 
                         if(R.joinRoom(roomcode, player)): #조인 실행 하면서 오류검사
                             self.request.sendall(('Ok-'+roomcode).encode('utf-8')) #참여 완료 코드 (싸인-방코드)
+                            self.flagRoomList = False
+                            self.flagRoom = roomcode
                         else:
                             self.request.sendall('Error'.encode('utf-8'))
 
 
-                elif self.flagRoom:
-                    return
+                elif self.flagRoom != 0:
+                    print("방 에 들어온 모드")
+                    self.request.sendall(str(Rooms[self.flagRoom]).encode('utf-8'))
 
         except Exception as e:
             print(e)
