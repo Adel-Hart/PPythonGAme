@@ -113,7 +113,7 @@ blockimg = pygame.image.load("./images/Player.png") #테스트용 임시 이미�
 
 mObjects = [] #움직이는 오브젝트 리스트
 
-maincharacter = MovingObject(5, 5, 0, 0, 2, 3, blockimg) #MovingObject 주인공을 maincharacter로 선언
+maincharacter = MovingObject(MAPSIZEX/2, MAPSIZEY/2, 0, 0, 2, 3, blockimg) #MovingObject 주인공을 maincharacter로 선언
 
 mObjects.append(maincharacter) #오브젝트 목록에 추가
 
@@ -142,7 +142,14 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
             #0,0이 왼쪽 위라서, MAPSIZEY가 가장 하단임 하단보다 1올라가서 벽을 만듬
 
         for i in range(self.MAPSIZEX): #천장 채우기
-            TileList[i][0] = BLACK
+            TileList[i][0] = WALL
+
+        for i in range(self.MAPSIZEY): #우측벽 채우기
+            TileList[self.MAPSIZEX-1][i] = WALL  
+            #0,0이 왼쪽 위라서, MAPSIZEY가 가장 하단임 하단보다 1올라가서 벽을 만듬
+
+        for i in range(self.MAPSIZEY): #좌측벽 채우기
+            TileList[0][i] = WALL
 
 
     def displayTiles(self): #타일 그리기
@@ -307,10 +314,21 @@ def gravityObjects(): #중력 적용
         elif onGround(object) == False: # 공중에 있다면?
             object.speedY += gravity # y속도에 중력값을 더한다
 
-def checkEscapeY(object): # Y방향 맵탈출 여부 True or False
+def checkEscapeY(object): # 속도까지 고려한 Y방향 맵탈출 여부 True or False
     if object.coordY+object.speedY+object.sizeY/2 >= MAPSIZEY:
         return True
     elif object.coordY+object.speedY-object.sizeY/2 < 0:
+        return True
+    return False
+
+def checkObjectEscape(object): #오브젝트가 현재 맵을 탈출했는지 판단 True or False
+    if object.coordY+object.sizeY/2 >= MAPSIZEY:
+        return True
+    if object.coordY-object.sizeY/2 < 0:
+        return True
+    if object.coordX+object.sizeX/2 >= MAPSIZEX:
+        return True
+    if object.coordX-object.sizeX/2 < 0:
         return True
     return False
 
@@ -351,6 +369,9 @@ def runGame(): # 게임 실행 함수
         displayMovingObjects() # 움직이는 오브젝트 일괄 출력
 
         #print(maincharacter.coordX,maincharacter.coordY)
+
+        if checkObjectEscape(maincharacter): # y방향 맵탈출시 사망판정
+            gameOver()
 
         if checkClip(maincharacter): # 오브젝트에 낄시 사망판정
             gameOver()
