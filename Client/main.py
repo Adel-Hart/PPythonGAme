@@ -137,19 +137,20 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         RGBList = [False, False, False] # RGB 모두 켜져 있다
 
 
-        for i in range(self.MAPSIZEX): #바닥 채우기
-            TileList[i][self.MAPSIZEY-1] = WALL  
-            #0,0이 왼쪽 위라서, MAPSIZEY가 가장 하단임 하단보다 1올라가서 벽을 만듬
-
-        for i in range(self.MAPSIZEX): #천장 채우기
-            TileList[i][0] = WALL
+        
 
         for i in range(self.MAPSIZEY): #우측벽 채우기
-            TileList[self.MAPSIZEX-1][i] = WALL  
+            TileList[self.MAPSIZEX-1][i] = GREEN  
             #0,0이 왼쪽 위라서, MAPSIZEY가 가장 하단임 하단보다 1올라가서 벽을 만듬
 
         for i in range(self.MAPSIZEY): #좌측벽 채우기
-            TileList[0][i] = WALL
+            TileList[0][i] = WHITE
+
+        for i in range(self.MAPSIZEX): #바닥 채우기
+            TileList[i][self.MAPSIZEY-1] = WALL
+
+        for i in range(self.MAPSIZEX): #천장 채우기
+            TileList[i][0] = BLACK
 
 
     def displayTiles(self): #타일 그리기
@@ -172,10 +173,11 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         else: return TileList[x][y] # 색이 있을시 원래 색으로 출력
 
     def drawGrids(self): # 그리드 그리기
+        GRIDCOLOR = WALL
         for x in range(MAPSIZEX):
-            pygame.draw.line(screen, WHITE, [x*MAPTILESIZE+ORIGINPOINT.x,ORIGINPOINT.y], [x*MAPTILESIZE+ORIGINPOINT.x,MAPSIZEY*MAPTILESIZE+ORIGINPOINT.y])
+            pygame.draw.line(screen, GRIDCOLOR, [x*MAPTILESIZE+ORIGINPOINT.x,ORIGINPOINT.y], [x*MAPTILESIZE+ORIGINPOINT.x,MAPSIZEY*MAPTILESIZE+ORIGINPOINT.y])
         for y in range(MAPSIZEY):
-            pygame.draw.line(screen, WHITE, [ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y], [MAPSIZEX*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y])
+            pygame.draw.line(screen, GRIDCOLOR, [ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y], [MAPSIZEX*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y])
 
 
 
@@ -266,13 +268,7 @@ def moveObjects(): # 움직이는 오브젝트 이동
             yUp = object.coordY - object.sizeY/2
             yDown = object.coordY + object.sizeY/2
                 
-            if nextX - object.sizeX/2 < 0 or nextX + object.sizeX/2 > MAPSIZEX: # 맵탈출 여부
-                object.speedX = 0
-                if nextX - object.sizeX/2 < 0:
-                    object.coordX = object.sizeX/2
-                else:
-                    object.coordX = MAPSIZEX-object.sizeX/2
-            elif findWall(xLeft, xRight, yUp, yDown)[0]: # 충돌 시 속도 0으로
+            if findWall(xLeft, xRight, yUp, yDown)[0]: # 충돌 시 속도 0으로
                 object.speedX = 0
             else: # 충돌 아니라면 이동
                 object.coordX += object.speedX 
@@ -285,11 +281,8 @@ def moveObjects(): # 움직이는 오브젝트 이동
             xLeft = object.coordX - object.sizeX/2
             xRight = object.coordX + object.sizeX/2
             yUp = nextY - object.sizeY/2
-            yDown = nextY + object.sizeY/2
-            
-            if nextY - object.sizeY/2 < 0 or nextY + object.sizeY/2 > MAPSIZEY: # 맵탈출 여부
-                object.speedY = 0               
-            elif findWall(xLeft, xRight, yUp, yDown)[0]:
+            yDown = nextY + object.sizeY/2   
+            if findWall(xLeft, xRight, yUp, yDown)[0]:
                 if object.speedY > 0: # 바닥에 막힐 경우
                     print("바닥")
                     object.speedY = 0
@@ -309,9 +302,7 @@ jumpPower = 0.5 #점프 가속도
 
 def gravityObjects(): #중력 적용
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기     
-        if checkEscapeY(object):# 맵탈출이라면
-            object.speedY = 0
-        elif onGround(object) == False: # 공중에 있다면?
+        if onGround(object) == False: # 공중에 있다면?
             object.speedY += gravity # y속도에 중력값을 더한다
 
 def checkEscapeY(object): # 속도까지 고려한 Y방향 맵탈출 여부 True or False
