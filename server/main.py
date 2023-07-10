@@ -5,7 +5,7 @@ import threading
 import socket
 import random
 
-HOST = "192.168.1.61"
+HOST = "192.168.1.59"
 PORT = 7777
 
 
@@ -43,7 +43,7 @@ class MyTcpHandler(socketserver.BaseRequestHandler):
         print('{} is connected'.format(self.client_address[0])) #접속 ip출력
 
         self.flagRoomList = True # 현재 방 목록창인가
-        self.flagRoom = 0 #방코드 (0이면, 방에서 나간 상태)
+        self.flagRoom = 0 #방코드 (0이면, 방에서 나간 상태) 
         self.flagGame = False # 게임 중인가
         self.Exit = False
 
