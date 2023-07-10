@@ -89,21 +89,21 @@ COLORLIST = [RED, GREEN, BLUE, YELLOW, MAGENTA, CYAN, WHITE] # 모든 색상의 
 
 
 #해상도 관계없이 플레이 가능하도록, 좌표를 픽셀 기준에서 타일 기준으로 변경 quick fix
-NEWSIZE = 50 #한 타일을 50개로 쪼개서 좌표를 정의한다.
+#NEWSIZE = 1 #한 타일을 50개로 쪼개서 좌표를 정의한다.
 
 class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
     def __init__(self, cx, cy, sx, sy, zx, zy, image): #오브젝트의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
-        self.coordX = NEWSIZE*cx
-        self.coordY = NEWSIZE*cy
+        self.coordX = cx
+        self.coordY = cy
 
         #2차원 공간에서의 속도
         self.speedX = sx
         self.speedY = sy
 
         #크기(직사각형) = 히트박스, 사용할 이미지 파일 : rect
-        self.sizeX = NEWSIZE*zx
-        self.sizeY = NEWSIZE*zy
+        self.sizeX = zx
+        self.sizeY = zy
         self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
         self.realimage = self.image #realimage는 원본imgae(blockimg)를 변화시키는거라 따로 제작
@@ -212,14 +212,14 @@ def displayMovingObjects():# 움직이는 오브젝트 표시
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기
        
         rect = object.image.get_rect()
-        rect.center = (object.coordX/NEWSIZE*MAPTILESIZE+ORIGINPOINT.x,object.coordY/NEWSIZE*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
+        rect.center = (object.coordX*MAPTILESIZE+ORIGINPOINT.x,object.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
         screen.blit(object.realimage, rect) #스크린에 출력
 
 def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있으면 True, 없으면 False 그 벽의 좌표를 List로 반환
-    xStart = int((xLeft+0.001) // NEWSIZE)
-    xEnd = int((xRight-0.001) // NEWSIZE)
-    yStart = int((yUp+0.001) // NEWSIZE)
-    yEnd = int((yDown-0.001) // NEWSIZE)
+    xStart = int(xLeft+0.001)
+    xEnd = int(xRight-0.001)
+    yStart = int(yUp+0.001)
+    yEnd = int(yDown-0.001)
     if xStart < 0:
         xStart = 0
     elif xEnd >= MAPSIZEX:
@@ -237,7 +237,7 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
     return [False,[]]
 
 def checkClip(object): # 오브젝트가 꼈는지 확인
-    return findWall(object.coordX - object.sizeX/2+1, object.coordX + object.sizeX/2-1, object.coordY - object.sizeY/2+1, object.coordY + object.sizeY/2-1)[0]
+    return findWall(object.coordX - object.sizeX/2, object.coordX + object.sizeX/2, object.coordY - object.sizeY/2, object.coordY + object.sizeY/2)[0]
 def moveObjects(): # 움직이는 오브젝트 이동
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기
 
@@ -259,12 +259,12 @@ def moveObjects(): # 움직이는 오브젝트 이동
             yUp = object.coordY - object.sizeY/2
             yDown = object.coordY + object.sizeY/2
                 
-            if nextX - object.sizeX/2 < 0 or nextX + object.sizeX/2 > NEWSIZE*MAPSIZEX: # 맵탈출 여부
+            if nextX - object.sizeX/2 < 0 or nextX + object.sizeX/2 > MAPSIZEX: # 맵탈출 여부
                 object.speedX = 0
                 if nextX - object.sizeX/2 < 0:
                     object.coordX = object.sizeX/2
                 else:
-                    object.coordX = NEWSIZE*MAPSIZEX-object.sizeX/2
+                    object.coordX = MAPSIZEX-object.sizeX/2
             elif findWall(xLeft, xRight, yUp, yDown)[0]: # 충돌 시 속도 0으로
                 object.speedX = 0
             else: # 충돌 아니라면 이동
@@ -280,16 +280,16 @@ def moveObjects(): # 움직이는 오브젝트 이동
             yUp = nextY - object.sizeY/2
             yDown = nextY + object.sizeY/2
             
-            if nextY - object.sizeY/2 < 0 or nextY + object.sizeY/2 > NEWSIZE*MAPSIZEY: # 맵탈출 여부
+            if nextY - object.sizeY/2 < 0 or nextY + object.sizeY/2 > MAPSIZEY: # 맵탈출 여부
                 object.speedY = 0               
             elif findWall(xLeft, xRight, yUp, yDown)[0]:
                 if object.speedY > 0: # 바닥에 막힐 경우
                     print("바닥")
                     object.speedY = 0
-                    object.coordY = findWall(xLeft, xRight, yUp, yDown)[1][1]*NEWSIZE - object.sizeY/2 # 바닥에 딱 붙이기
+                    object.coordY = findWall(xLeft, xRight, yUp, yDown)[1][1] - object.sizeY/2 # 바닥에 딱 붙이기
                 elif object.speedY < 0: # 천장에 막힐 경우
                     print("천장")
-                    object.coordY = (findWall(xLeft, xRight, yUp, yDown)[1][1]+1)*NEWSIZE + object.sizeY/2 # 천장에 딱 붙이기
+                    object.coordY = (findWall(xLeft, xRight, yUp, yDown)[1][1]+1) + object.sizeY/2 # 천장에 딱 붙이기
                     object.speedY = 0
                 
             object.coordY += object.speedY 
@@ -305,10 +305,10 @@ def gravityObjects(): #중력 적용
         if checkEscapeY(object):# 맵탈출이라면
             object.speedY = 0
         elif onGround(object) == False: # 공중에 있다면?
-            object.speedY += gravity * NEWSIZE # y속도에 중력값을 더한다
+            object.speedY += gravity # y속도에 중력값을 더한다
 
 def checkEscapeY(object): # Y방향 맵탈출 여부 True or False
-    if object.coordY+object.speedY+object.sizeY/2 >= NEWSIZE*MAPSIZEY:
+    if object.coordY+object.speedY+object.sizeY/2 >= MAPSIZEY:
         return True
     elif object.coordY+object.speedY-object.sizeY/2 < 0:
         return True
@@ -349,6 +349,8 @@ def runGame(): # 게임 실행 함수
         moveObjects() # 움직이는 오브젝트 일괄 이동
 
         displayMovingObjects() # 움직이는 오브젝트 일괄 출력
+
+        #print(maincharacter.coordX,maincharacter.coordY)
 
         if checkClip(maincharacter): # 오브젝트에 낄시 사망판정
             gameOver()
@@ -392,12 +394,12 @@ def runGame(): # 게임 실행 함수
                 elif event.key == pygame.K_b: # B 변경
                     changeRGB(2)
 
-        maincharacter.speedX = wantToMoveX*moveSpeed*NEWSIZE # 이동속도만큼 X좌표 속도 설정
+        maincharacter.speedX = wantToMoveX*moveSpeed # 이동속도만큼 X좌표 속도 설정
 
         
         if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
             print("JUMP!")
-            maincharacter.speedY = -1 * jumpPower * NEWSIZE
+            maincharacter.speedY = -1 * jumpPower
 
 
 
