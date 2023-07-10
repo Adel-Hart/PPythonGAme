@@ -1,9 +1,11 @@
 import socketserver
 import sys
+import os
 import threading
 import socket
+import random
 
-HOST = "192.168.1.43"
+HOST = "192.168.1.61"
 PORT = 7777
 
 
@@ -96,6 +98,27 @@ class MyTcpHandler(socketserver.BaseRequestHandler):
                     print("방 에 들어온 모드")
                     self.request.sendall(str(Rooms[self.flagRoom]).encode('utf-8'))
 
+                    if("setMap" in self.msg): #맵 코드 지정 형식 : setMap-맵코드
+                        set_map = Map((self.msg).split('-')[1])
+
+
+                        if(set_map.checkMap()):
+                            Rooms[self.flagRoom][1]['Map'] = (self.msg).split('-')[1]
+                            self.request.sendall("Ok".encode('utf-8'))
+                            self.msg = ""
+                            print("방 지정 완료")
+                        else:
+                            self.msg = ""
+                            self.request.sendall("noRoom".encode('utf-8'))
+                            print("해당 방 없음")
+                            
+
+
+
+
+
+
+
         except Exception as e:
             print(e)
 
@@ -135,6 +158,41 @@ class Room():
             return 'Ok'
         except:
             return 'Not'
+
+
+
+class Map():
+
+    def __init__(self, roomCode):
+
+        self.roomCode = roomCode
+
+
+
+
+
+    def checkMap(self):
+        try:
+            maps = os.listdir('./Maps/{}'.format(self.roomCode)) #roomCode의 맵 폴더를 열기  (없으면 오류가 날 것임)
+            return True
+        except FileNotFoundError: #파일 못 찾음 에러 감지
+            return False
+        
+
+    def makeMap(self, file, player):
+        return #나중에 만들거임 (에디터 완성되면)
+    
+    def listMap(self):
+        maps = os.listdir('./Maps/')
+        return maps #폴더 목록 읽어와서 list형태로 보내기
+
+
+
+
+
+
+
+
 
 
 
