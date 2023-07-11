@@ -3,7 +3,7 @@ import threading
 
 Client = []
 
-HOST = "192.168.1.107"
+HOST = "192.168.1.41"
 PORT = 7777
 
 Clients = []
@@ -28,12 +28,15 @@ class Server(threading.Thread):
         while True:
             data = self.receive()[0] #한무 대기
             if(data == "hi"):
-                self.send(addr, context="hi too")
-
+                self.send(addr, "hi too")
+                #for i in range(100):
+                    #self.send(addr, str(i))
+            
 
     def receive(self):
         global temp
         data, addr = self.sock.recvfrom(8388608) #데이터 받기, 인자는 데이터의 최대 크기        
+        data = data.decode('utf-8')
 
         if(temp != data):
             temp = data 
@@ -43,7 +46,7 @@ class Server(threading.Thread):
 
 
     def send(self, addr, context):
-        self.sock.sendto(context, (addr, PORT))
+        self.sock.sendto(context.encode('utf-8'), addr)
 
 
 
