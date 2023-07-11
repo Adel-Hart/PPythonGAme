@@ -2,7 +2,7 @@ import socket
 import time
 
 
-HOST = "118.235.11.105"
+HOST = "125.136.13.49"
 PORT = 7777
 
 start = False
