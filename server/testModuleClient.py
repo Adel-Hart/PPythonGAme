@@ -5,7 +5,7 @@ import threading
 
 
 
-HOST = "192.168.1.41"
+HOST = "192.168.1.26"
 PORT = 7777
 
 

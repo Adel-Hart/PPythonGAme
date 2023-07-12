@@ -3,7 +3,7 @@ import threading
 
 Client = []
 
-HOST = "192.168.1.41"
+HOST = "192.168.1.26"
 PORT = 7777
 
 Clients = []
@@ -12,11 +12,16 @@ temp = ""
 
 class Server(threading.Thread):
 
-    def __init__(self):
-        threading.Thread.__init__(self) #쓰레드를 클래스로 사용하는 경우는, 부모 클래스 생성자 호출 필요! >> 클래스 호출 시 run 함수 자동 실행
+    def __init__(self, socket):
+        #threading.Thread.__init__(self) #쓰레드를 클래스로 사용하는 경우는, 부모 클래스 생성자 호출 필요! >> 클래스 호출 시 run 함수 자동 실행
+        super().__init__()
+        self.sock = socket
+        
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024) #인자1 : 변경할 것, 인자2 : 데이터 크기지정 설정 (다음 인자에 크기가 나옴)
         self.sock.bind((HOST, PORT))
+
+#https://hyeonukdev.tistory.com/117
 
 
     def run(self):
