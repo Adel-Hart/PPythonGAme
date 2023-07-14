@@ -89,9 +89,9 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
 class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
 
     def __init__(self, mapName): #맵을 불러오고 각종 상수를 결정한다.
-        global TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity
-
-        TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity = mapload.readMap(mapName) # 맵의 정보 다 받아온다
+        global TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed
+        TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed = mapload.readMap(mapName) # 맵의 정보 다 받아온다
+        print(moveSpeed)
         global MAPTILESIZE # 한 타일의 길이(픽셀 수)
         MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
         #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
@@ -285,11 +285,7 @@ def runGame(mapName): # 게임 실행 함수
 
     global done 
     done = False
-
     pygame.display.set_caption(str(mapName)) # set window's name a mapName
-
-    global moveSpeed
-    moveSpeed = 0.25 # 프레임당 이동할 타일 수(=속도)
 
     global wantToMoveX
     wantToMoveX = 0 # 플레이어가 누르고 있는 X방향(-1, 1)
@@ -331,6 +327,8 @@ def runGame(mapName): # 게임 실행 함수
 
         if checkClip(maincharacter): # 오브젝트에 낄시 사망판정
             gameOver()
+        
+        
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # 종료 이벤트
