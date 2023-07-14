@@ -1,5 +1,3 @@
-# 유지보수하기 어렵게 코딩하는 방법
-
 import tkinter
 import pyautogui
 
@@ -94,8 +92,6 @@ def jump(height,time):
     g = height * 8 / (time * time)
     return f"{v},{g}"
 
-
-
 def save():
     f = open(mapName.get()+".dat","w")
     for y in range(mapY):
@@ -104,10 +100,7 @@ def save():
         f.write("\n") 
     f.write("!" + position.get())
     f.write("\n@" + size.get())
-    f.write("\n#" + jump(int(jumpHeight.get()), int(jumpTime.get())) + speed.get())
-
-
-
+    f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
 
 # window.bind("<Button-1>", click)
 mapSizeAlert = tkinter.Label(inputFrame, text = "")
