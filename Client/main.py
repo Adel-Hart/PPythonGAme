@@ -5,6 +5,7 @@ import math
 import random
 import time
 import sys
+import mapload
 
 import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
@@ -26,47 +27,23 @@ RGBlist : 현재 화면 색 (이 화면색과 같은 타일들은 무시됨)
 
 '''
 
-
-
-#현재 경로 저장
-originDir = os.getcwd().replace("\\", "/")
-print(originDir)
-
 pygame.init() # initialize pygame
-
-
 
 user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
 SCRSIZEY = user32.GetSystemMetrics(1) #세로
-
-
-
-
-
-#맵의 크기 지정 (총 타일 개수!!!!)
-MAPSIZEX = 30 #나중에 외부 파일로 바꿀수 있게 할거 quick fix
-MAPSIZEY = 20
-
-MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
-#만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
 
 class pos: # 좌표값 class, 오브젝트마다 pos가 필요해서, 클래스화
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-#맵의 원점(0,0)의 편향값, 이 값만큼 편향돼서 출력됨으로써 좌우대칭을 맞춘다
-ORIGINPOINT = pos(SCRSIZEX/2-MAPTILESIZE*MAPSIZEX/2, 0) if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else pos(0,SCRSIZEY/2-MAPTILESIZE*MAPSIZEY/2)
-#만약, 해상도가 X축이 길면, 보류
 
 
 size = [SCRSIZEX, SCRSIZEY] # set screen size
 screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
 
-pygame.display.set_caption("AL1S") # set window's name a "AL1s" (quick fix)
 
-done = False # set shutdown triger
 
 clock = pygame.time.Clock() # set fps
 
@@ -109,26 +86,33 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
         self.realimage = self.image #realimage는 원본imgae(blockimg)를 변화시키는거라 따로 제작
 
 
-blockimg = pygame.image.load("./images/Player.png") #테스트용 임시 이미지
-
-mObjects = [] #움직이는 오브젝트 리스트
-
-maincharacter = MovingObject(MAPSIZEX/2, MAPSIZEY/2, 0, 0, 2, 3, blockimg) #MovingObject 주인공을 maincharacter로 선언
-
-mObjects.append(maincharacter) #오브젝트 목록에 추가
-
-
 class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
 
-    def __init__(self, MAPSIZEX, MAPSIZEY, MAPTILESIZE, ORIGINPOINT):
-        self.MAPSIZEX = MAPSIZEX
-        self.MAPSIZEY = MAPSIZEY
-        self.MAPTILESIZE = MAPTILESIZE
-        self.ORIGINPOINT = ORIGINPOINT #맵이 스테이지 마다 바뀌기 때문 + 가독성 >> 클래스로 정리
+    def __init__(self, mapName): #맵을 불러오고 각종 상수를 결정한다.
+        global TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity
 
-    def makeTiles(self): #타일을 그리는 함수가 X, 타일 배치를 만드는 함수
-        global TileList # Tile의 집합, 즉 맵
-        TileList = [[BLACK if random.randrange(10) else [[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)],[COLORON,0][random.randrange(2)]] for j in range(self.MAPSIZEY)] for i in range(self.MAPSIZEX)] # 맵 크기만큼의 2차원 배열 생성
+        TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity = mapload.readMap(mapName) # 맵의 정보 다 받아온다
+        
+        global MAPTILESIZE # 한 타일의 길이(픽셀 수)
+        MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
+        #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
+
+        global mObjects
+        mObjects = []
+
+        global maincharacter
+        global blockimg
+        blockimg = pygame.image.load("./images/Player.png")
+        maincharacter = MovingObject(PSTARTX, PSTARTY, 0, 0, PSIZEX, PSIZEY, blockimg) #MovingObject 주인공을 maincharacter로 선언
+        mObjects.append(maincharacter) #오브젝트 목록에 추가
+
+
+        
+        global ORIGINPOINT
+        #맵의 원점(0,0)의 편향값, 이 값만큼 편향돼서 출력됨으로써 좌우대칭을 맞춘다
+        ORIGINPOINT = pos(SCRSIZEX/2-MAPTILESIZE*MAPSIZEX/2, 0) if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else pos(0,SCRSIZEY/2-MAPTILESIZE*MAPSIZEY/2)
+        #만약, 해상도가 X축이 길면, 보류      
+        #   
         #TileList = [[BLACK for j in range(self.MAPSIZEY)] for i in range(self.MAPSIZEX)] # 맵 크기만큼의 2차원 배열 생성
         
         #삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
@@ -136,27 +120,10 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         global RGBList #현재 화면 상태
         RGBList = [False, False, False] # RGB 모두 켜져 있다
 
-
-        
-
-        for i in range(self.MAPSIZEY): #우측벽 채우기
-            TileList[self.MAPSIZEX-1][i] = GREEN  
-            #0,0이 왼쪽 위라서, MAPSIZEY가 가장 하단임 하단보다 1올라가서 벽을 만듬
-
-        for i in range(self.MAPSIZEY): #좌측벽 채우기
-            TileList[0][i] = WHITE
-
-        for i in range(self.MAPSIZEX): #바닥 채우기
-            TileList[i][self.MAPSIZEY-1] = WALL
-
-        for i in range(self.MAPSIZEX): #천장 채우기
-            TileList[i][0] = BLACK
-
-
     def displayTiles(self): #타일 그리기
-        for y in range(self.MAPSIZEY):
-            for x in range(self.MAPSIZEX):
-                pygame.draw.rect(screen, self.RGBTile(x,y), [x*self.MAPTILESIZE+self.ORIGINPOINT.x,y*self.MAPTILESIZE+self.ORIGINPOINT.y,self.MAPTILESIZE+1,self.MAPTILESIZE+1]) # 정사각형으로 타일 색칠
+        for y in range(MAPSIZEY):
+            for x in range(MAPSIZEX):
+                pygame.draw.rect(screen, self.RGBTile(x,y), [x*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y,MAPTILESIZE+1,MAPTILESIZE+1]) # 정사각형으로 타일 색칠
     #pygame.draw.rect(화면크기, 색[rgbTile이라는 타일에대한 색 정보에서 해당 타일 색을 가져옴], [x위치(한 열마다, 타일의 크기를 곱하면, 타일의 위치가 나옴 혹시 모를 편차 때문에 수정된 원점(왼쪽 위)를 더해서 수정), y위치, x크기, y크기])
     
 
@@ -294,12 +261,6 @@ def moveObjects(): # 움직이는 오브젝트 이동
                 
             object.coordY += object.speedY 
 
-global gravity
-gravity = 0.02 #중력가속도
-
-global jumpPower
-jumpPower = 0.5 #점프 가속도
-
 def gravityObjects(): #중력 적용
     for object in mObjects: # 모든 움직이는 오브젝트 불러오기     
         if onGround(object) == False: # 공중에 있다면?
@@ -323,8 +284,12 @@ def checkObjectEscape(object): #오브젝트가 현재 맵을 탈출했는지 �
         return True
     return False
 
-def runGame(): # 게임 실행 함수
-    global done #종료 트리거
+def runGame(mapName): # 게임 실행 함수
+    
+    global done 
+    done = False
+
+    pygame.display.set_caption(str(mapName)) # set window's name a mapName
 
     global moveSpeed
     moveSpeed = 0.25 # 프레임당 이동할 타일 수(=속도)
@@ -335,10 +300,9 @@ def runGame(): # 게임 실행 함수
     global wantToJump # 위 방향키를 누르고 있는지 여부(True, False)
     wantToJump = False
 
+    Map = initMap(mapName)
 
-    Map = initMap(MAPSIZEX, MAPSIZEY, MAPTILESIZE, ORIGINPOINT)
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
-    Map.makeTiles() #타일 생성 (타일 목록작성과 타일의 무작위화를 한뒤 타일 생성기로 넘김)
 
     while not done: # loop the game
 
@@ -422,5 +386,6 @@ def gameOver(): # 사망시
     global done
     done = True
 
-runGame() 
+runGame(123456) 
+runGame(444444)
 pygame.quit() #게임 종료
