@@ -15,7 +15,7 @@ MAGENTA = [COLORON,0,COLORON]
 
 WALL = [COLORON//2,COLORON//2,COLORON//2]
 
-ColorDict = {"0":BLACK, "1":RED, "2":GREEN, "3":BLUE, "4": YELLOW, "5":CYAN, "6":MAGENTA, "7":WHITE, "8":WALL}
+ColorDict = {"0":BLACK, "1":RED, "2":GREEN, "3":BLUE, "4": YELLOW, "5":CYAN, "6":MAGENTA, "7":WHITE, "8":WALL} #색상표
 
 
 def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표를 반환하는 함수

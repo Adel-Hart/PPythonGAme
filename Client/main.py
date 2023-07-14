@@ -27,7 +27,7 @@ RGBlist : 현재 화면 색 (이 화면색과 같은 타일들은 무시됨)
 
 '''
 
-pygame.init() # initialize pygame
+
 
 user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
@@ -286,6 +286,7 @@ def checkObjectEscape(object): #오브젝트가 현재 맵을 탈출했는지 �
 
 def runGame(mapName): # 게임 실행 함수
     
+
     global done 
     done = False
 
@@ -385,7 +386,3 @@ def gameOver(): # 사망시
     print("사망")
     global done
     done = True
-
-runGame(123456) 
-runGame(444444)
-pygame.quit() #게임 종료
