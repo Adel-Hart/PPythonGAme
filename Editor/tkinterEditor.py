@@ -1,26 +1,42 @@
 import tkinter
 import pyautogui
 import os
+import ctypes
 
 brushColor = 0 
 colorTuple = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") 
 mapX = 0
 mapY = 0
-gridSize = 50 #격자 한칸의 크기
+gridSize = 50 #맵 격자 한칸의 크기
+mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
+
+
+
+user32 = ctypes.windll.user32
+SCRSIZEX = user32.GetSystemMetrics(0)-mapOrigin-50 #화면의 해상도 (픽셀수) 구하기 가로, 왼쪽 여유공간 600, 오른쪽 여유공간 50
+SCRSIZEY = user32.GetSystemMetrics(1)-50 #세로, 여유로 50 남김
 
 def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
     global mapX
     global mapY
     global mapArray
     global canvas
-    if XEntry.get().isdigit() and YEntry.get().isdigit(): #입력값이 정수인지 확인
+    global gridSize
+
+    if XEntry.get().isdigit() and YEntry.get().isdigit() and int(XEntry.get()) >= 1 and int(XEntry.get()) >= 1: #입력값이 정수인지 확인, 1 이상인지 확인
         mapSizeAlert.config(text = XEntry.get() + ", " + YEntry.get())
         canvas.destroy()
         mapX = int(XEntry.get())
-        mapY = int(YEntry.get())
+        mapY = int(YEntry.get())\
+        
+        gridSize = SCRSIZEY // mapY if SCRSIZEX/mapX > SCRSIZEY/mapY else SCRSIZEX // mapX #타일 크기를 화면비율에 맞추기
+        if gridSize > 80: gridSize = 80 # 80 이상은 너무 크므로 100으로 고정
+
         canvas = tkinter.Canvas(window, width = mapX * gridSize, height = mapY * gridSize)
         mapArray = [[0 for y in range(mapY)] for x in range(mapX)]
+       
+
         drawGrid()
     else:
         mapSizeAlert.config(text = "정수를 입력해주세요...!")
@@ -30,18 +46,22 @@ def drawGrid(): #격자 그리기
     for x in range(mapX):
         for y in range(mapY):
             canvas.create_rectangle(gridSize * x, gridSize * y, gridSize * (x + 1), gridSize * (y + 1), fill = "black")
+
+    for x in range(mapX): canvas.create_line(gridSize * x, 0, gridSize * x, gridSize * (y + 1), fill = "gray") # 세로줄긋기
+    for y in range(mapY): canvas.create_line(0, gridSize *y, gridSize * (x + 1), gridSize * y, fill = "gray") # 가로줄긋기
+
     canvas.bind("<Button-1>", colorChange)
     canvas.bind("<B1-Motion>", colorChange)
-    canvas.place(x = 600, y = 0)
+    canvas.place(x = mapOrigin, y = 0)
 
 def colorChange(event): #색 변경
     global canvas
     global mapArray
-    x = (pyautogui.position()[0]-600) // gridSize 
+    x = (pyautogui.position()[0]-mapOrigin) // gridSize 
     y = (pyautogui.position()[1]) // gridSize
     if x < mapX and y < mapY:
         mapArray[x][y] = brushColor
-        canvas.create_rectangle(x * gridSize, y * gridSize, x * gridSize + gridSize, y * gridSize + gridSize, fill = colorTuple[brushColor])
+        canvas.create_rectangle(x * gridSize+1, y * gridSize+1, x * gridSize + gridSize-1, y * gridSize + gridSize-1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
 
 def setBrushColor(color):
     global brushColor
@@ -53,20 +73,28 @@ def jump(height,time): #점프속도와 중력가속도 계산
     return f"{v},{g},"
 
 def save(): #맵 파일 작성
-    f = open("map.dat","w")
-    for y in range(mapY):
-        for x in range(mapX):
-            f.write(str(mapArray[x][y]))
-        f.write("\n") 
-    f.write("!" + position.get())
-    f.write("\n@" + size.get())
-    f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
+    try: # 오류 대비
+        os.makedirs("./maps/"+mapName.get()) # maps/맵이름 폴더 만들기
+        f = open("./maps/"+mapName.get()+"/map.dat","w") #맵이름 폴더 안에 dat 파일 생성
+        for y in range(mapY):
+            for x in range(mapX):
+                f.write(str(mapArray[x][y]))
+            f.write("\n") 
+        f.write("!" + position.get())
+        f.write("\n@" + size.get())
+        f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
+        f.close
+        return True
+    except: # 오류 발생시 실패를 알린다
+        print("저장 실패")
+        return False
 
 # ------------------------ GUI 요소 생성 ------------------------
 
 window = tkinter.Tk()
 window.title("맵에디터") #창의 이름
-window.geometry("1200x800+100+100") #창의 너비, 높이
+#window.geometry("1200x800+100+100") #창의 너비, 높이 # 전체화면이라서 의미없음. 주석처리
+
 window.resizable(False, False) #창 크기 조절 가능 여부
 window.attributes("-fullscreen", True) #전체화면
 
