@@ -100,7 +100,7 @@ def save():
         f.write("\n") 
     f.write("!" + position.get())
     f.write("\n@" + size.get())
-    f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
+    f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + "," + speed.get())
 
 # window.bind("<Button-1>", click)
 mapSizeAlert = tkinter.Label(inputFrame, text = "")
