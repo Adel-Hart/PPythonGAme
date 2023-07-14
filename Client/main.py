@@ -92,7 +92,6 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         global TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity
 
         TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity = mapload.readMap(mapName) # 맵의 정보 다 받아온다
-        
         global MAPTILESIZE # 한 타일의 길이(픽셀 수)
         MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
         #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
@@ -162,7 +161,6 @@ def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
 
 def changeRGB(changedRGB): #RGB 변경 시
     RGBList[changedRGB] = not RGBList[changedRGB]
-    print(RGBList)
 
 
 
@@ -251,11 +249,9 @@ def moveObjects(): # 움직이는 오브젝트 이동
             yDown = nextY + object.sizeY/2   
             if findWall(xLeft, xRight, yUp, yDown)[0]:
                 if object.speedY > 0: # 바닥에 막힐 경우
-                    print("바닥")
                     object.speedY = 0
                     object.coordY = findWall(xLeft, xRight, yUp, yDown)[1][1] - object.sizeY/2 # 바닥에 딱 붙이기
                 elif object.speedY < 0: # 천장에 막힐 경우
-                    print("천장")
                     object.coordY = (findWall(xLeft, xRight, yUp, yDown)[1][1]+1) + object.sizeY/2 # 천장에 딱 붙이기
                     object.speedY = 0
                 
@@ -300,8 +296,12 @@ def runGame(mapName): # 게임 실행 함수
 
     global wantToJump # 위 방향키를 누르고 있는지 여부(True, False)
     wantToJump = False
-
-    Map = initMap(mapName)
+    try:
+        Map = initMap(mapName)
+    except:
+        print("맵 로딩 실패")
+        return
+    print(str(mapName)+" 로딩 완료")
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
 
@@ -375,7 +375,6 @@ def runGame(mapName): # 게임 실행 함수
 
         
         if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
-            print("JUMP!")
             maincharacter.speedY = -1 * jumpPower
 
 
