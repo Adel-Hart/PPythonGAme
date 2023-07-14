@@ -98,7 +98,7 @@ saveButton = tkinter.Button(window, text = "저장", command = save)
 #색 변경 버튼 생성
 colorButton = []
 for i in range(9):
-    colorButton.append(tkinter.Button(window, command = lambda i=i: setBrushColor(i), bg = colorTuple[i], width = 5)) #i=i로 i를 람다의 지역 변수로 가져옴
+    colorButton.append(tkinter.Button(window, command = lambda i=i: setBrushColor(i), bg = colorTuple[i], width = 5)) #i=i로 i를 반복문의 현재 값으로 바꿈
 
 #캔버스 생성
 canvas = tkinter.Canvas()
