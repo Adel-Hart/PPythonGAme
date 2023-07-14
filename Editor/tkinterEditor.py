@@ -74,7 +74,7 @@ def jump(height,time): #점프속도와 중력가속도 계산
 
 def save(): #맵 파일 작성
     try: # 오류 대비
-        os.makedirs("./maps/"+mapName.get()) # maps/맵이름 폴더 만들기
+        os.makedirs("./maps/"+mapName.get(), exist_ok=True) # maps/맵이름 폴더 만들기
         f = open("./maps/"+mapName.get()+"/map.dat","w") #맵이름 폴더 안에 dat 파일 생성
         for y in range(mapY):
             for x in range(mapX):
