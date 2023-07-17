@@ -7,6 +7,8 @@ brushColor = 0
 colorTuple = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") 
 mapX = 0
 mapY = 0
+playerX = 0
+playerY = 0
 gridSize = 50 #맵 격자 한칸의 크기
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
@@ -28,7 +30,7 @@ def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
         mapSizeAlert.config(text = XEntry.get() + ", " + YEntry.get())
         canvas.destroy()
         mapX = int(XEntry.get())
-        mapY = int(YEntry.get())\
+        mapY = int(YEntry.get())
         
         gridSize = SCRSIZEY // mapY if SCRSIZEX/mapX > SCRSIZEY/mapY else SCRSIZEX // mapX #타일 크기를 화면비율에 맞추기
         if gridSize > 80: gridSize = 80 # 80 이상은 너무 크므로 100으로 고정
@@ -52,6 +54,7 @@ def drawGrid(): #격자 그리기
 
     canvas.bind("<Button-1>", colorChange)
     canvas.bind("<B1-Motion>", colorChange)
+    canvas.bind("<Button-3>", 몰루)
     canvas.place(x = mapOrigin, y = 0)
 
 def colorChange(event): #색 변경
@@ -80,14 +83,22 @@ def save(): #맵 파일 작성
             for x in range(mapX):
                 f.write(str(mapArray[x][y]))
             f.write("\n") 
-        f.write("!" + position.get())
-        f.write("\n@" + size.get())
+        f.write("!" + f"{playerX},{playerY}")
+        f.write("\n@" + playerWidth.get() + "," + playerHeight.get())
         f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
         f.close
         return True
     except: # 오류 발생시 실패를 알린다
         print("저장 실패")
         return False
+    
+def 몰루(event):
+    global playerX
+    global playerY
+    playerX = round((pyautogui.position()[0] - mapOrigin) / gridSize, 1)
+    playerY = round(pyautogui.position()[1] / gridSize, 1)
+    positionLabel.config(text = f"{playerX},{playerY}")
+    
 
 # ------------------------ GUI 요소 생성 ------------------------
 
@@ -102,8 +113,9 @@ window.attributes("-fullscreen", True) #전체화면
 mapSizeAlert = tkinter.Label(window, text = "")
 XLabel = tkinter.Label(window, text = "맵의 가로 길이 입력")
 YLabel = tkinter.Label(window, text = "맵의 세로 길이 입력")
-positionLabel = tkinter.Label(window, text = "시작 좌표 입력 \nx,y의 형식으로")
-sizeLabel = tkinter.Label(window, text = "플레이어 크기 입력 \nx,y의 형식으로")
+positionLabel = tkinter.Label(window, text = "")
+playerWidthLabel = tkinter.Label(window, text = "플레이어 너비 입력")
+playerHeigheLabel = tkinter.Label(window, text = "플레이어 키 입력")
 jumpHeightLabel = tkinter.Label(window, text = "점프 높이 입력")
 jumpTimeLabel = tkinter.Label(window, text = "점프 시간 입력")
 mapNameAlert = tkinter.Label(window, text = "저장할 이름 입력")
@@ -116,8 +128,8 @@ jumpHeight = tkinter.Entry(window)
 jumpTime = tkinter.Entry(window)
 mapName = tkinter.Entry(window)
 speed = tkinter.Entry(window)
-position = tkinter.Entry(window)
-size = tkinter.Entry(window)
+playerWidth = tkinter.Entry(window)
+playerHeight = tkinter.Entry(window)
 
 #버튼 생성
 button = tkinter.Button(window, text = "확인", command = sizeChange)
@@ -144,9 +156,12 @@ for button in colorButton:
     button.grid()
 
 positionLabel.grid()
-position.grid()
-sizeLabel.grid()
-size.grid()
+playerHeigheLabel.grid()
+playerHeight.grid()
+playerWidthLabel.grid()
+playerWidth.grid()
+
+
 jumpHeightLabel.grid()
 jumpHeight.grid()
 jumpTimeLabel.grid()
