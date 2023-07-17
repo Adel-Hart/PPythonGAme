@@ -13,11 +13,11 @@ gridSize = 50 #맵 격자 한칸의 크기
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
 
-
-
 user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0)-mapOrigin-50 #화면의 해상도 (픽셀수) 구하기 가로, 왼쪽 여유공간 600, 오른쪽 여유공간 50
 SCRSIZEY = user32.GetSystemMetrics(1)-50 #세로, 여유로 50 남김
+
+
 
 def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
     global mapX
@@ -25,8 +25,9 @@ def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
     global mapArray
     global canvas
     global gridSize
+    global characterCanvas
 
-    if XEntry.get().isdigit() and YEntry.get().isdigit() and int(XEntry.get()) >= 1 and int(XEntry.get()) >= 1: #입력값이 정수인지 확인, 1 이상인지 확인
+    if XEntry.get().isdigit() and YEntry.get().isdigit() and int(XEntry.get()) >= 1 and int(XEntry.get()) >= 1 and int(XEntry.get()) <= 150 and int(XEntry.get()) <= 150: #입력값이 정수인지 확인, 1 이상인지 확인
         mapSizeAlert.config(text = XEntry.get() + ", " + YEntry.get())
         canvas.destroy()
         mapX = int(XEntry.get())
@@ -38,7 +39,6 @@ def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
         canvas = tkinter.Canvas(window, width = mapX * gridSize, height = mapY * gridSize)
         mapArray = [[0 for y in range(mapY)] for x in range(mapX)]
        
-
         drawGrid()
     else:
         mapSizeAlert.config(text = "정수를 입력해주세요...!")
@@ -50,21 +50,21 @@ def drawGrid(): #격자 그리기
             canvas.create_rectangle(gridSize * x, gridSize * y, gridSize * (x + 1), gridSize * (y + 1), fill = "black")
 
     for x in range(mapX): canvas.create_line(gridSize * x, 0, gridSize * x, gridSize * (y + 1), fill = "gray") # 세로줄긋기
-    for y in range(mapY): canvas.create_line(0, gridSize *y, gridSize * (x + 1), gridSize * y, fill = "gray") # 가로줄긋기
+    for y in range(mapY): canvas.create_line(0, gridSize * y, gridSize * (x + 1), gridSize * y, fill = "gray") # 가로줄긋기
 
     canvas.bind("<Button-1>", colorChange)
-    canvas.bind("<B1-Motion>", colorChange)
-    canvas.bind("<Button-3>", 몰루)
+    canvas.bind("<B1-Motion>", colorChange) 
+
     canvas.place(x = mapOrigin, y = 0)
 
 def colorChange(event): #색 변경
     global canvas
     global mapArray
-    x = (pyautogui.position()[0]-mapOrigin) // gridSize 
+    x = (pyautogui.position()[0] - mapOrigin) // gridSize 
     y = (pyautogui.position()[1]) // gridSize
     if x < mapX and y < mapY:
         mapArray[x][y] = brushColor
-        canvas.create_rectangle(x * gridSize+1, y * gridSize+1, x * gridSize + gridSize-1, y * gridSize + gridSize-1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
+        canvas.create_rectangle(x * gridSize + 1, y * gridSize + 1, x * gridSize + gridSize - 1, y * gridSize + gridSize - 1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
 
 def setBrushColor(color):
     global brushColor
@@ -92,13 +92,28 @@ def save(): #맵 파일 작성
         print("저장 실패")
         return False
     
-def 몰루(event):
+def playerPos(event): #플레이어 시작 좌표
     global playerX
     global playerY
-    playerX = round((pyautogui.position()[0] - mapOrigin) / gridSize, 1)
-    playerY = round(pyautogui.position()[1] / gridSize, 1)
-    positionLabel.config(text = f"{playerX},{playerY}")
+    if pyautogui.position()[0] >= mapOrigin and pyautogui.position()[0] <= gridSize * mapX + mapOrigin and pyautogui.position()[1] >= 0 and pyautogui.position()[1] <= gridSize * mapY:
+        playerX = round((pyautogui.position()[0] - mapOrigin) / gridSize, 1)
+        playerY = round(pyautogui.position()[1] / gridSize, 1)
+        positionLabel.config(text = f"{playerX},{playerY}")
+    character()
     
+def character(): #플레이어 캐릭터 생성
+    global characterCanvas
+    characterCanvas.destroy()
+    if playerWidth.get().isnumeric() and playerHeight.get().isnumeric(): #플레이어 키와 너비가 실수인지 확인
+        characterCanvas = tkinter.Canvas(width = float(playerWidth.get()) * gridSize, height = float(playerHeight.get()) * gridSize)
+        characterCanvas.create_rectangle(0, 0, float(playerWidth.get()) * gridSize, float(playerHeight.get()) * gridSize, fill = "olive")
+        characterCanvas.place(x = (playerX - float(playerWidth.get()) / 2) * gridSize + mapOrigin , y = (playerY - float(playerHeight.get()) / 2) * gridSize)
+    elif not playerWidth.get() or not playerHeight.get(): #플레이어 키와 너비 입력값이 없는지 판단
+        characterCanvas = tkinter.Canvas(width = gridSize / 2, height = gridSize / 2)
+        characterCanvas.create_rectangle(0, 0, gridSize / 2, gridSize / 2, fill = "olive")
+        characterCanvas.place(x = gridSize * (playerX - 1 / 4) + mapOrigin, y = gridSize * (playerY - 1 / 4))
+
+
 
 # ------------------------ GUI 요소 생성 ------------------------
 
@@ -108,7 +123,7 @@ window.title("맵에디터") #창의 이름
 
 window.resizable(False, False) #창 크기 조절 가능 여부
 window.attributes("-fullscreen", True) #전체화면
-
+window.bind("<Button-3>", playerPos)   
 #레이블 생성
 mapSizeAlert = tkinter.Label(window, text = "")
 XLabel = tkinter.Label(window, text = "맵의 가로 길이 입력")
@@ -142,6 +157,8 @@ for i in range(9):
 
 #캔버스 생성
 canvas = tkinter.Canvas()
+characterCanvas = tkinter.Canvas()
+
 
 # ------------------------ GUI 배치 ------------------------
 
@@ -160,8 +177,6 @@ playerHeigheLabel.grid()
 playerHeight.grid()
 playerWidthLabel.grid()
 playerWidth.grid()
-
-
 jumpHeightLabel.grid()
 jumpHeight.grid()
 jumpTimeLabel.grid()
@@ -171,4 +186,5 @@ speed.grid()
 mapNameAlert.grid()
 mapName.grid()
 saveButton.grid()
+
 window.mainloop()
