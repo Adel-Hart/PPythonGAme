@@ -5,8 +5,8 @@ import threading
 
 
 
-HOST = "192.168.1.26"
-PORT = 7777
+HOST = "192.168.50.47"
+PORT = 8080
 
 
 socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
