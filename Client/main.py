@@ -144,9 +144,9 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
                         imgnumber = 5
                     elif TileList[x][y] == MAGENTA:
                         imgnumber = 6
-                    elif TileList[x][y] == WALL:
-                        imgnumber = 7
                     elif TileList[x][y] == WHITE:
+                        imgnumber = 7
+                    elif TileList[x][y] == WALL:
                         imgnumber = 8
                     else:
                         pass
@@ -403,6 +403,8 @@ def runGame(mapName): # 게임 실행 함수
 
         displayMovingObjects() # 움직이는 오브젝트 일괄 출력
 
+        pygame.display.update()
+
         #print(maincharacter.coordX,maincharacter.coordY)
 
         if checkObjectEscape(maincharacter): # y방향 맵탈출시 사망판정
@@ -457,10 +459,6 @@ def runGame(mapName): # 게임 실행 함수
         
         if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
             maincharacter.speedY = -1 * jumpPower
-
-
-
-        pygame.display.update()
 
 def gameOver(): # 사망시
     print("사망")
