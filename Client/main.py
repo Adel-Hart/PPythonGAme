@@ -395,8 +395,6 @@ def runGame(mapName): # 게임 실행 함수
 
         Map.drawGrids() # 그리드 그리기
 
-        displayMovingObjects() # 움직이는 오브젝트 일괄 출력
-
         gravityObjects() #중력 적용
     
         moveObjects() # 움직이는 오브젝트 일괄 이동
