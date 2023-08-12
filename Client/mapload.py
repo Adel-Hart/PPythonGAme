@@ -47,7 +47,7 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
             movespeed = float(Pos[2]) 
             pass
         elif "$" in line: # &가 있는 줄은 배경 폴더의 이름:
-            line = line.strip("#") #$ 제거
+            line = line.strip("$") #$ 제거
             backgroundImage = line
         else:
             Map.append(map(lambda x : ColorDict[x],list(line))) #새로운 가로줄 추가

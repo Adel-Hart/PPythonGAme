@@ -2,18 +2,14 @@ from PIL import Image
 
 import numpy as np
 
-#imgname = input("이미지 이름")
-imgname = "test"
+imgname = "sea"
 
 img = Image.open(f"./images/backgrounds/{imgname}/default.png")
 
+"""
 Cimg = img.convert("HSV") #이미지를 HSV 형식으로 변경
 
 npimg = np.array(Cimg) #이미지를 numpy로 변경
-
-#ColorDict = {"0":BLACK, "1":RED, "2":GREEN, "3":BLUE, "4": YELLOW, "5":CYAN, "6":MAGENTA, "7":WHITE}
-
-
 
 #색상 변경
 Hlist = [0, 88, 155, 44, 120, 213]
@@ -26,7 +22,6 @@ for Hcolor in range(len(Hlist)):
 
     newimg = Image.fromarray(npimg, "HSV")
     newimg = newimg.convert("RGB")
-    #newimg.show()
     newimg.save(f"./images/backgrounds/{imgname}/colors/{Hcolor+1}.png") #저장
 
 
@@ -53,11 +48,22 @@ for i in range(len(npimg)):
         npimg[i][j] = npimg[i][j] // 4
         pass
 
+
 newimg = Image.fromarray(npimg, "L")
 newimg = newimg.convert("RGB")
 newimg.save(f"./images/backgrounds/{imgname}/colors/0.png")
+"""
+Bimg = img.convert("L") #흑백 이미지
+npimg = np.array(Bimg) #이미지를 numpy로 변경
 
-#CBimg.show()
+for i in range(len(npimg)):
+    for j in range(len(npimg[0])):
+        npimg[i][j] = npimg[i][j] // 2
+        pass
+
+newimg = Image.fromarray(npimg, "L")
+newimg = newimg.convert("RGB")
+newimg.save(f"./images/backgrounds/{imgname}/colors/8.png")
 
 
 

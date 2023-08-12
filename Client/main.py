@@ -57,12 +57,12 @@ GREEN = [0,COLORON,0]
 BLUE = [0,0,COLORON]
 
 YELLOW = [COLORON,COLORON,0]
-MAGENTA = [COLORON,0,COLORON]
 CYAN = [0,COLORON,COLORON]
+MAGENTA = [COLORON,0,COLORON]
+
 
 WALL = [COLORON//2,COLORON//2,COLORON//2]
 
-COLORLIST = [RED, GREEN, BLUE, YELLOW, MAGENTA, CYAN, WHITE] # 모든 색상의 리스트
 
 
 #해상도 관계없이 플레이 가능하도록, 좌표를 픽셀 기준에서 타일 기준으로 변경 quick fix
@@ -122,16 +122,41 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         RGBList = [False, False, False] # RGB 모두 켜져 있다
 
     def displayTiles(self): #타일 그리기
-
-        
-
         #타일 그리기
         for y in range(MAPSIZEY):
             for x in range(MAPSIZEX):
+
                 if TileList[x][y] == BLACK: #검은색일 경우 출력하지 않기
                     pass
+                
                 else:
-                    pygame.draw.rect(screen, self.RGBTile(x,y), [x*MAPTILESIZE+ORIGINPOINT.x,y*MAPTILESIZE+ORIGINPOINT.y,MAPTILESIZE+1,MAPTILESIZE+1]) # 정사각형으로 타일 색칠
+                    imgnumber = 0
+
+                    if TileList[x][y] == RED:
+                        imgnumber = 1
+                    elif TileList[x][y] == GREEN:
+                        imgnumber = 2
+                    elif TileList[x][y] == BLUE:
+                        imgnumber = 3
+                    elif TileList[x][y] == YELLOW:
+                        imgnumber = 4
+                    elif TileList[x][y] == CYAN:
+                        imgnumber = 5
+                    elif TileList[x][y] == MAGENTA:
+                        imgnumber = 6
+                    elif TileList[x][y] == WALL:
+                        imgnumber = 7
+                    elif TileList[x][y] == WHITE:
+                        imgnumber = 8
+                    else:
+                        pass
+                    
+                    if isWall(TileList[x][y]):
+                        screen.blit(tileImageList[imgnumber], (x*MAPTILESIZE+ORIGINPOINT.x, y*MAPTILESIZE+ORIGINPOINT.y))
+                    else:
+                        screen.blit(alphatileImageList[imgnumber], (x*MAPTILESIZE+ORIGINPOINT.x, y*MAPTILESIZE+ORIGINPOINT.y))
+                    
+                    
     #pygame.draw.rect(화면크기, 색[rgbTile이라는 타일에대한 색 정보에서 해당 타일 색을 가져옴], [x위치(한 열마다, 타일의 크기를 곱하면, 타일의 위치가 나옴 혹시 모를 편차 때문에 수정된 원점(왼쪽 위)를 더해서 수정), y위치, x크기, y크기])
     
 
@@ -142,10 +167,9 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
                 if RGBList[i]: #RGBList에서는 켜져있다면
                     properTile[i] = (properTile[i]+COLORON)//2 # 색깔의 평균값 대입
             return properTile
-        elif TileList[x][y] == BLACK: # 검은색일시 배경색 그대로 출력            
-            return list(map(lambda x: COLORON if x else 0, RGBList)) # RGBlist(bool)을 실제 RGB(int)로 전환 
             #추가 설명, map(함수, 값) 값들이 함수로 가 함수대로 변형, 즉 RGBList의 값들이 lamda에 x가 되어 바뀌어 나온다.
-        else: return TileList[x][y] # 색이 있을시 원래 색으로 출력
+        else: 
+            return TileList[x][y] # 색이 있을시 원래 색으로 출력
 
     def drawGrids(self): # 그리드 그리기
         GRIDCOLOR = WALL
@@ -169,7 +193,30 @@ def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
 
 
 def changeRGB(changedRGB): #RGB 변경 시
+    global backImage  
     RGBList[changedRGB] = not RGBList[changedRGB]
+    imgnumber = 8
+
+    if RGBList == [0,0,0]:
+        imgnumber = 0
+    elif RGBList == [1,0,0]:
+        imgnumber = 1
+    elif RGBList == [0,1,0]:
+        imgnumber = 2
+    elif RGBList == [0,0,1]:
+        imgnumber = 3
+    elif RGBList == [1,1,0]:
+        imgnumber = 4
+    elif RGBList == [0,1,1]:
+        imgnumber = 5
+    elif RGBList == [1,0,1]:
+        imgnumber = 6
+    elif RGBList == [1,1,1]:
+        imgnumber = 7
+    else:
+        pass
+    
+    backImage = pygame.transform.scale(pygame.image.load(f"./images/backgrounds/{backgroundImage}/colors/{imgnumber}.png"), (MAPTILESIZE*MAPSIZEX, MAPTILESIZE*MAPSIZEY))
 
 
 
@@ -316,7 +363,24 @@ def runGame(mapName): # 게임 실행 함수
     screen.fill(WHITE) # 화면 리셋
     
     #배경 이미지 설정
-    backImage = pygame.transform.scale(pygame.image.load(f"./images/backgrounds/{backgroundImage}/{0}.png"), (MAPTILESIZE*MAPSIZEX, MAPTILESIZE*MAPSIZEY))
+    global backImage
+    backImage = pygame.transform.scale(pygame.image.load(f"./images/backgrounds/{backgroundImage}/colors/{0}.png"), (MAPTILESIZE*MAPSIZEX, MAPTILESIZE*MAPSIZEY))
+    
+    global tileImageList
+    tileImageList = []
+
+    for i in range(9): #타일 색깔별 이미지 리스트
+        tileImageList.append(pygame.transform.scale(pygame.image.load(f"./images/tiles/colors/{i}.png"), (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
+    
+    global alphatileImageList
+    alphatileImageList = []
+
+    for i in range(9): #반투명한 타일 색깔별 이미지 리스트
+        temp = pygame.image.load(f"./images/tiles/colors/{i}.png")
+        temp.set_alpha(128)
+        alphatileImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
+    
+
 
     while not done: # loop the game
 
