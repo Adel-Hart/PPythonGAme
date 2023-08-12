@@ -22,7 +22,8 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
     f = open("./maps/"+str(MapName)+"/map.dat", "r") #파일 읽기
 
     lines = f.readlines()
-    
+    backgroundImage = "None"
+
     Map = []
     for line in lines:
         line = line.strip("\n")
@@ -45,6 +46,9 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
             gravity = float(Pos[1]) 
             movespeed = float(Pos[2]) 
             pass
+        elif "$" in line: # &가 있는 줄은 배경 폴더의 이름:
+            line = line.strip("#") #$ 제거
+            backgroundImage = line
         else:
             Map.append(map(lambda x : ColorDict[x],list(line))) #새로운 가로줄 추가
     #print(Map)
@@ -54,5 +58,8 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
     tileY = len(Map[0])
 
     f.close() #파일 닫기
-    
-    return Map, tileX, tileY, posX, posY, sizeX, sizeY, jumpPower, gravity, movespeed
+
+    if backgroundImage == "None":
+        backgroundImage = "test"
+
+    return Map, tileX, tileY, posX, posY, sizeX, sizeY, jumpPower, gravity, movespeed, backgroundImage
