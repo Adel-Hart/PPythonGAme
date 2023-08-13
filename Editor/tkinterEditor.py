@@ -100,19 +100,42 @@ def playerPos(event): #플레이어 시작 좌표
         playerY = round(pyautogui.position()[1] / gridSize, 1)
         positionLabel.config(text = f"{playerX},{playerY}")
     character()
-    
+
+def isNumeric(s): #문자열 실수 판단
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+ 
 def character(): #플레이어 캐릭터 생성
     global characterCanvas
-    characterCanvas.destroy()
-    if playerWidth.get().isnumeric() and playerHeight.get().isnumeric(): #플레이어 키와 너비가 실수인지 확인
+    global playerX
+    global playerY
+
+
+    if isNumeric(playerWidth.get()) and isNumeric(playerHeight.get()): #플레이어 키와 너비가 실수인지 확인
+        
+        
+
+        if playerX - float(playerWidth.get()) / 2 <= 0:
+            playerX = float(playerWidth.get()) / 2 + 0.1
+
+        elif playerX + float(playerWidth.get()) / 2 >= int(XEntry.get()):
+            playerX = int(XEntry.get()) - float(playerWidth.get()) / 2 - 0.1
+        
+        if playerY - float(playerHeight.get()) / 2 <= 0:
+            playerY = float(playerHeight.get()) / 2 + 0.1
+        elif playerY + float(playerHeight.get()) / 2 >= int(YEntry.get()):
+            playerY = int(YEntry.get()) - float(playerHeight.get()) / 2 - 0.1
+        
+        mouseX = (playerX - float(playerWidth.get()) / 2) * gridSize + mapOrigin #마우스로 클릭한 지점이 맵에서 X 좌표인지(타일기준 )
+        mouseY = (playerY - float(playerHeight.get()) / 2) * gridSize #Y
+    
+        characterCanvas.destroy()
         characterCanvas = tkinter.Canvas(width = float(playerWidth.get()) * gridSize, height = float(playerHeight.get()) * gridSize)
         characterCanvas.create_rectangle(0, 0, float(playerWidth.get()) * gridSize, float(playerHeight.get()) * gridSize, fill = "olive")
-        characterCanvas.place(x = (playerX - float(playerWidth.get()) / 2) * gridSize + mapOrigin , y = (playerY - float(playerHeight.get()) / 2) * gridSize)
-    elif not playerWidth.get() or not playerHeight.get(): #플레이어 키와 너비 입력값이 없는지 판단
-        characterCanvas = tkinter.Canvas(width = gridSize / 2, height = gridSize / 2)
-        characterCanvas.create_rectangle(0, 0, gridSize / 2, gridSize / 2, fill = "olive")
-        characterCanvas.place(x = gridSize * (playerX - 1 / 4) + mapOrigin, y = gridSize * (playerY - 1 / 4))
-
+        characterCanvas.place(x = mouseX , y = mouseY) 
 
 
 # ------------------------ GUI 요소 생성 ------------------------
