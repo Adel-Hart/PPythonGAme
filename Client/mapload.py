@@ -12,12 +12,19 @@ YELLOW = [COLORON,COLORON,0]
 CYAN = [0,COLORON,COLORON]
 MAGENTA = [COLORON,0,COLORON]
 
-
 WALL = [COLORON//2,COLORON//2,COLORON//2]
 
+RSWITCH = ["switch",1,[True, False, False]]
+GSWITCH = ["switch",2,[False, True, False]]
+BSWITCH = ["switch",3,[False, False, True]]
+YSWITCH = ["switch",4,[True, True, False]]
+CSWITCH = ["switch",5,[False, True, True]]
+MSWITCH = ["switch",6,[True, False, True]]
+WSWITCH = ["switch",7,[True, True, True]]
+
 ColorDict = {
-    "0":BLACK, "1":RED, "2":GREEN, "3":BLUE, "4": YELLOW, "5":CYAN, "6":MAGENTA, "7":WHITE, "8":WALL
-    
+    "0":BLACK, "1":RED, "2":GREEN, "3":BLUE, "4": YELLOW, "5":CYAN, "6":MAGENTA, "7":WHITE, "8":WALL,
+    "r":RSWITCH, "g":GSWITCH, "b":BSWITCH, "y":YSWITCH, "c":CSWITCH, "m":MSWITCH, "w":WSWITCH
     } #색상표
 
 

@@ -63,6 +63,13 @@ MAGENTA = [COLORON,0,COLORON]
 
 WALL = [COLORON//2,COLORON//2,COLORON//2]
 
+RSWITCH = ["switch",1,[True, False, False]]
+GSWITCH = ["switch",2,[False, True, False]]
+BSWITCH = ["switch",3,[False, False, True]]
+YSWITCH = ["switch",4,[True, True, False]]
+CSWITCH = ["switch",5,[False, True, True]]
+MSWITCH = ["switch",6,[True, False, True]]
+WSWITCH = ["switch",7,[True, True, True]]
 
 
 #해상도 관계없이 플레이 가능하도록, 좌표를 픽셀 기준에서 타일 기준으로 변경 quick fix
@@ -125,8 +132,10 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         #타일 그리기
         for y in range(MAPSIZEY):
             for x in range(MAPSIZEX):
+                if TileList[x][y][0] == "switch": #스위치일 경우
+                    screen.blit(switchImageList[TileList[x][y][1]-1], (x*MAPTILESIZE+ORIGINPOINT.x, y*MAPTILESIZE+ORIGINPOINT.y))
 
-                if TileList[x][y] == BLACK: #검은색일 경우 출력하지 않기
+                elif TileList[x][y] == BLACK: #검은색일 경우 출력하지 않기
                     pass
                 
                 else:
@@ -185,7 +194,9 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
 '''
 
 def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
-    if COLOR == BLACK: # 검은색일 경우
+    if COLOR[0] == "switch": #스위치는 벽이 아님
+        return False
+    elif COLOR == BLACK: # 검은색일 경우
         return False
     elif COLOR == list(map(lambda x: COLORON if x else 0, RGBList)): # 배경색과 같을 경우
         return False
@@ -265,6 +276,29 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
             if isWall(TileList[x][y]): 
                 return [True, [x,y]]
     return [False,[]]
+
+def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 스위치가 있으면 ~
+    xStart = int(xLeft+0.001)
+    xEnd = int(xRight-0.001)
+    yStart = int(yUp+0.001)
+    yEnd = int(yDown-0.001)
+    if xStart < 0:
+        xStart = 0
+    elif xEnd >= MAPSIZEX:
+        xEnd = MAPSIZEX-1
+
+    if yStart < 0:
+        yStart = 0
+    elif yEnd >= MAPSIZEY:
+        yEnd = MAPSIZEY-1
+
+    for x in range(xStart, xEnd+1): # x범위
+        for y in range(yStart, yEnd+1): # y범위
+            if isWall(TileList[x][y]): 
+                return [True, [x,y]]
+    return [False,[]]
+
+
 
 def checkClip(object): # 오브젝트가 꼈는지 확인
     return findWall(object.coordX - object.sizeX/2, object.coordX + object.sizeX/2, object.coordY - object.sizeY/2, object.coordY + object.sizeY/2)[0]
@@ -380,6 +414,16 @@ def runGame(mapName): # 게임 실행 함수
         temp.set_alpha(128)
         alphatileImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
     
+    global switchImageList #스위치 이미지 리스트 [0]은 OFF, [1]은 ON
+    switchImageList = []
+    for i in range(1,8):
+        temp = pygame.image.load(f"./images/switch/{i}.png")
+        if i == 7:
+            temp.set_colorkey((0,0,0))
+        else:
+            temp.set_colorkey((255, 255, 255))
+        switchImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
+
 
 
     while not done: # loop the game
@@ -444,6 +488,9 @@ def runGame(mapName): # 게임 실행 함수
 
                 elif event.key == pygame.K_DOWN:
                     pass
+                
+                if event.key == pygame.K_z:
+
 
                 if event.key == pygame.K_r: # R 변경
                     changeRGB(0)
