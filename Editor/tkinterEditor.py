@@ -5,13 +5,12 @@ import ctypes
 
 brushCheck = True
 brushColor = 0
-switchColor = 0
-colorTuple = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") 
-mapX = 0
-mapY = 0
-playerX = 0
-playerY = 0
-tileSize = 50 #맵 격자 한칸의 크기
+colorTuple = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") #색 목록
+mapX = 0 #맵의 가로 타일 수
+mapY = 0 #맵의 세로 타일 수
+playerX = 0 #플레이어 시작 X좌표(캔버스 기준)
+playerY = 0 #플레이어 시작 Y좌표(캔버스 기준)
+tileSize = 50 #타일의 크기
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
 
@@ -43,7 +42,7 @@ def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
        
         drawGrid()
     else:
-        mapSizeAlert.config(text = "정수를 입력해주세요...!")
+        mapSizeAlert.config(text = "1 이상 150 이하의 정수 입력")
 
 def drawGrid(): #격자 그리기
     global canvas
@@ -54,7 +53,7 @@ def drawGrid(): #격자 그리기
     for x in range(mapX): canvas.create_line(tileSize * x, 0, tileSize * x, tileSize * (y + 1), fill = "gray") # 세로줄긋기
     for y in range(mapY): canvas.create_line(0, tileSize * y, tileSize * (x + 1), tileSize * y, fill = "gray") # 가로줄긋기
 
-    canvas.bind("<Button-1>", colorChange)
+    canvas.bind("<Button-1>", colorChange) #클릭 / 드래그 감지
     canvas.bind("<B1-Motion>", colorChange) 
 
     canvas.place(x = mapOrigin, y = 0)
@@ -65,18 +64,20 @@ def colorChange(event): #색 변경
     x = (pyautogui.position()[0] - mapOrigin) // tileSize 
     y = (pyautogui.position()[1]) // tileSize
     if x < mapX and y < mapY:
-        if brushCheck:
+        if brushCheck: #타일 색을 선택했을 경우
             mapArray[x][y] = brushColor
             canvas.create_rectangle(x * tileSize + 1, y * tileSize + 1, x * tileSize + tileSize - 1, y * tileSize + tileSize - 1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
-        else:
+        else: #스위치 색을 선택했을 경우
             mapArray[x][y] = colorTuple[brushColor][0]
+            canvas.create_rectangle(x * tileSize + 1, y * tileSize + 1, x * tileSize + tileSize - 1, y * tileSize + tileSize - 1, fill = "black")
             canvas.create_rectangle((x + 1 / 4) * tileSize, (y + 1 / 4) * tileSize, (x + 3 / 4) * tileSize, (y + 3 / 4) * tileSize, fill = colorTuple[brushColor])
-def setBrushColor(color):
+
+def setBrushColor(color): #타일 버튼 클릭 시
     global brushColor, brushCheck
     brushCheck = True
     brushColor = color
     
-def setSwitchColor(color):
+def setSwitchColor(color): #스위치 버튼 클릭 시
     global brushColor, brushCheck
     brushCheck = False
     brushColor = color
@@ -151,11 +152,11 @@ def character(): #플레이어 캐릭터 생성
 
 window = tkinter.Tk()
 window.title("맵에디터") #창의 이름
-#window.geometry("1200x800+100+100") #창의 너비, 높이 # 전체화면이라서 의미없음. 주석처리
 
 window.resizable(False, False) #창 크기 조절 가능 여부
 window.attributes("-fullscreen", True) #전체화면
-window.bind("<Button-3>", playerPos)   
+window.bind("<Button-3>", playerPos)
+
 #레이블 생성
 mapSizeAlert = tkinter.Label(window, text = "")
 XLabel = tkinter.Label(window, text = "맵의 가로 길이 입력")
