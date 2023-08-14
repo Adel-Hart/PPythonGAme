@@ -3,13 +3,15 @@ import pyautogui
 import os
 import ctypes
 
-brushColor = 0 
+brushCheck = True
+brushColor = 0
+switchColor = 0
 colorTuple = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") 
 mapX = 0
 mapY = 0
 playerX = 0
 playerY = 0
-gridSize = 50 #맵 격자 한칸의 크기
+tileSize = 50 #맵 격자 한칸의 크기
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
 
@@ -24,7 +26,7 @@ def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
     global mapY
     global mapArray
     global canvas
-    global gridSize
+    global tileSize
     global characterCanvas
 
     if XEntry.get().isdigit() and YEntry.get().isdigit() and int(XEntry.get()) >= 1 and int(XEntry.get()) >= 1 and int(XEntry.get()) <= 150 and int(XEntry.get()) <= 150: #입력값이 정수인지 확인, 1 이상인지 확인
@@ -33,10 +35,10 @@ def sizeChange(): #2차원 배열 크기 변경, 캔버스 생성
         mapX = int(XEntry.get())
         mapY = int(YEntry.get())
         
-        gridSize = SCRSIZEY // mapY if SCRSIZEX/mapX > SCRSIZEY/mapY else SCRSIZEX // mapX #타일 크기를 화면비율에 맞추기
-        if gridSize > 80: gridSize = 80 # 80 이상은 너무 크므로 100으로 고정
+        tileSize = SCRSIZEY // mapY if SCRSIZEX/mapX > SCRSIZEY/mapY else SCRSIZEX // mapX #타일 크기를 화면비율에 맞추기
+        if tileSize > 80: tileSize = 80 # 80 이상은 너무 크므로 100으로 고정
 
-        canvas = tkinter.Canvas(window, width = mapX * gridSize, height = mapY * gridSize)
+        canvas = tkinter.Canvas(window, width = mapX * tileSize, height = mapY * tileSize)
         mapArray = [[0 for y in range(mapY)] for x in range(mapX)]
        
         drawGrid()
@@ -47,10 +49,10 @@ def drawGrid(): #격자 그리기
     global canvas
     for x in range(mapX):
         for y in range(mapY):
-            canvas.create_rectangle(gridSize * x, gridSize * y, gridSize * (x + 1), gridSize * (y + 1), fill = "black")
+            canvas.create_rectangle(tileSize * x, tileSize * y, tileSize * (x + 1), tileSize * (y + 1), fill = "black")
 
-    for x in range(mapX): canvas.create_line(gridSize * x, 0, gridSize * x, gridSize * (y + 1), fill = "gray") # 세로줄긋기
-    for y in range(mapY): canvas.create_line(0, gridSize * y, gridSize * (x + 1), gridSize * y, fill = "gray") # 가로줄긋기
+    for x in range(mapX): canvas.create_line(tileSize * x, 0, tileSize * x, tileSize * (y + 1), fill = "gray") # 세로줄긋기
+    for y in range(mapY): canvas.create_line(0, tileSize * y, tileSize * (x + 1), tileSize * y, fill = "gray") # 가로줄긋기
 
     canvas.bind("<Button-1>", colorChange)
     canvas.bind("<B1-Motion>", colorChange) 
@@ -60,14 +62,23 @@ def drawGrid(): #격자 그리기
 def colorChange(event): #색 변경
     global canvas
     global mapArray
-    x = (pyautogui.position()[0] - mapOrigin) // gridSize 
-    y = (pyautogui.position()[1]) // gridSize
+    x = (pyautogui.position()[0] - mapOrigin) // tileSize 
+    y = (pyautogui.position()[1]) // tileSize
     if x < mapX and y < mapY:
-        mapArray[x][y] = brushColor
-        canvas.create_rectangle(x * gridSize + 1, y * gridSize + 1, x * gridSize + gridSize - 1, y * gridSize + gridSize - 1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
-
+        if brushCheck:
+            mapArray[x][y] = brushColor
+            canvas.create_rectangle(x * tileSize + 1, y * tileSize + 1, x * tileSize + tileSize - 1, y * tileSize + tileSize - 1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
+        else:
+            mapArray[x][y] = colorTuple[brushColor][0]
+            canvas.create_rectangle((x + 1 / 4) * tileSize, (y + 1 / 4) * tileSize, (x + 3 / 4) * tileSize, (y + 3 / 4) * tileSize, fill = colorTuple[brushColor])
 def setBrushColor(color):
-    global brushColor
+    global brushColor, brushCheck
+    brushCheck = True
+    brushColor = color
+    
+def setSwitchColor(color):
+    global brushColor, brushCheck
+    brushCheck = False
     brushColor = color
 
 def jump(height,time): #점프속도와 중력가속도 계산
@@ -86,6 +97,7 @@ def save(): #맵 파일 작성
         f.write("!" + f"{playerX},{playerY}")
         f.write("\n@" + playerWidth.get() + "," + playerHeight.get())
         f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
+        f.write("\n$" + background.get())
         f.close
         return True
     except: # 오류 발생시 실패를 알린다
@@ -95,9 +107,9 @@ def save(): #맵 파일 작성
 def playerPos(event): #플레이어 시작 좌표
     global playerX
     global playerY
-    if pyautogui.position()[0] >= mapOrigin and pyautogui.position()[0] <= gridSize * mapX + mapOrigin and pyautogui.position()[1] >= 0 and pyautogui.position()[1] <= gridSize * mapY:
-        playerX = round((pyautogui.position()[0] - mapOrigin) / gridSize, 1)
-        playerY = round(pyautogui.position()[1] / gridSize, 1)
+    if pyautogui.position()[0] >= mapOrigin and pyautogui.position()[0] <= tileSize * mapX + mapOrigin and pyautogui.position()[1] >= 0 and pyautogui.position()[1] <= tileSize * mapY:
+        playerX = round((pyautogui.position()[0] - mapOrigin) / tileSize, 1)
+        playerY = round(pyautogui.position()[1] / tileSize, 1)
         positionLabel.config(text = f"{playerX},{playerY}")
     character()
 
@@ -113,11 +125,8 @@ def character(): #플레이어 캐릭터 생성
     global playerX
     global playerY
 
-
     if isNumeric(playerWidth.get()) and isNumeric(playerHeight.get()): #플레이어 키와 너비가 실수인지 확인
         
-        
-
         if playerX - float(playerWidth.get()) / 2 <= 0:
             playerX = float(playerWidth.get()) / 2 + 0.1
 
@@ -129,12 +138,12 @@ def character(): #플레이어 캐릭터 생성
         elif playerY + float(playerHeight.get()) / 2 >= int(YEntry.get()):
             playerY = int(YEntry.get()) - float(playerHeight.get()) / 2 - 0.1
         
-        mouseX = (playerX - float(playerWidth.get()) / 2) * gridSize + mapOrigin #마우스로 클릭한 지점이 맵에서 X 좌표인지(타일기준 )
-        mouseY = (playerY - float(playerHeight.get()) / 2) * gridSize #Y
+        mouseX = (playerX - float(playerWidth.get()) / 2) * tileSize + mapOrigin #마우스로 클릭한 지점이 맵에서 X 좌표인지(타일기준)
+        mouseY = (playerY - float(playerHeight.get()) / 2) * tileSize #Y
     
         characterCanvas.destroy()
-        characterCanvas = tkinter.Canvas(width = float(playerWidth.get()) * gridSize, height = float(playerHeight.get()) * gridSize)
-        characterCanvas.create_rectangle(0, 0, float(playerWidth.get()) * gridSize, float(playerHeight.get()) * gridSize, fill = "olive")
+        characterCanvas = tkinter.Canvas(width = float(playerWidth.get()) * tileSize, height = float(playerHeight.get()) * tileSize)
+        characterCanvas.create_rectangle(0, 0, float(playerWidth.get()) * tileSize, float(playerHeight.get()) * tileSize, fill = "olive")
         characterCanvas.place(x = mouseX , y = mouseY) 
 
 
@@ -158,6 +167,7 @@ jumpHeightLabel = tkinter.Label(window, text = "점프 높이 입력")
 jumpTimeLabel = tkinter.Label(window, text = "점프 시간 입력")
 mapNameAlert = tkinter.Label(window, text = "저장할 이름 입력")
 speedLabel = tkinter.Label(window, text = "이동 속도 입력")
+backgroundLabel = tkinter.Label(window, text = "배경사진 이름 입력")
 
 #엔트리 생성
 XEntry = tkinter.Entry(window)
@@ -168,16 +178,20 @@ mapName = tkinter.Entry(window)
 speed = tkinter.Entry(window)
 playerWidth = tkinter.Entry(window)
 playerHeight = tkinter.Entry(window)
+background = tkinter.Entry(window)
 
 #버튼 생성
-button = tkinter.Button(window, text = "확인", command = sizeChange)
-saveButton = tkinter.Button(window, text = "저장", command = save)
+mapButton = tkinter.Button(window, text = "맵 생성", command = sizeChange)
+saveButton = tkinter.Button(window, text = "맵 저장", command = save)
 
-#색 변경 버튼 생성
 colorButton = []
 for i in range(9):
     colorButton.append(tkinter.Button(window, command = lambda i=i: setBrushColor(i), bg = colorTuple[i], width = 5)) #i=i로 i를 반복문의 현재 값으로 바꿈
 
+switchButton = []
+for i in range(7):
+    switchButton.append(tkinter.Button(window, command = lambda i=i: setSwitchColor(i+1), bg = colorTuple[i+1], width = 5, text = "스위치"))
+ 
 #캔버스 생성
 canvas = tkinter.Canvas()
 characterCanvas = tkinter.Canvas()
@@ -190,9 +204,12 @@ XLabel.grid()
 XEntry.grid()
 YLabel.grid()
 YEntry.grid()
-button.grid()
+mapButton.grid()
 
 for button in colorButton:
+    button.grid()
+
+for button in switchButton:
     button.grid()
 
 positionLabel.grid()
@@ -208,6 +225,7 @@ speedLabel.grid()
 speed.grid()
 mapNameAlert.grid()
 mapName.grid()
+backgroundLabel.grid()
+background.grid()
 saveButton.grid()
-
 window.mainloop()
