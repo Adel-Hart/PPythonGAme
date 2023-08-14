@@ -1,8 +1,8 @@
 import socket
 import threading
+import select
 
-
-HOST = ""
+HOST = "192.168.50.47"
 PORT = 8080
 
 
@@ -12,13 +12,32 @@ recv_address = (HOST, PORT)
 sock.connect(recv_address)
 
 print("연결 성공")
-while True:
-    s = str(input())
 
-    sock.send(s)
 
-    data = sock.recv(1024)
 
-    print(data)
 
-sock.clos()
+def recv(sock):
+    sock.settimeout(300000)
+    
+    while True:
+        
+        data = sock.recv(1024)
+        print(data.decode())
+
+
+def send(sock):
+    while True:
+        data = str(input())
+        sock.send(data.encode())
+        print("me :{}".format(data))
+        if(data == "q"):
+            socket.close()
+
+t1 = threading.Thread(target=recv, args=(sock, ))
+t1.start()
+
+t2 = threading.Thread(target=send, args=(sock, ))
+t2.start()
+
+        
+

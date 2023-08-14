@@ -3,7 +3,7 @@ import socket
 import random
 
 
-HOST = ""
+HOST = "192.168.50.47"
 PORT = 8080
 
 
@@ -43,12 +43,14 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
 class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리!, TCP
-    def __init__(self, soc):
+    def __init__(self, soc, addr):
         self.soc = soc
         self.inRoom = False
         self.inGamePlayer = False
+        print("실행 한다")
         self.run()
-        self.addr = socket.gethostbyname(socket.gethostname)
+        print("실행 했다.")
+        self.addr = addr
         self.name = "" #플레이어 닉네임
 
 
@@ -73,14 +75,14 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
     def checkRoom(self):
+        print("checkroom")
         result = '!'.join(str(x) for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
         return result #결과 값 반환.
 
 
     def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러
             while True:
-                self.soc.sendall()
-
+                
                 print("data listening..")
                 data = self.soc.recv(1024)
                 print("get data")
@@ -89,17 +91,18 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                 if not self.inRoom: #방 목록 탐색기에 있을때.
                     if msg == "0000":
-                        self.soc.sendall("0080".encode()) #OK sign
+                        print("ok")
+                        self.soc.send("0080".encode()) #OK sign
                     if "0001" in msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
                         self.name = msg.replace("0001", "") #잘라내기 이름 설정
-                        self.soc.sendall("0080".encode()) #OK sign
+                        self.soc.send("0080".encode()) #OK sign
                     if msg == "0002": #방 목록 수신
                         result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
-                        self.soc.sendall(result.encode())
+                        self.soc.send(result.encode())
 
                     if "0003" in msg: #방 만들기 수신 형식은 0003방이름
                         self.makeRoom(msg.split('3')[1])
-                        self.soc.sendall("0080".encode())
+                        self.soc.send("0080".encode())
 
 
     def run(self):
@@ -120,4 +123,8 @@ print("서버 시작")
 
 while True:
     conn, addr = sock.accept()
-    t = threading.Thread(target = Handler, args= (conn, addr))
+    print("연결됨")
+    t = threading.Thread(target = Handler, args= (conn, addr)) #(conn, addr) 형식이 아니면 오류, 스트링으로 읽어서 그런듯? (conn, )으로 써도 가능
+    t.start()
+
+socket.close()
