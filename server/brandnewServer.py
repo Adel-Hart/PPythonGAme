@@ -7,15 +7,16 @@ HOST = ""
 PORT = 8080
 
 
-global rooms
-rooms = []
+global roomList
+roomList = []
 
 class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유지 한채로, UDP소켓 열기.
-    def __init__(self):
+    def __init__(self, roomName):
         self.clients = [] #방에 있는 클라이언트 핸들러 목록
         self.clients_name = [] #방에 있는 클라이언트 식별자 목록 (아이피)
         self.mapCode = 0
         self.inGame = False
+        self.roomName = roomName
 
     def join(self, client, addr):
         self.clients.append(client) #클라이언트를 받고, 목록에 추가
@@ -35,10 +36,6 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     def multiCastCmd(self, msg): #방에 있는 모든 클라이언트에게 커맨드 메세지 전송
         for c in self.clients:
             c.sendMsg("CMD " + msg)
-
-
-
-
     
 
     
@@ -46,33 +43,63 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
 class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리!, TCP
-    def __init__(self, soc, addr):
+    def __init__(self, soc):
         self.soc = soc
-        self.addr = addr
         self.inRoom = False
         self.inGamePlayer = False
         self.run()
+        self.addr = socket.gethostbyname(socket.gethostname)
+        self.name = "" #플레이어 닉네임
 
-    def makeRoom(self, roomCode): #방 생성
-        if not roomCode in rooms:
-            globals()[roomCode] = Room() #roomCode의 변수 명으로 Room 클래스 선언(방을 팜)
-            rooms.append(roomCode) #방 목록에 append
+
+    def makeRoom(self, roomName): #방 생성
+        if not roomName in roomList:
+            globals()[roomName] = Room() #roomName의 변수 명으로 Room 클래스 선언(방을 팜)
+            roomList.append(roomName) #방 목록에 append
+
+            self.joinRoom(roomName)
             return True
         return False
 
-    def joinRoom(self, roomCode, addr):
-        if roomCode in rooms:
-            roomCode.join(addr)
+    def joinRoom(self, roomName):
+        if roomName in roomList:
+            roomName.join(self.addr)
             self.inRoom = True
             return True
         return False
     
 
-    def recvMsg(self):
-        while True:
-            data = self.soc.recv(1024)
-            msg = data.decode()
+    
 
+
+    def checkRoom(self):
+        result = '!'.join(str(x) for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
+        return result #결과 값 반환.
+
+
+    def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러
+            while True:
+                self.soc.sendall()
+
+                print("data listening..")
+                data = self.soc.recv(1024)
+                print("get data")
+                msg = data.decode()
+
+
+                if not self.inRoom: #방 목록 탐색기에 있을때.
+                    if msg == "0000":
+                        self.soc.sendall("0080".encode()) #OK sign
+                    if "0001" in msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
+                        self.name = msg.replace("0001", "") #잘라내기 이름 설정
+                        self.soc.sendall("0080".encode()) #OK sign
+                    if msg == "0002": #방 목록 수신
+                        result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
+                        self.soc.sendall(result.encode())
+
+                    if "0003" in msg: #방 만들기 수신 형식은 0003방이름
+                        self.makeRoom(msg.split('3')[1])
+                        self.soc.sendall("0080".encode())
 
 
     def run(self):

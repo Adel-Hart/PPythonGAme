@@ -6,6 +6,9 @@ HOST = "192.168.50.47"
 PORT = 8080
 
 #https://gogetem.tistory.com/entry/Python%EC%9D%98-%EA%B0%84%EB%8B%A8%ED%95%9C-UDP-%EC%B1%84%ED%8C%85%EB%B0%A9-%EB%A7%8C%EB%93%A4%EA%B8%B0
+#https://wikidocs.net/125626
+
+
 
 Clients = []
 
