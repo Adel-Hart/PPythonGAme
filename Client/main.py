@@ -353,7 +353,7 @@ def runGame(mapName): # 게임 실행 함수
     try:
         Map = initMap(mapName)
     except:
-        print("맵 로딩 실패")
+        print(str(mapName)+ "로딩 실패")
         return
     
     print(str(mapName)+" 로딩 완료")

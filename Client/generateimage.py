@@ -6,7 +6,6 @@ imgname = "sea"
 
 img = Image.open(f"./images/backgrounds/{imgname}/default.png")
 
-"""
 Cimg = img.convert("HSV") #이미지를 HSV 형식으로 변경
 
 npimg = np.array(Cimg) #이미지를 numpy로 변경
@@ -52,7 +51,7 @@ for i in range(len(npimg)):
 newimg = Image.fromarray(npimg, "L")
 newimg = newimg.convert("RGB")
 newimg.save(f"./images/backgrounds/{imgname}/colors/0.png")
-"""
+
 Bimg = img.convert("L") #흑백 이미지
 npimg = np.array(Bimg) #이미지를 numpy로 변경
 
