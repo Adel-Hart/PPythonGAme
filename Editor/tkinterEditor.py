@@ -172,8 +172,8 @@ def goal(evnet): #도착지점 생성
 
         if goalY - 1 <= 0: #도착지점 Y값 조정
             goalY = 1
-        elif goalY + 1 >= int(XEntry.get()) :
-            goalY = int(XEntry.get()) - 1
+        elif goalY + 1 >= int(YEntry.get()) :
+            goalY = int(YEntry.get()) - 1
         else:
             if goalY - math.trunc(goalY) <= 0.25: 
                 goalY = math.trunc(goalY)
