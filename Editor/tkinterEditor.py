@@ -27,10 +27,18 @@ def drawMap(): #맵 생성
     global mapArray
     global canvas
     global tileSize
+    global playerX, playerY, goalX, goalY
+
 
     if XEntry.get().isdigit() and YEntry.get().isdigit() and int(XEntry.get()) >= 1 and int(XEntry.get()) >= 1 and int(XEntry.get()) <= 150 and int(XEntry.get()) <= 150: #입력값이 정수인지 확인, 1 이상인지 확인
         mapSizeAlert.config(text = XEntry.get() + ", " + YEntry.get())
         canvas.destroy()
+        characterCanvas.destroy()
+        goalCanvas.destroy()
+        playerX = 0
+        playerY = 0
+        goalX = 0
+        goalY = 0 
         mapX = int(XEntry.get())
         mapY = int(YEntry.get())
         
