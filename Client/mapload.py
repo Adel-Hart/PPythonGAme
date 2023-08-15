@@ -27,6 +27,10 @@ ColorDict = {
     "r":RSWITCH, "g":GSWITCH, "b":BSWITCH, "y":YSWITCH, "c":CSWITCH, "m":MSWITCH, "w":WSWITCH
     } #색상표
 
+class pos: # 좌표값 class, 오브젝트마다 pos가 필요해서, 클래스화
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
 def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표를 반환하는 함수
     f = open("./maps/"+str(MapName)+"/map.dat", "r") #파일 읽기
@@ -40,8 +44,7 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
         if "!" in line: # !가 있는 줄은 플레이어의 좌표를 말한다
             line = line.strip("!") #! 제거
             Pos = line.split(",") #, 기준으로 문자열 나누기
-            posX = float(Pos[0])
-            posY = float(Pos[1]) 
+            Ppos = pos(float(Pos[0]), float(Pos[1])) 
             pass
         elif "@" in line: # @가 있는 줄은 플레이어의 x,y 크기를 말한다
             line = line.strip("@") # @ 제거
@@ -56,9 +59,14 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
             gravity = float(Pos[1]) 
             movespeed = float(Pos[2]) 
             pass
-        elif "$" in line: # &가 있는 줄은 배경 폴더의 이름:
+        elif "$" in line: # $가 있는 줄은 배경 폴더의 이름:
             line = line.strip("$") #$ 제거
             backgroundImage = line
+        elif "%" in line: # %가 있는 줄은 도착지점 좌표
+            line = line.strip("%") #% 제거
+            Pos = line.split(",") #, 기준으로 문자열 나누기
+            Gpos = pos(float(Pos[0]), float(Pos[1])) #도착지점 좌표
+            pass 
         else:
             Map.append(map(lambda x : ColorDict[x],list(line))) #새로운 가로줄 추가
     #print(Map)
@@ -72,4 +80,4 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
     if backgroundImage == "None":
         backgroundImage = "test"
 
-    return Map, tileX, tileY, posX, posY, sizeX, sizeY, jumpPower, gravity, movespeed, backgroundImage
+    return Map, tileX, tileY, Ppos, Gpos, sizeX, sizeY, jumpPower, gravity, movespeed, backgroundImage

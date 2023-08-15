@@ -52,6 +52,7 @@ newimg = Image.fromarray(npimg, "L")
 newimg = newimg.convert("RGB")
 newimg.save(f"./images/backgrounds/{imgname}/colors/0.png")
 
+"""
 Cimg = img.convert("RGB") 
 npimg = np.array(Cimg) #이미지를 numpy로 변경
 
@@ -66,6 +67,7 @@ for i in range(len(npimg)):
 newimg = Image.fromarray(npimg, "L")
 newimg = newimg.convert("RGB")
 newimg.save(f"./images/backgrounds/{imgname}/colors/8.png")
+"""
 
 
 

@@ -90,29 +90,59 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
         self.sizeY = zy
         self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
-        self.realimage = self.image #realimage는 원본imgae(blockimg)를 변화시키는거라 따로 제작
+        self.realimage = self.image #realimage는 원본image(playerimg)를 변화시키는거라 따로 제작
+    def display(self): #화면에 표시
+        rect = self.image.get_rect()
+        rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
+        screen.blit(self.realimage, rect) #스크린에 출력
+    
+class showImage: #타일, 플레이어, 배경을 제외하고 게임 화면에 나올 수 있는 모든 이미지들 
+    def __init__(self, cx, cy, zx, zy, image): #이미지의 기본정보를 지정
+        #2차원 공간적 좌표(중심좌표)
+        self.coordX = cx
+        self.coordY = cy
+        #크기(직사각형) = 히트박스, 사용할 이미지 파일 : rect
+        self.sizeX = zx
+        self.sizeY = zy
+        self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
+
+        self.realimage = self.image #realimage는 원본image를 변화시키는거라 따로 제작
+
+    def display(self): #화면에 표시
+        rect = self.image.get_rect()
+        rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
+        screen.blit(self.realimage, rect) #스크린에 출력
+    
 
 
 class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
-
     def __init__(self, mapName): #맵을 불러오고 각종 상수를 결정한다.
-        global TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed, backgroundImage
-        TileList, MAPSIZEX, MAPSIZEY, PSTARTX, PSTARTY, PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed, backgroundImage = mapload.readMap(mapName) # 맵의 정보 다 받아온다
+        global TileList, MAPSIZEX, MAPSIZEY, PPOS, GPOS, PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed, backgroundImage
+        TileList, MAPSIZEX, MAPSIZEY, PPOS, GPOS ,PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed, backgroundImage = mapload.readMap(mapName) # 맵의 정보 다 받아온다
         global MAPTILESIZE # 한 타일의 길이(픽셀 수)
         MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
+        
         #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
 
-        global mObjects
-        mObjects = []
+        global mObjects, sImages #표시할 오브젝트, 이미지들 리스트
+        mObjects, sImages = [], [] #초기화
 
         global maincharacter
-        global blockimg
 
-        blockimg = pygame.image.load("./images/Player.png")
+        playerimg = pygame.image.load("./images/Player.png")
 
-        maincharacter = MovingObject(PSTARTX, PSTARTY, 0, 0, PSIZEX, PSIZEY, blockimg) #MovingObject 주인공을 maincharacter로 선언
+        maincharacter = MovingObject(PPOS.x, PPOS.y, 0, 0, PSIZEX, PSIZEY, playerimg) #MovingObject 주인공을 maincharacter로 선언
         
         mObjects.append(maincharacter) #오브젝트 목록에 추가
+
+        global goal 
+
+        goalimg = pygame.image.load("./images/Goal.png")
+
+        goal = showImage(GPOS.x, GPOS.y, 1, 2, goalimg)
+
+        sImages.append(goal)
+
 
 
         
@@ -248,13 +278,7 @@ def onGround(object): #바닥에 붙어있는지 여부 판정
     xRight = object.coordX + object.sizeX/2
     y = object.coordY + object.sizeY/2+0.01
     return findWall(xLeft,xRight,y,y)[0]
-
-def displayMovingObjects():# 움직이는 오브젝트 표시
-    for object in mObjects: # 모든 움직이는 오브젝트 불러오기
-       
-        rect = object.image.get_rect()
-        rect.center = (object.coordX*MAPTILESIZE+ORIGINPOINT.x,object.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
-        screen.blit(object.realimage, rect) #스크린에 출력
+        
 
 def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있으면 True, 없으면 False 그 벽의 좌표를 List로 반환
     xStart = int(xLeft+0.001)
@@ -277,26 +301,26 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
                 return [True, [x,y]]
     return [False,[]]
 
-def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 스위치가 있으면 ~
-    xStart = int(xLeft+0.001)
-    xEnd = int(xRight-0.001)
-    yStart = int(yUp+0.001)
-    yEnd = int(yDown-0.001)
-    if xStart < 0:
-        xStart = 0
-    elif xEnd >= MAPSIZEX:
-        xEnd = MAPSIZEX-1
+def activateSwitch(pos:pos): #스위치라면 발동시킨다
+    if TileList[pos.x][pos.y][0] == "switch": #그 좌표의 타일이 스위치라면
+        print("switch", pos.x, pos.y)
+        for i in range(3): #R, G, B 마다 한번씩
+            if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
+                changeRGB(i) #RGB값중 하나 변경 
 
-    if yStart < 0:
-        yStart = 0
-    elif yEnd >= MAPSIZEY:
-        yEnd = MAPSIZEY-1
+def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 있으면 ~
+    xStart = int(object.coordX-object.sizeX/2+0.1)
+    xEnd = int(object.coordX+object.sizeX/2-0.1)
+
+    yStart = int(object.coordY-object.sizeY/2+0.1)
+    yEnd = int(object.coordY+object.sizeY/2-0.1)
 
     for x in range(xStart, xEnd+1): # x범위
         for y in range(yStart, yEnd+1): # y범위
-            if isWall(TileList[x][y]): 
-                return [True, [x,y]]
-    return [False,[]]
+            print(x, y)
+            activateSwitch(pos(x,y)) 
+                
+    return
 
 
 
@@ -370,9 +394,22 @@ def checkObjectEscape(object): #오브젝트가 현재 맵을 탈출했는지 �
         return True
     return False
 
+def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐있는지 여부 True or False
+    if object1.coordX - object1.sizeX - object2.sizeX < object2.coordX < object1.coordX + object1.sizeX + object2.sizeX and\
+    object1.coordY - object1.sizeY - object2.sizeY < object2.coordY < object1.coordY + object1.sizeY + object2.sizeY:
+        #한 직사각형의 중심좌표를 중심으로 두 사각형의 x, y 길이를 합한 새로운 직사각형을 만든다.
+        #그 직사각형 안에 나머지 직사각형의 중심좌표가 들어있다면, 두 직사각형은 겹쳐있었다는 결론을 얻을 수 있다.
+        return True
+    else:
+        return False
+ 
+    
+
 def runGame(mapName): # 게임 실행 함수
     
-    
+    global clear
+    clear = False
+
     global done 
     done = False
     pygame.display.set_caption(str(mapName)) # set window's name a mapName
@@ -443,8 +480,13 @@ def runGame(mapName): # 게임 실행 함수
     
         moveObjects() # 움직이는 오브젝트 일괄 이동
 
-        displayMovingObjects() # 움직이는 오브젝트 일괄 출력
+        for image in sImages: # 모든 이미지 불러오기 
+            image.display() # 이미지 일괄 출력
 
+        for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
+            object.display() # 움직이는 오브젝트 일괄 출력
+            
+            
         pygame.display.update()
 
         #print(maincharacter.coordX,maincharacter.coordY)
@@ -489,8 +531,11 @@ def runGame(mapName): # 게임 실행 함수
                 elif event.key == pygame.K_DOWN:
                     pass
                 
-                if event.key == pygame.K_z:
-
+                if event.key == pygame.K_z: #상호작용 키
+                    if isCollapse(maincharacter, goal): #도착 지점에 있다면
+                        gameClear()
+                    else:
+                        findSwitch(maincharacter)
 
                 if event.key == pygame.K_r: # R 변경
                     changeRGB(0)
@@ -501,9 +546,18 @@ def runGame(mapName): # 게임 실행 함수
 
         maincharacter.speedX = wantToMoveX*moveSpeed # 이동속도만큼 X좌표 속도 설정
 
-        
         if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
             maincharacter.speedY = -1 * jumpPower
+    
+    #while문 탈출 : 게임 종료
+    return clear #클리어 여부를 반환 
+
+def gameClear(): #클리어=도착시
+    print("도착")
+    global clear
+    clear = True
+    global done
+    done = True
 
 def gameOver(): # 사망시
     print("사망")
