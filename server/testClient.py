@@ -2,7 +2,7 @@ import socket
 import threading
 import select
 
-HOST = "192.168.50.47"
+HOST = "118.40.40.181"
 PORT = 8080
 
 
