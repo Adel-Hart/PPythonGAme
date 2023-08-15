@@ -200,18 +200,23 @@ def chapterButtons(chapter:int): #챕터 내부 = 레벨선택창
 
 def openStoryMap(chapterlevel:list): #[챕터번호, 레벨번호]
 
-    if main.runGame(f"story/chapter{chapterlevel[0]}/level{chapterlevel[1]}"): #레벨 클리어시
-        with open(f"./maps/story/chapter{chapterlevel[0]}/info.dat", "r") as f: #챕터 정보 파일 열기
-            lines = f.readlines()
-            for line in lines:
-                if "cleared=" in line: #클리어된 레벨 목록
-                    temp = line.strip("cleared=")
-                    clearedList = list(map(lambda x: int(x),temp.split(","))) #문자열의 정수들을 리스트에 저장 
-        
-        if chapterlevel[1] not in clearedList: #클리어 목록에 레벨이 없다면
-            with open(f"./maps/story/chapter{chapterlevel[0]}/info.dat", "a") as f: #챕터 정보 파일 뒤에 이어서 쓰기
-                f.write(f",{chapterlevel[1]}")
-
+    while True:
+        clear = main.runGame(f"story/chapter{chapterlevel[0]}/level{chapterlevel[1]}")
+        if clear == 1: #레벨 클리어시
+            
+            with open(f"./maps/story/chapter{chapterlevel[0]}/info.dat", "r") as f: #챕터 정보 파일 열기
+                lines = f.readlines()
+                for line in lines:
+                    if "cleared=" in line: #클리어된 레벨 목록
+                        temp = line.strip("cleared=")
+                        clearedList = list(map(lambda x: int(x),temp.split(","))) #문자열의 정수들을 리스트에 저장 
+            
+            if chapterlevel[1] not in clearedList: #클리어 목록에 레벨이 없다면
+                with open(f"./maps/story/chapter{chapterlevel[0]}/info.dat", "a") as f: #챕터 정보 파일 뒤에 이어서 쓰기
+                    f.write(f",{chapterlevel[1]}")
+            break
+        elif clear == 2: #레벨 직접 중단시
+            break
             
     chapterButtons(chapterlevel[0]) #챕터 선택창 다시 로드하기(CLEARED! 표시를 위해)
     

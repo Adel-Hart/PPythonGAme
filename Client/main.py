@@ -501,6 +501,7 @@ def runGame(mapName): # 게임 실행 함수
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # 종료 이벤트
+                clear = 2
                 done=True
 
             if event.type == pygame.KEYUP: # 방향키 뗴기
@@ -530,6 +531,10 @@ def runGame(mapName): # 게임 실행 함수
 
                 elif event.key == pygame.K_DOWN:
                     pass
+
+                if event.key == pygame.K_ESCAPE: # 직접 중단하는 키
+                    clear = 2
+                    done = True 
                 
                 if event.key == pygame.K_z: #상호작용 키
                     if isCollapse(maincharacter, goal): #도착 지점에 있다면
@@ -555,11 +560,12 @@ def runGame(mapName): # 게임 실행 함수
 def gameClear(): #클리어=도착시
     print("도착")
     global clear
-    clear = True
+    clear = 1
     global done
     done = True
 
 def gameOver(): # 사망시
     print("사망")
+    clear = 0
     global done
     done = True
