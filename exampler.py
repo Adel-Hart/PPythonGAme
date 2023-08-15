@@ -1,9 +1,7 @@
-class map:
-    def gi(self):
-        print('gi')
-    
+class room():
+    def __init__(self):
+        self.name = "!23"
 
+a = room()
 
-didi = map()
-
-eval("di"+"di").gi()
+a.name

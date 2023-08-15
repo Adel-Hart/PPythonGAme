@@ -1,6 +1,7 @@
 import threading
 import socket
 import re #정규식
+import os
 
 
 HOST = "192.168.50.47"
@@ -18,15 +19,20 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.inGame = False
         self.roomName = roomName
 
-    def joinRoom(self, client, addr):
-        self.clients.append(client) #클라이언트를 받고, 목록에 추가
+    def joinRoom(self, client, addr, name):
+        self.clients.append(client) #클라이언트의 핸들러를 받고, 목록에 추가
         self.clients_name.append(addr) #아이피 목록에 추가
-        self.multiCast(addr + " 접속")
+        self.multiCastChat(name + f"({addr}) 접속")
 
-    def leaveRoom(self, client, addr):
+    def leaveRoom(self, client, addr, name):
         self.clients.remove(client) #클라이언트를 받고, 목록에서 지우기
         self.clients_name.remove(addr) #아이피 목록에서 지우기
-        self.multiCast(addr + " 나감")
+        self.multiCastChat(name + f"({addr}) 나감")
+
+    #def setMap(self, mapCode):
+
+
+
 
 
     def multiCastChat(self, msg): #방에 있는 모든 클라이언트에게 룸챗 메세지 전송
@@ -64,13 +70,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
             self.joinRoom(self.evaler(roomName))
 
-            
+
             return True
         return False
 
     def joinRoom(self, roomName):
         if roomName in roomList:
-            roomName.joinRoom(self.addr)
+            roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
             #self.inRoom = True
             return True
         return False
@@ -81,7 +87,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def checkRoom(self):
         print("checkroom")
-        result = '!'.join(str(x) for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
+        result = '!'.join(x.roomName for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
         return result #결과 값 반환.
 
 
@@ -108,6 +114,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     if "0003" in msg: #방 만들기 수신 형식은 0003방이름
                         self.makeRoom(msg.split('3')[1])
                         self.soc.send("0080".encode())
+
+
+
+    def sendMsg(self, msg):
+        self.soc.send(msg.encode())
+        return True
 
 
     def run(self):
