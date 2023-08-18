@@ -1,5 +1,6 @@
 import main
 import pygame
+import editor
 import ctypes
 
 def darkColor(color): #색을 더 어둡게 
@@ -131,7 +132,7 @@ def singleButtons(): #싱글플레이
     currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
     currentButtonList.append(Button( BLACK,"STORY", WHITE, SCRSIZEX // 21, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
-    currentButtonList.append(Button( BLACK,"CUSTOM", WHITE, SCRSIZEX // 30,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, singleButtons))
+    currentButtonList.append(Button( BLACK,"CUSTOM", WHITE, SCRSIZEX // 30,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, editor.runEditor))
     return
 
 def storyButtons(): #스토리모드 = 챕터선택창
