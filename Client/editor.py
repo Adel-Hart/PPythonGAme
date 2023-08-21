@@ -5,6 +5,15 @@ import ctypes
 import math
 import keyboard
 
+
+
+
+'''
+이재용 작성
+사용 모듈 : 
+'''
+
+
 brushCheck = True #True일시 타일, False일시 스위치
 brushColor = 0
 colorTuple = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") #색 목록
@@ -44,12 +53,12 @@ def drawMap(): #맵 생성
         canvas = tkinter.Canvas(window, width = mapX * tileSize, height = mapY * tileSize)
         mapArray = [[0 for y in range(mapY)] for x in range(mapX)]
 
-        for x in range(mapX):
-            for y in range(mapY):
-                canvas.create_rectangle(tileSize * x, tileSize * y, tileSize * (x + 1), tileSize * (y + 1), fill = "black")
+        for i in range(mapX):
+            for j in range(mapY):
+                canvas.create_rectangle(tileSize * i, tileSize * j, tileSize * (i + 1), tileSize * (j + 1), fill = "black")
 
-        for x in range(mapX): canvas.create_line(tileSize * x, 0, tileSize * x, tileSize * (y + 1), fill = "gray") # 세로줄긋기
-        for y in range(mapY): canvas.create_line(0, tileSize * y, tileSize * (x + 1), tileSize * y, fill = "gray") # 가로줄긋기
+        for i in range(mapX): canvas.create_line(tileSize * i, 0, tileSize * i, tileSize * (j + 1), fill = "gray") # 세로줄긋기
+        for j in range(mapY): canvas.create_line(0, tileSize * j, tileSize * (i + 1), tileSize * j, fill = "gray") # 가로줄긋기
 
         canvas.bind("<Button-1>", colorChange) #클릭 / 드래그 감지
         canvas.bind("<B1-Motion>", colorChange) 
@@ -62,8 +71,8 @@ def isMap(): #클릭 좌표가 맵 안인지 판단
     
     global x, y
 
-    x = (pyautogui.position()[0] - mapOrigin) // tileSize 
-    y = (pyautogui.position()[1]) // tileSize
+    x = (pyautogui.position()[0] - mapOrigin) // tileSize #마우스의 타일 X좌표
+    y = (pyautogui.position()[1]) // tileSize #마우스의 타일 Y좌표
 
     if x < mapX and y < mapY:
         return True
@@ -165,6 +174,11 @@ def isNumeric(s): #문자열 실수 판단
     
 def close():
     window.destroy() #창 닫기
+
+def eventHandelr_ESC(key): #ESC를 감지하는 이벤트 핸들러
+    if key.name == "esc": #누른 키가 esc라면
+        close() #종료 함수 실행
+
  
 def goal(evnet): #도착지점 생성
 
@@ -211,6 +225,8 @@ def goal(evnet): #도착지점 생성
 def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, positionLabel, canvas, playerCanvas, goalCanvas
+    keyboard.on_press(eventHandelr_ESC)
+    
 
     # ------------------------ GUI 요소 생성 ------------------------
 
