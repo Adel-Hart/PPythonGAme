@@ -1,7 +1,17 @@
-class room():
-    def __init__(self):
-        self.name = "!23"
+import socket
 
-a = room()
+# socket create
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-a.name
+# Bind the socket to the port
+recv_address = ('127.0.0.1', 9999)
+sock.bind(recv_address)
+
+data_size = 512
+
+data, sender = sock.recvfrom(data_size)
+print(sender)
+print(data.decode())
+sock.sendto("dafag".encode(), ('127.0.0.1', 9999))
+print("sendeing")
+sock.close()
