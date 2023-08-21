@@ -1,2 +1,6 @@
 level=6
+<<<<<<< HEAD
 cleared=0,1
+=======
+cleared=0,1,2,3,4,5,6
+>>>>>>> 5f7f0a97669ae7a3a084b69bbcab3d2a5159e724
