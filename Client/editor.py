@@ -44,12 +44,12 @@ def drawMap(): #맵 생성
         canvas = tkinter.Canvas(window, width = mapX * tileSize, height = mapY * tileSize)
         mapArray = [[0 for y in range(mapY)] for x in range(mapX)]
 
-        for x in range(mapX):
-            for y in range(mapY):
-                canvas.create_rectangle(tileSize * x, tileSize * y, tileSize * (x + 1), tileSize * (y + 1), fill = "black")
+        for i in range(mapX):
+            for j in range(mapY):
+                canvas.create_rectangle(tileSize * i, tileSize * j, tileSize * (i + 1), tileSize * (j + 1), fill = "black")
 
-        for x in range(mapX): canvas.create_line(tileSize * x, 0, tileSize * x, tileSize * (y + 1), fill = "gray") # 세로줄긋기
-        for y in range(mapY): canvas.create_line(0, tileSize * y, tileSize * (x + 1), tileSize * y, fill = "gray") # 가로줄긋기
+        for i in range(mapX): canvas.create_line(tileSize * i, 0, tileSize * i, tileSize * (j + 1), fill = "gray") # 세로줄긋기
+        for j in range(mapY): canvas.create_line(0, tileSize * j, tileSize * (i + 1), tileSize * j, fill = "gray") # 가로줄긋기
 
         canvas.bind("<Button-1>", colorChange) #클릭 / 드래그 감지
         canvas.bind("<B1-Motion>", colorChange) 
@@ -211,7 +211,10 @@ def goal(evnet): #도착지점 생성
 def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, positionLabel, canvas, playerCanvas, goalCanvas
-
+    buttonPosX = 20 #첫 버튼(검은색 타일)의 X좌표
+    buttonPosY = 600 #첫 버튼(검은색 타일)의 Y좌표
+    buttonX = 60 #버튼간 X 간격
+    buttonY = 40 #버튼간 Y 간격
     # ------------------------ GUI 요소 생성 ------------------------
 
     window = tkinter.Tk()
@@ -271,13 +274,6 @@ def runEditor():
     YLabel.grid()
     YEntry.grid()
     mapButton.grid()
-
-    for button in colorButton:
-        button.grid()
-
-    for button in switchButton:
-        button.grid()
-
     positionLabel.grid()
     playerHeigheLabel.grid()
     playerHeight.grid()
@@ -295,6 +291,12 @@ def runEditor():
     background.grid()
     saveButton.grid()
     closeButton.grid()
-    window.mainloop()
 
+    for i in range(9):
+        colorButton[i].place(x = buttonPosX, y = buttonPosY + buttonY * i)
+
+    for i in range(7):
+        switchButton[i].place(x = buttonPosX + buttonX, y = buttonPosY + buttonY * (i+1))
+
+    window.mainloop()
     return
