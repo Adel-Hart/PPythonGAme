@@ -5,7 +5,7 @@ import os
 import zipfile
 import selectors
 
-HOST = "192.168.50.47"
+HOST = "172.30.1.72"
 PORT = 8080
 
 sele = selectors.DefaultSelector() #셀렉터 생성
@@ -56,7 +56,6 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         
 
 
-
     def multiCastChat(self, msg, name): #방에 있는 모든 클라이언트에게 룸챗 메세지 전송
         for c in self.whos.values():
             c.sendMsg(f"roomChat!{name}:{msg}") #!로 구분, 닉네임 : 내용
@@ -65,7 +64,9 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.values():
             c.sendMsg("CMD " + msg)
 
-
+    def deleteRoom(self):
+        roomList.remove(self) #방목록에서 삭제
+        del self #자신의 참조 삭제
 
 class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리!, TCP
     def __init__(self, soc, addr):
@@ -104,6 +105,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def leaveRoom(self):
         print("leaving room..")
+        self.inRoom = False
         self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
         del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
             #룸 핸들러의 참조가 모두 사라지면, 파이썬의 garbage collector가 자동으로 룸 핸들러를 삭제시킴
@@ -153,12 +155,23 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         self.roomHandler.startGame()
                         self.inGamePlayer = True
                     elif msg == "1003": #방 나가기
-                        if(self.leaveRoom()):
+                        if self.leaveRoom():
                             self.inRoom = False
                             self.soc.send("0080".encode())
                         else:
                             self.soc.send("0000".encode())
 
+
+
+                    elif msg == "1004": #방 파쇄 (플레이어가 1명 밖에 없을때만 가능)
+                        if len(self.roomHandler.whos.keys) == 1:
+                            self.roomHandler.deleteRoom() #삭제 요청
+                            del self.roomHandler #핸들러 참조 삭제
+                            
+                            self.inRoom = False
+                            self.soc.send("0080".encode()) #완료메세지
+                        else:
+                            self.soc.send("0000".encode())
 
 
 
