@@ -2,6 +2,18 @@ import main
 import pygame
 import editor
 import ctypes
+import re
+
+#요 아래는 서버용
+import socket
+import threading
+
+HOST = ""
+PORT = 8080
+
+
+
+
 
 def darkColor(color): #색을 더 어둡게 
     return list(map(lambda x: x / 2, color)) #RGB 값을 모두 절반으로
@@ -112,7 +124,7 @@ def lobbyButtons(): #처음 시작 장면
     currentundo = None
 
     currentButtonList.append(Button( BLACK,"SINGLE PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
-    currentButtonList.append(Button( BLACK,"MULTI PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
+    currentButtonList.append(Button( BLACK,"MULTI PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
     currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 14, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
     currentButtonList.append(Button( BLACK,"QUIT", WHITE, SCRSIZEX // 9, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
@@ -229,10 +241,98 @@ def undo():
 
     return
 
+def multiButtons(): #멀티플레이, 시작 전 화면
+    regularFilter = re.compile("^a-zA-Z0-9") #문자나 숫자 아닌것들 필터
+    name = "" #이름 변수 설정
+    flagEntering = False #이름입력창에서 나가는 트리거
+    font = pygame.font.SysFont(None, 20, False, False) #폰트 설정 (크기 20)
+    nameScrenner = font.render(name, True, [255, 255, 255])
+    nameRule = font.render("이름은 12자 내\n영문과 숫자 외 금지.", True, [255, 255, 255])
+
+    connecting = font.render("Connecting To Server...", True, [255, 255, 255]) #서버 연결 메세지 표시
+
+    connectError = font.render("Fail to connect, shuting down game..", True, [255, 255, 255]) #서버 연결 메세지 표시
+
+    while not flagEntering: #먼저 이름을 입력 받은 후 서버와 통신한다.
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN: #키가 눌렸을 때
+                if event.key == pygame.K_SPACE: #스페이스면
+                    pass #무시
+                elif event.key == pygame.K_RETURN: #엔터면
+                    if not regularFilter.search(name) and len(name) <= 12: #name함수에 영어나 숫자외 다른게 없고 12자 내면
+                        flagEntering = True #반복 중단(다음 단계 진행)
+                    else:
+                        pass
+                    
+                elif event.key == pygame.K_BACKSPACE: #뒤로가기
+                    name = name[:-1] #맨 오른쪽 빼고 저장
+                else:
+                    name += event.unicode #쓰기
+            
+            nameScrenner = font.render(name, True, [255, 255, 255]) #이름 새로고침
+        screen.fill([0, 0, 0]) #검은 화면
+        screen.blit(nameScrenner, (200, 300)) #화면에 띄우기
+        screen.bilt(nameRule, (200, 500)) #설명창 띄우기
+        pygame.display.flip() #화면 업데이트
+        
+
+    
+    tcpHandler = conTcp(name=name) #tcp 핸들러 시작 (반복문 벗어나면)
+    while True:
+        screen.fill([0, 0, 0]) #검은 화면
+        screen.blit(connecting, (SCRSIZEX // 2, SCRSIZEY // 2)) #대기 메세지 출력
+        if(tcpHandler.run()): #run했을때, 실행 완료(True)면
+            return #대충 매뉴화면 나오게 하는 함수 (미 구현)
+        
+        else:
+            screen.fill([0, 0, 0]) #검은 화면 (기존 메세지 지우기)
+            screen.bilt(connectError, (SCRSIZEX // 2, SCRSIZEY // 2)) #오류 메세지 출력
+
+            
+        
+        pygame.display.flip()
+            
+
+
+    
+
+
+
+
+
 def test():
     print("test")
     return
 
+
+
+class conTcp():
+    def __init__(self, name: str):
+        self.name = name #클래스에 이름 저장.
+
+
+    def run(self): #연결 실행함수
+        tcpSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #소켓 생성
+        try:
+            tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
+            recv = threading.Thread(target=recv, args=(tcpSock, )) #받는 핸들러 스레드 생성
+            send = threading.Thread(target=send, args=(tcpSock, )) #전송 핸들러 스레드 생성
+
+            recv.start()
+            send.start() #스레드 시작
+
+
+
+        except ConnectionRefusedError: #연결 실패시
+            return False #연결 실패시, 연결 실패 표시
+
+        return True #연결 되면, 연결 됨 표시
+    
+
+    def recv(self): #메세지를 받는 핸들러
+        return #미구현  
+    def send(self): #메세지를 보내는 핸들러.
+        return #미구현
 
 
 #------------------------여기부터 시작---------------------------------#

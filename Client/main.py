@@ -1,10 +1,5 @@
 import pygame
 from pygame.locals import *
-import os
-import math
-import random
-import time
-import sys
 import mapload
 
 import ctypes #컴퓨터 정보, 화면 크기를 가져옴
@@ -16,8 +11,7 @@ import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 ! 2023 07 22 start
 
 
--김동훈
-
+- 서버 : 김동훈
 
 
 헷갈리는 것들
