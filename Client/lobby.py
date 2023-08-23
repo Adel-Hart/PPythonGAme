@@ -70,7 +70,7 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
             
         
 
-        font = pygame.font.SysFont("None", 200) #폰트 설정
+        font = pygame.font.SysFont("Consolas", 200) #폰트 설정
         img = font.render(self.text, True, self.textColor) #렌더
         img = pygame.transform.scale(img, (self.width - self.marginx*2, self.height))
         screen.blit(img, (self.posX+self.marginx,self.posY)) #텍스트 표시
@@ -125,7 +125,7 @@ def lobbyButtons(): #처음 시작 장면
 
     currentButtonList.append(Button( BLACK,"SINGLE PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
     currentButtonList.append(Button( BLACK,"MULTI PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
-    currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 14, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
+    currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
     currentButtonList.append(Button( BLACK,"QUIT", WHITE, SCRSIZEX // 9, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
 
@@ -242,18 +242,26 @@ def undo():
     return
 
 def multiButtons(): #멀티플레이, 시작 전 화면
+
     regularFilter = re.compile("^a-zA-Z0-9") #문자나 숫자 아닌것들 필터
     name = "" #이름 변수 설정
-    flagEntering = False #이름입력창에서 나가는 트리거
-    font = pygame.font.SysFont(None, 20, False, False) #폰트 설정 (크기 20)
-    nameScrenner = font.render(name, True, [255, 255, 255])
-    nameRule = font.render("이름은 12자 내\n영문과 숫자 외 금지.", True, [255, 255, 255])
 
-    connecting = font.render("Connecting To Server...", True, [255, 255, 255]) #서버 연결 메세지 표시
+    flagEntering = False #이름입력창에서 나가는 트리거
+
+    font = pygame.font.SysFont(None, 20, False, False) #폰트 설정 (크기 20)
+
+    nameScrenner = Button(None, name, WHITE, 0, SCRSIZEX//4, SCRSIZEY//4, len(name) * 30, 60)
+    nameRule1 = Button(None, "Nickname must be 12 characters or less.", WHITE, 0, SCRSIZEX//4, SCRSIZEY //2, SCRSIZEY * 3 // 4, SCRSIZEY//20)
+    nameRule2 = Button(None, "You can't use anything other than English and numbers", WHITE, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+    
+
+    connecting = Button(None, "Nickname must be 12 characters or less.", WHITE, 0, SCRSIZEX//2, SCRSIZEY //2, SCRSIZEY * 3 // 8, SCRSIZEY//20) #서버 연결 메세지 표시
 
     connectError = font.render("Fail to connect, shuting down game..", True, [255, 255, 255]) #서버 연결 메세지 표시
 
-    while not flagEntering: #먼저 이름을 입력 받은 후 서버와 통신한다.
+    done = False
+
+    while not (flagEntering or done): #먼저 이름을 입력 받은 후 서버와 통신한다.
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN: #키가 눌렸을 때
                 if event.key == pygame.K_SPACE: #스페이스면
@@ -263,43 +271,57 @@ def multiButtons(): #멀티플레이, 시작 전 화면
                         flagEntering = True #반복 중단(다음 단계 진행)
                     else:
                         pass
-                    
+                
+                elif event.key == pygame.K_ESCAPE: #ESC면
+                    done = True
+
                 elif event.key == pygame.K_BACKSPACE: #뒤로가기
                     name = name[:-1] #맨 오른쪽 빼고 저장
                 else:
-                    name += event.unicode #쓰기
+                    if len(name) < 12: #12글자 미만일 때만
+                        name += event.unicode #쓰기
             
-            nameScrenner = font.render(name, True, [255, 255, 255]) #이름 새로고침
-        screen.fill([0, 0, 0]) #검은 화면
-        screen.blit(nameScrenner, (200, 300)) #화면에 띄우기
-        screen.bilt(nameRule, (200, 500)) #설명창 띄우기
+            #이름 지정
+            nameScrenner = Button(None, name, WHITE, 0, SCRSIZEX//4, SCRSIZEY//4, len(name) * 30, 60)
+        
+        screen.fill(BLACK) #검은 화면
+        
+        #화면에 띄우기
+        nameScrenner.displayButton() 
+        nameRule1.displayButton()
+        nameRule2.displayButton()
+        
         pygame.display.flip() #화면 업데이트
-        
+
+    if done:
+        return
+    
+    try : 
+        tcpHandler = conTcp(name=name) #tcp 핸들러 시작 (반복문 벗어나면)
+        while True:
+            screen.fill([0, 0, 0]) #검은 화면
+
+            connecting.displayButton()
+            #screen.blit(connecting, (SCRSIZEX // 2, SCRSIZEY // 2)) #대기 메세지 출력
+
+            if(tcpHandler.run()): #run했을때, 실행 완료(True)면
+                return #대충 매뉴화면 나오게 하는 함수 (미 구현)
+            
+            else:
+                screen.fill([0, 0, 0]) #검은 화면 (기존 메세지 지우기)
+                screen.bilt(connectError, (SCRSIZEX // 2, SCRSIZEY // 2)) #오류 메세지 출력
+
+                
+            
+            pygame.display.flip()
+    except:
+        print("서버 연결 오류")
+
+    return
+                
+
 
     
-    tcpHandler = conTcp(name=name) #tcp 핸들러 시작 (반복문 벗어나면)
-    while True:
-        screen.fill([0, 0, 0]) #검은 화면
-        screen.blit(connecting, (SCRSIZEX // 2, SCRSIZEY // 2)) #대기 메세지 출력
-        if(tcpHandler.run()): #run했을때, 실행 완료(True)면
-            return #대충 매뉴화면 나오게 하는 함수 (미 구현)
-        
-        else:
-            screen.fill([0, 0, 0]) #검은 화면 (기존 메세지 지우기)
-            screen.bilt(connectError, (SCRSIZEX // 2, SCRSIZEY // 2)) #오류 메세지 출력
-
-            
-        
-        pygame.display.flip()
-            
-
-
-    
-
-
-
-
-
 def test():
     print("test")
     return
