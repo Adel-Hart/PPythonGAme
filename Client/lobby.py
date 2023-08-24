@@ -125,7 +125,7 @@ def lobbyButtons(): #처음 시작 장면
 
     currentButtonList.append(Button( BLACK,"SINGLE PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
     currentButtonList.append(Button( BLACK,"MULTI PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
-    currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
+    currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, serverRoomList, 1))
     currentButtonList.append(Button( BLACK,"QUIT", WHITE, SCRSIZEX // 9, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
 
@@ -320,6 +320,47 @@ def multiButtons(): #멀티플레이, 시작 전 화면
     return
                 
 
+def serverRoomList(page):
+
+    global currentImageList, currentButtonList
+    currentImageList, currentButtonList = [],[] #초기화
+    
+    global currentundo
+    currentundo = lobbyButtons
+
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    
+    currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #새로고침 버튼
+
+    #임시 방 리스트(수정예정)
+    roomList = ["dlwodyd", "rlfhrgus", "xlfhrtls", "rlrlrlfhrgus", "dkdlrhsks", "andxoddl", "1", "2", "3", "4", "5", "6"]
+
+    roomCount = len(roomList)
+
+    pageCount = (roomCount - 1) // 5 + 1
+
+    if roomCount == 0: #방이 없네
+        pass
+
+    else: #방이 있다
+        currentPageRooms = roomList[page * 5 - 5:page * 5 - 1] #현재 페이지의 방 목록 불러오기
+
+        for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
+            roomName = currentPageRooms[i]
+            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8)) #undo 버튼
+
+        pass
+
+        
+
+
+
+
+
+
+
 
     
 def test():
@@ -331,17 +372,13 @@ def test():
 class conTcp():
     def __init__(self, name: str):
         self.name = name #클래스에 이름 저장.
+        self.players = []
 
 
     def run(self): #연결 실행함수
-        tcpSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #소켓 생성
+        self.tcpSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #소켓 생성
         try:
-            tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
-            recv = threading.Thread(target=recv, args=(tcpSock, )) #받는 핸들러 스레드 생성
-            send = threading.Thread(target=send, args=(tcpSock, )) #전송 핸들러 스레드 생성
-
-            recv.start()
-            send.start() #스레드 시작
+            self.tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
 
 
 
@@ -351,10 +388,54 @@ class conTcp():
         return True #연결 되면, 연결 됨 표시
     
 
-    def recv(self): #메세지를 받는 핸들러
-        return #미구현  
-    def send(self): #메세지를 보내는 핸들러.
-        return #미구현
+    def setName(self, name): #메세지를 받는 핸들러
+        self.tcpSock.send(f"0001{name}".encode())
+        data = self.tcpSock.recv(1024)
+        if(data.decode() == "0080"):
+            del data #변수 참조 삭제
+            return True #성공 메세지 받을 시
+        else:
+            del data
+            return False
+    
+    def checkRoomList(self):
+        self.tcpSock.send("0002".encode()) #룸 리스트 받기 형식 > 방이름!방이름!
+        data = self.tcpSock.recv(1024)
+        data = data.decode()
+        return data.split("!")
+    
+    def makeRoom(self, roomCode: str): #방 만들기 (서버 상에서 자동으로 방 참여가 된다.) 이름 규칙 : 12자 내외 영문만
+        self.tcpSock.send(f"0003{roomCode}".encode()) #방 생성 요청
+        data = self.tcpSock.recv(1024)
+        if(data.decode() == "0080"):
+            del data #변수 참조 삭제
+            return True #성공 메세지 받을 시 >> 클라이언트 측 핸들러에서, 룸 용 함수 실행 필요
+        else:
+            del data
+            return False
+        
+    def joinRoom(self, roomCode: str): #방 참여요청
+        self.tcpSock.send(f"0004{roomCode}".encode()) #방 생성 요청 >> "
+        data = self.tcpSock.recv(1024)
+        if(data.decode() == "0080"):
+            del data #변수 참조 삭제
+            return True #성공 메세지 받을 시
+        else:
+            del data
+            return False
+        
+
+
+    def inRoom(self): #방에 접속시 실행됨, 송신 스레드와 수신 스레드가 실행됨
+        
+
+    def recvRoom(self): #받는 명령어 핸들러
+        data = self.tcpSock.recv(1024).decode()
+        if data.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
+            cmd = data.split(" ")[1]
+            if cmd.startswith("IN"): #누군가 들어왔다는 신호인 경우.
+                self.players.append(cmd.replace("IN", "")) #들어온 사람을 플레이어 리스트에 추가.
+
 
 
 #------------------------여기부터 시작---------------------------------#
