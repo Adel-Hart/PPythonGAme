@@ -427,7 +427,7 @@ class conTcp():
 
 
     def inRoom(self): #방에 접속시 실행됨, 송신 스레드와 수신 스레드가 실행됨
-        
+        return
 
     def recvRoom(self): #받는 명령어 핸들러
         data = self.tcpSock.recv(1024).decode()
