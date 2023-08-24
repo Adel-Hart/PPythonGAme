@@ -221,10 +221,8 @@ def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, positionLabel, canvas, playerCanvas, goalCanvas
 
-    buttonPosX = 40 #첫번째 버튼(검은색 타일)의 X좌표
-    buttonPosY = 750 #첫번째 버튼(검은색 타일)의 Y좌표
-    buttonX = 65 #버튼 사이의 X축 간격
-    buttonY = 45 #버튼 사이의 Y축 간격
+    buttonX = SCRSIZEX / 35 #버튼 사이의 X축 간격
+    buttonY = SCRSIZEY / 30 #버튼 사이의 Y축 간격
     
 
     # ------------------------ GUI 요소 생성 ------------------------
@@ -288,10 +286,10 @@ def runEditor():
     mapButton.grid()
 
     for i in range(9):
-        colorButton[i].place(x = buttonPosX, y = buttonPosY + buttonY * i)
+        colorButton[8-i].place(x = buttonX, y = SCRSIZEY - buttonY * (i+2))
 
     for i in range(7):
-        switchButton[i].place(x = buttonPosX + buttonX, y = buttonPosY + buttonY * (i+1))
+        switchButton[6-i].place(x = buttonX * 2, y = SCRSIZEY - buttonY * (i+3))
 
     positionLabel.grid()
     playerHeigheLabel.grid()
