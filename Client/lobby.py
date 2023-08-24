@@ -431,10 +431,10 @@ class conTcp():
 
     def recvRoom(self): #받는 명령어 핸들러
         data = self.tcpSock.recv(1024).decode()
-        if "CMD" in data: #CMD로 시작되는, 서버 설정 메세지인 경우
+        if data.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
             cmd = data.split(" ")[1]
-            if(cmd``.startswith("IN"))
-        
+            if cmd.startswith("IN"): #누군가 들어왔다는 신호인 경우.
+                self.players.append(cmd.replace("IN", "")) #들어온 사람을 플레이어 리스트에 추가.
 
 
 
