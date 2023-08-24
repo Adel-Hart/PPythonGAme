@@ -85,14 +85,18 @@ def colorChange(event): #색 변경
     global canvas, mapArray
 
     if isMap():
-        if brushCheck: #타일 색을 선택했을 경우
+
+        tileX = x * tileSize #클릭 타일의 좌상단 X좌표
+        tileY = y * tileSize #클릭 타일의 좌상단 Y좌표
+
+        if brushCheck: #타일 버튼을 클릭한 경우
             mapArray[x][y] = brushColor
-            canvas.create_rectangle(x * tileSize + 1, y * tileSize + 1, x * tileSize + tileSize - 1, y * tileSize + tileSize - 1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
+            canvas.create_rectangle(tileX + 1, tileY + 1, tileX + tileSize - 1, tileY + tileSize - 1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
         
-        else: #스위치 색을 선택했을 경우
+        else: #스위치 버튼을 클릭 경우
             mapArray[x][y] = colorTuple[brushColor][0]
-            canvas.create_rectangle(x * tileSize + 1, y * tileSize + 1, x * tileSize + tileSize - 1, y * tileSize + tileSize - 1, fill = "black")
-            canvas.create_rectangle((x + 1/4) * tileSize, (y + 1/4) * tileSize, (x + 3/4) * tileSize, (y + 3/4) * tileSize, fill = colorTuple[brushColor])
+            canvas.create_rectangle(tileX + 1, tileY + 1, tileX + tileSize - 1, tileY + tileSize - 1, fill = "black") #타일을 검정색으로 초기화
+            canvas.create_rectangle(tileX + tileSize/4, tileY + tileSize/4, tileX + tileSize*3/4, tileY + tileSize*3/4, fill = colorTuple[brushColor])
     
     return
 
@@ -144,18 +148,23 @@ def player(event): #플레이어 생성
 
         if isNumeric(playerWidth.get()) and isNumeric(playerHeight.get()): #플레이어 키와 너비가 실수인지 확인
             
-            if playerX - float(playerWidth.get()) / 2 <= 0:
-                playerX = float(playerWidth.get()) / 2 + 0.1
-            elif playerX + float(playerWidth.get()) / 2 >= int(XEntry.get()):
-                playerX = int(XEntry.get()) - float(playerWidth.get()) / 2 - 0.1
+            halfPWidth = float(playerWidth.get()) / 2 #플레이어 폭의 절반
+            halfPHeight = float(playerHeight.get()) / 2 #플레이어 높이의 절반
+
+            #플레이어가 맵 밖에 있을 경우 맵 안으로 자동조정
+
+            if playerX - halfPWidth <= 0: #플레이어 좌측이 맵 밖일 경우
+                playerX = halfPWidth + 0.1
+            elif playerX + halfPWidth >= mapX: #플레이어 우측이 맵 밖일 경우
+                playerX = mapX - halfPWidth - 0.1
             
-            if playerY - float(playerHeight.get()) / 2 <= 0:
-                playerY = float(playerHeight.get()) / 2 + 0.1
-            elif playerY + float(playerHeight.get()) / 2 >= int(YEntry.get()):
-                playerY = int(YEntry.get()) - float(playerHeight.get()) / 2 - 0.1
+            if playerY - halfPHeight <= 0: #플레이어 하단이 맵 밖일 경우
+                playerY = halfPHeight + 0.1
+            elif playerY + halfPHeight >= mapY: #플레이어 상단이 맵 밖일 경우
+                playerY = mapY - halfPHeight - 0.1
             
-            mouseX = (playerX - float(playerWidth.get()) / 2) * tileSize + mapOrigin #마우스로 클릭한 지점이 맵에서 X 좌표인지(타일기준)
-            mouseY = (playerY - float(playerHeight.get()) / 2) * tileSize #Y
+            mouseX = (playerX - halfPWidth) * tileSize + mapOrigin #마우스로 클릭한 지점이 맵에서 X 좌표인지(타일기준)
+            mouseY = (playerY - halfPHeight) * tileSize #Y
         
             playerCanvas.destroy()
             playerCanvas = tk.Canvas(width = float(playerWidth.get()) * tileSize, height = float(playerHeight.get()) * tileSize)
@@ -175,7 +184,7 @@ def close(): #종료 함수
     window.destroy() #창 닫기
 
  
-def goal(evnet): #도착지점 생성
+def goal(evnet): #도착지점 생성 (넓이 1*2)
 
     global goalCanvas, goalX, goalY
 
@@ -186,8 +195,8 @@ def goal(evnet): #도착지점 생성
         #도착지점 X값 조정
         if goalX - 0.5 <= 0: #도착지점이 맵을 넘어가는 경우
             goalX = 0.5
-        elif goalX + 0.5 >= int(XEntry.get()) :
-            goalX = int(XEntry.get()) - 0.5
+        elif goalX + 0.5 >= mapX:
+            goalX = mapX - 0.5
         else: #도착지점 좌표 0.5 기준으로 조정
             if goalX - trunc(goalX) <= 0.25:
                 goalX = trunc(goalX)
@@ -198,8 +207,8 @@ def goal(evnet): #도착지점 생성
         #도착지점 Y값 조정
         if goalY - 1 <= 0: #도착지점이 맵을 넘어가는 경우
             goalY = 1
-        elif goalY + 1 >= int(YEntry.get()) :
-            goalY = int(YEntry.get()) - 1
+        elif goalY + 1 >= mapY :
+            goalY = mapY - 1
         else: #도착지점 좌표 0.5 기준으로 조정
             if goalY - trunc(goalY) <= 0.25: 
                 goalY = trunc(goalY)
@@ -232,8 +241,8 @@ def runEditor():
 
     window.resizable(False, False) #창 크기 조절 가능 여부
     window.attributes("-fullscreen", True) #전체화면
-    window.bind("<Button-3>", player)
-    window.bind("<Button-2>", goal)
+    window.bind("<Button-3>", player) #좌클릭 감지 -> player함수 실행
+    window.bind("<Button-2>", goal) #휠클릭 감지 -> goal함수 실행
 
     #레이블 생성
     XLabel = tk.Label(window, text = "맵의 가로 길이 입력")
