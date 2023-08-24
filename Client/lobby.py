@@ -125,7 +125,7 @@ def lobbyButtons(): #처음 시작 장면
 
     currentButtonList.append(Button( BLACK,"SINGLE PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
     currentButtonList.append(Button( BLACK,"MULTI PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
-    currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
+    currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, serverRoomList, 1))
     currentButtonList.append(Button( BLACK,"QUIT", WHITE, SCRSIZEX // 9, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
 
@@ -319,6 +319,47 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
     return
                 
+
+def serverRoomList(page):
+
+    global currentImageList, currentButtonList
+    currentImageList, currentButtonList = [],[] #초기화
+    
+    global currentundo
+    currentundo = lobbyButtons
+
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    
+    currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #새로고침 버튼
+
+    #임시 방 리스트(수정예정)
+    roomList = ["dlwodyd", "rlfhrgus", "xlfhrtls", "rlrlrlfhrgus", "dkdlrhsks", "andxoddl", "1", "2", "3", "4", "5", "6"]
+
+    roomCount = len(roomList)
+
+    pageCount = (roomCount - 1) // 5 + 1
+
+    if roomCount == 0: #방이 없네
+        pass
+
+    else: #방이 있다
+        currentPageRooms = roomList[page * 5 - 5:page * 5 - 1] #현재 페이지의 방 목록 불러오기
+
+        for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
+            roomName = currentPageRooms[i]
+            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8)) #undo 버튼
+
+        pass
+
+        
+
+
+
+
+
+
 
 
     
