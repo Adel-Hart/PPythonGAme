@@ -1,8 +1,8 @@
-import tkinter
+import tkinter as tk
 import pyautogui
 import os
 import ctypes
-import math
+from math import trunc
 import keyboard
 
 
@@ -33,7 +33,7 @@ def drawMap(): #맵 생성
 
     global mapX, mapY, mapArray, canvas, tileSize, playerX, playerY, goalX, goalY
 
-    if XEntry.get().isdigit() and YEntry.get().isdigit() and int(XEntry.get()) >= 1 and int(XEntry.get()) >= 1 and int(XEntry.get()) <= 150 and int(XEntry.get()) <= 150: #입력값이 정수인지 확인, 1 이상인지 확인
+    if XEntry.get().isdigit() and YEntry.get().isdigit() and 1 <= int(XEntry.get()) <= 150 and 1 <= int(YEntry.get()) <= 150: #입력값이 정수인지 확인, 1 이상 150 이하인지 확인
 
         canvas.destroy() #맵, 플레이어, 도착지점 제거
         playerCanvas.destroy()
@@ -50,7 +50,7 @@ def drawMap(): #맵 생성
         tileSize = SCRSIZEY // mapY if SCRSIZEX/mapX > SCRSIZEY/mapY else SCRSIZEX // mapX #타일 크기를 화면비율에 맞추기
         if tileSize > 80: tileSize = 80 # 80 이상은 너무 크므로 100으로 고정
 
-        canvas = tkinter.Canvas(window, width = mapX * tileSize, height = mapY * tileSize)
+        canvas = tk.Canvas(window, width = mapX * tileSize, height = mapY * tileSize)
         mapArray = [[0 for y in range(mapY)] for x in range(mapX)]
 
         for i in range(mapX):
@@ -64,7 +64,6 @@ def drawMap(): #맵 생성
         canvas.bind("<B1-Motion>", colorChange) 
 
         canvas.place(x = mapOrigin, y = 0)
-    
     return
 
 def isMap(): #클릭 좌표가 맵 안인지 판단
@@ -93,7 +92,7 @@ def colorChange(event): #색 변경
         else: #스위치 색을 선택했을 경우
             mapArray[x][y] = colorTuple[brushColor][0]
             canvas.create_rectangle(x * tileSize + 1, y * tileSize + 1, x * tileSize + tileSize - 1, y * tileSize + tileSize - 1, fill = "black")
-            canvas.create_rectangle((x + 1 / 4) * tileSize, (y + 1 / 4) * tileSize, (x + 3 / 4) * tileSize, (y + 3 / 4) * tileSize, fill = colorTuple[brushColor])
+            canvas.create_rectangle((x + 1/4) * tileSize, (y + 1/4) * tileSize, (x + 3/4) * tileSize, (y + 3/4) * tileSize, fill = colorTuple[brushColor])
     
     return
 
@@ -159,7 +158,7 @@ def player(event): #플레이어 생성
             mouseY = (playerY - float(playerHeight.get()) / 2) * tileSize #Y
         
             playerCanvas.destroy()
-            playerCanvas = tkinter.Canvas(width = float(playerWidth.get()) * tileSize, height = float(playerHeight.get()) * tileSize)
+            playerCanvas = tk.Canvas(width = float(playerWidth.get()) * tileSize, height = float(playerHeight.get()) * tileSize)
             playerCanvas.create_rectangle(0, 0, float(playerWidth.get()) * tileSize, float(playerHeight.get()) * tileSize, fill = "olive")
             playerCanvas.place(x = mouseX , y = mouseY) 
             
@@ -172,12 +171,8 @@ def isNumeric(s): #문자열 실수 판단
     except ValueError:
         return False
     
-def close():
+def close(): #종료 함수
     window.destroy() #창 닫기
-
-def eventHandelr_ESC(key): #ESC를 감지하는 이벤트 핸들러
-    if key.name == "esc": #누른 키가 esc라면
-        close() #종료 함수 실행
 
  
 def goal(evnet): #도착지점 생성
@@ -194,27 +189,27 @@ def goal(evnet): #도착지점 생성
         elif goalX + 0.5 >= int(XEntry.get()) :
             goalX = int(XEntry.get()) - 0.5
         else: #도착지점 좌표 0.5 기준으로 조정
-            if goalX - math.trunc(goalX) <= 0.25:
-                goalX = math.trunc(goalX)
-            elif 0.25 < goalX - math.trunc(goalX) <= 0.75:
-                goalX = math.trunc(goalX) + 0.5
-            elif 0.75 < goalX - math.trunc(goalX):
-                goalX = math.trunc(goalX) + 1
+            if goalX - trunc(goalX) <= 0.25:
+                goalX = trunc(goalX)
+            elif 0.25 < goalX - trunc(goalX) <= 0.75:
+                goalX = trunc(goalX) + 0.5
+            elif 0.75 < goalX - trunc(goalX):
+                goalX = trunc(goalX) + 1
         #도착지점 Y값 조정
         if goalY - 1 <= 0: #도착지점이 맵을 넘어가는 경우
             goalY = 1
         elif goalY + 1 >= int(YEntry.get()) :
             goalY = int(YEntry.get()) - 1
         else: #도착지점 좌표 0.5 기준으로 조정
-            if goalY - math.trunc(goalY) <= 0.25: 
-                goalY = math.trunc(goalY)
-            elif 0.25 < goalY - math.trunc(goalY) <= 0.75:
-                goalY = math.trunc(goalY) + 0.5
-            elif 0.75 < goalY - math.trunc(goalY):
-                goalY = math.trunc(goalY) + 1
+            if goalY - trunc(goalY) <= 0.25: 
+                goalY = trunc(goalY)
+            elif 0.25 < goalY - trunc(goalY) <= 0.75:
+                goalY = trunc(goalY) + 0.5
+            elif 0.75 < goalY - trunc(goalY):
+                goalY = trunc(goalY) + 1
 
         goalCanvas.destroy()
-        goalCanvas = tkinter.Canvas(width = tileSize, height = 2 * tileSize)
+        goalCanvas = tk.Canvas(width = tileSize, height = 2 * tileSize)
         goalCanvas.create_rectangle(0, 0,  tileSize, 2 * tileSize, fill = "purple")
         goalCanvas.place(x = (goalX - 0.5) * tileSize + mapOrigin , y = (goalY - 1) * tileSize) 
 
@@ -225,12 +220,14 @@ def goal(evnet): #도착지점 생성
 def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, positionLabel, canvas, playerCanvas, goalCanvas
-    keyboard.on_press(eventHandelr_ESC)
+
+    buttonX = SCRSIZEX / 35 #버튼 사이의 X축 간격
+    buttonY = SCRSIZEY / 30 #버튼 사이의 Y축 간격
     
 
     # ------------------------ GUI 요소 생성 ------------------------
 
-    window = tkinter.Tk()
+    window = tk.Tk()
     window.title("맵에디터") #창의 이름
 
     window.resizable(False, False) #창 크기 조절 가능 여부
@@ -239,45 +236,45 @@ def runEditor():
     window.bind("<Button-2>", goal)
 
     #레이블 생성
-    XLabel = tkinter.Label(window, text = "맵의 가로 길이 입력")
-    YLabel = tkinter.Label(window, text = "맵의 세로 길이 입력")
-    positionLabel = tkinter.Label(window, text = "")
-    playerWidthLabel = tkinter.Label(window, text = "플레이어 너비 입력")
-    playerHeigheLabel = tkinter.Label(window, text = "플레이어 키 입력")
-    jumpHeightLabel = tkinter.Label(window, text = "점프 높이 입력")
-    jumpTimeLabel = tkinter.Label(window, text = "점프 시간 입력")
-    mapNameAlert = tkinter.Label(window, text = "저장할 이름 입력")
-    speedLabel = tkinter.Label(window, text = "이동 속도 입력")
-    backgroundLabel = tkinter.Label(window, text = "배경사진 이름 입력")
+    XLabel = tk.Label(window, text = "맵의 가로 길이 입력")
+    YLabel = tk.Label(window, text = "맵의 세로 길이 입력")
+    positionLabel = tk.Label(window, text = "")
+    playerWidthLabel = tk.Label(window, text = "플레이어 너비 입력")
+    playerHeigheLabel = tk.Label(window, text = "플레이어 키 입력")
+    jumpHeightLabel = tk.Label(window, text = "점프 높이 입력")
+    jumpTimeLabel = tk.Label(window, text = "점프 시간 입력")
+    mapNameAlert = tk.Label(window, text = "저장할 이름 입력")
+    speedLabel = tk.Label(window, text = "이동 속도 입력")
+    backgroundLabel = tk.Label(window, text = "배경사진 이름 입력")
 
     #엔트리 생성
-    XEntry = tkinter.Entry(window)
-    YEntry = tkinter.Entry(window)
-    jumpHeight = tkinter.Entry(window)
-    jumpTime = tkinter.Entry(window)
-    mapName = tkinter.Entry(window)
-    speed = tkinter.Entry(window)
-    playerWidth = tkinter.Entry(window)
-    playerHeight = tkinter.Entry(window)
-    background = tkinter.Entry(window)
+    XEntry = tk.Entry(window)
+    YEntry = tk.Entry(window)
+    jumpHeight = tk.Entry(window)
+    jumpTime = tk.Entry(window)
+    mapName = tk.Entry(window)
+    speed = tk.Entry(window)
+    playerWidth = tk.Entry(window)
+    playerHeight = tk.Entry(window)
+    background = tk.Entry(window)
 
     #버튼 생성
-    mapButton = tkinter.Button(window, text = "맵 생성", command = drawMap)
-    saveButton = tkinter.Button(window, text = "맵 저장", command = save)
-    closeButton = tkinter.Button(window, text = "종료", command = close)
+    mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
+    saveButton = tk.Button(window, text = "맵 저장", command = save)
+    closeButton = tk.Button(window, text = "종료", command = close)
 
     colorButton = []
     for i in range(9):
-        colorButton.append(tkinter.Button(window, command = lambda i=i: setBrushColor(i), bg = colorTuple[i], width = 5))
+        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorTuple[i], width = 5))
 
     switchButton = []
     for i in range(7):
-        switchButton.append(tkinter.Button(window, command = lambda i=i: setSwitchColor(i+1), bg = colorTuple[i+1], width = 5, text = "스위치"))
+        switchButton.append(tk.Button(window, command = lambda i=i: setSwitchColor(i+1), bg = colorTuple[i+1], width = 5, text = "스위치"))
     
     #캔버스 생성
-    canvas = tkinter.Canvas()
-    playerCanvas = tkinter.Canvas()
-    goalCanvas = tkinter.Canvas()
+    canvas = tk.Canvas()
+    playerCanvas = tk.Canvas()
+    goalCanvas = tk.Canvas()
 
 
     # ------------------------ GUI 배치 ------------------------
@@ -288,11 +285,11 @@ def runEditor():
     YEntry.grid()
     mapButton.grid()
 
-    for button in colorButton:
-        button.grid()
+    for i in range(9):
+        colorButton[8-i].place(x = buttonX, y = SCRSIZEY - buttonY * (i+2))
 
-    for button in switchButton:
-        button.grid()
+    for i in range(7):
+        switchButton[6-i].place(x = buttonX * 2, y = SCRSIZEY - buttonY * (i+3))
 
     positionLabel.grid()
     playerHeigheLabel.grid()
