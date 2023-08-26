@@ -80,6 +80,7 @@ class conTcp():
         if(data.decode() == "0080"):
             del data #변수 참조 삭제
             return True #성공 메세지 받을 시 >> 클라이언트 측 핸들러에서, 룸 용 함수 실행 필요
+        
         else:
             del data
             return False
@@ -94,7 +95,18 @@ class conTcp():
             del data
             return False
         
+    def leaveRoom(self, roomCode: str):
 
+        self.tcpSock.send(f"1003{roomCode}".encode()) #방 나가기 요청
+
+        data = self.tcpSock.recv(1024)
+
+        if(data.decode() == "0080"):
+            del data #변수 참조 삭제
+            return True #성공 메세지 받을 시
+        else:
+            del data
+            return False
 
     def inRoom(self): #방에 접속시 실행됨, 송신 스레드와 수신 스레드가 실행됨
         return
@@ -151,7 +163,7 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
     
     def displayButton(self): #버튼 표시
         
-        if self.backColor != None: #배경색이 None이 아니라면(존재한다면)
+        if self.backColor != None and self.function != None: #배경색이 None이 아니라면(존재한다면)
             if self.checkMouse(): #마우스의 위치가 버튼 안쪽이라면
                 pygame.draw.rect(screen, darkColor(self.backColor), [self.posX, self.posY, self.width, self.height]) #좀더 어둡게 버튼 색상 변경
             else:
@@ -361,6 +373,14 @@ def getString(filter, lengthLimit = 12):
     behindScreener = Button(WHITE, "            ", BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * 45, 90) #이름 입력칸 뒤에 올 것(리셋을 위해)
 
     while not strDone: #먼저 이름을 입력 받은 후 서버와 통신한다.
+        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, len(string) * 45, 90)
+
+        #화면에 띄우기
+        behindScreener.displayButton()
+        nameScreener.displayButton() 
+
+        pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # 종료 이벤트
                 global done
@@ -385,15 +405,6 @@ def getString(filter, lengthLimit = 12):
                         if filter.match(event.unicode) != None:
                             string += event.unicode #쓰기
         
-        
-        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, len(string) * 45, 90)
-
-        #화면에 띄우기
-        behindScreener.displayButton()
-        nameScreener.displayButton() 
-
-        pygame.display.update()
-    
 
     if string == "":
         return "default"
@@ -421,7 +432,11 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
     while True:
 
+        
+
         nickName = getString(re.compile('[a-zA-Z0-9]+')) #이름 변수 설정
+
+        print("이름 입력 완료")
 
         if nickName == "/ESC":
             return #로비로 돌아가기
@@ -434,22 +449,23 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
         if connected:
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
-                serverRoomList(tcpHandler, 1) #대충 매뉴화면 나오게 하는 함수
+                serverRoomList(tcpHandler) #대충 매뉴화면 나오게 하는 함수
 
         elif tcpHandler.run(): #run했을때, 실행 완료(True)면
 
-            print("here")
-
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
-                connected = True
+                
                 print("이름 설정 성공")
-                serverRoomList(tcpHandler, 1) #방 목록 나오는 함수
+                serverRoomList(tcpHandler) #방 목록 나오는 함수
                 
             else:
                 screen.fill(T1_BG) 
                 nameError.displayButton() #이름 재설정 부탁해요 띄우기.   
         else:
+            print("이름 설정 실패")
             return    
+        
+        connected = True
 
         pygame.display.update()
 
@@ -490,7 +506,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
 
         for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
             roomName = currentPageRooms[i]
-            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8)) #undo 버튼
+            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8))
         pass
     
     if page != 1: #1페이지가 아니라면
@@ -505,33 +521,54 @@ def serverRoomList(handler: classmethod, page:int = 1):
     #방 추가 버튼
     currentButtonList.append(Button( GRAY,"MAKE ROOM", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
 
-
 def serverMakeRoom(handler: classmethod):
 
     while True: #계속 반복
+
+        print("방만드는중")
+
         roomName = getString(re.compile('[a-zA-Z]+')) #필터 설정(영문만 가능)
 
         if roomName == "/ESC": #탈출
             return
         
-        else:
-            if handler.makeRoom(roomName): #방 만들기
-                global joinedRoomName
-                joinedRoomName = roomName
-                serverJoinedRoom(handler, roomName)
-                return #함수 종료
+        print(roomName,"방이름")
+        
+        if handler.makeRoom(roomName): #방 만들기
+            print("만들기 성공")
+            global joinedRoomName
+            joinedRoomName = roomName
+            serverJoinedRoom(handler)
+            return #함수 종료
+        else: 
+            print("만들기 실패")
             
 def serverJoinedRoom(handler: classmethod):
 
+    global joinedRoomName
 
+    print(joinedRoomName, "들어옴")
 
-    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, joinedRoomName * 75, 150)
+    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, 0, len(joinedRoomName) * 75, 150)
 
-    while True:
+    while joinedRoomName != None:
         
-        
+        screen.fill(T1_BG)
         roomTitleButton.displayButton()
 
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: # 종료 이벤트
+                global done
+                done=True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
+                    if handler.leaveRoom(joinedRoomName):
+                        print(joinedRoomName, "나가기 완료")
+                        joinedRoomName = None
+                        return
+
+                    else:
+                        print(joinedRoomName, "나가기 실패")
 
 
 
