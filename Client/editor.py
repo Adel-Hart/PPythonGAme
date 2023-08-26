@@ -3,8 +3,7 @@ import pyautogui
 import os
 import ctypes
 from math import trunc
-import keyboard
-
+import re
 
 
 
@@ -13,15 +12,9 @@ import keyboard
 사용 모듈 : 
 '''
 
-
-brushCheck = True #True일시 타일, False일시 스위치
 brushColor = 0
-colorTuple = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") #색 목록
-playerX = 0 #플레이어 시작 X좌표
-playerY = 0 #플레이어 시작 Y좌표
-goalX = 0
-goalY = 0
-tileSize = 50 #타일의 크기
+brushCheck = True
+colorList = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") #색 목록
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
 
@@ -31,7 +24,7 @@ SCRSIZEY = user32.GetSystemMetrics(1)-50 #세로, 여유로 50 남김
 
 def drawMap(): #맵 생성
 
-    global mapX, mapY, mapArray, canvas, tileSize, playerX, playerY, goalX, goalY
+    global mapX, mapY, mapArray, canvas, tileSize, playerX, playerY, goalX, goalY, PWidth, PHeight
 
     if XEntry.get().isdigit() and YEntry.get().isdigit() and 1 <= int(XEntry.get()) <= 150 and 1 <= int(YEntry.get()) <= 150: #입력값이 정수인지 확인, 1 이상 150 이하인지 확인
 
@@ -39,14 +32,17 @@ def drawMap(): #맵 생성
         playerCanvas.destroy()
         goalCanvas.destroy()
 
-        playerX = 0 #플레이어, 도착지점 좌표 초기화
-        playerY = 0
-        goalX = 0
-        goalY = 0 
+        playerX = None #변수 초기화
+        playerY = None
+        goalX = None
+        goalY = None
+        PWidth = None
+        PHeight = None
 
         mapX = int(XEntry.get()) #맵의 가로 타일 수
         mapY = int(YEntry.get()) #맵의 세로 타일 수
         
+        #타일 사이즈 지정
         tileSize = SCRSIZEY // mapY if SCRSIZEX/mapX > SCRSIZEY/mapY else SCRSIZEX // mapX #타일 크기를 화면비율에 맞추기
         if tileSize > 80: tileSize = 80 # 80 이상은 너무 크므로 100으로 고정
 
@@ -55,10 +51,10 @@ def drawMap(): #맵 생성
 
         for i in range(mapX):
             for j in range(mapY):
-                canvas.create_rectangle(tileSize * i, tileSize * j, tileSize * (i + 1), tileSize * (j + 1), fill = "black")
+                canvas.create_rectangle(tileSize * i, tileSize * j, tileSize * (i+1), tileSize * (j+1), fill = "black")
 
-        for i in range(mapX): canvas.create_line(tileSize * i, 0, tileSize * i, tileSize * (j + 1), fill = "gray") # 세로줄긋기
-        for j in range(mapY): canvas.create_line(0, tileSize * j, tileSize * (i + 1), tileSize * j, fill = "gray") # 가로줄긋기
+        for i in range(mapX): canvas.create_line(tileSize * i, 0, tileSize * i, tileSize * (j+1), fill = "gray") # 세로줄긋기
+        for j in range(mapY): canvas.create_line(0, tileSize * j, tileSize * (i+1), tileSize * j, fill = "gray") # 가로줄긋기
 
         canvas.bind("<Button-1>", colorChange) #클릭 / 드래그 감지
         canvas.bind("<B1-Motion>", colorChange) 
@@ -78,8 +74,6 @@ def isMap(): #클릭 좌표가 맵 안인지 판단
     else:
         return False
 
-
-
 def colorChange(event): #색 변경
 
     global canvas, mapArray
@@ -91,12 +85,12 @@ def colorChange(event): #색 변경
 
         if brushCheck: #타일 버튼을 클릭한 경우
             mapArray[x][y] = brushColor
-            canvas.create_rectangle(tileX + 1, tileY + 1, tileX + tileSize - 1, tileY + tileSize - 1, fill = colorTuple[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
+            canvas.create_rectangle(tileX + 1, tileY + 1, tileX + tileSize - 1, tileY + tileSize - 1, fill = colorList[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
         
         else: #스위치 버튼을 클릭 경우
-            mapArray[x][y] = colorTuple[brushColor][0]
+            mapArray[x][y] = colorList[brushColor][0]
             canvas.create_rectangle(tileX + 1, tileY + 1, tileX + tileSize - 1, tileY + tileSize - 1, fill = "black") #타일을 검정색으로 초기화
-            canvas.create_rectangle(tileX + tileSize/4, tileY + tileSize/4, tileX + tileSize*3/4, tileY + tileSize*3/4, fill = colorTuple[brushColor])
+            canvas.create_rectangle(tileX + tileSize/4, tileY + tileSize/4, tileX + tileSize*3/4, tileY + tileSize*3/4, fill = colorList[brushColor])
     
     return
 
@@ -117,41 +111,44 @@ def jump(height,time): #점프속도와 중력가속도 계산
     g = height * 8 / (time * time)
     return f"{v},{g},"
 
-def save(): #맵 파일 작성
-    try: # 오류 대비
-        os.makedirs("./maps/"+mapName.get(), exist_ok=True) # maps/맵이름 폴더 만들기
-        f = open("./maps/"+mapName.get()+"/map.dat","w") #맵이름 폴더 안에 dat 파일 생성
-        for y in range(mapY):
-            for x in range(mapX):
-                f.write(str(mapArray[x][y]))
-            f.write("\n") 
-        f.write("!" + f"{playerX},{playerY}")
-        f.write("\n@" + playerWidth.get() + "," + playerHeight.get())
-        f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
-        f.write("\n$" + background.get())
-        f.write("\n%" + f"{goalX},{goalY}")
-        f.close
-        return True
-    except: # 오류 발생시 실패를 알린다
-        print("저장 실패")
-        return False
+def save(fileName): #맵 파일 작성
+    if valueCheck():
+        try: # 오류 대비
+            os.makedirs(fileName+mapName.get(), exist_ok=True) # maps/맵이름 혹은 temp/맵이름 폴더 만들기
+            f = open(fileName+mapName.get()+"/map.dat","w") #맵이름 폴더 안에 dat 파일 생성
+            for y in range(mapY):
+                for x in range(mapX):
+                    f.write(str(mapArray[x][y]))
+                f.write("\n") 
+            f.write("!" + f"{playerX},{playerY}")
+            f.write("\n@" + f"{PWidth},{PHeight}")
+            f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
+            f.write("\n$" + background.get())
+            f.write("\n%" + f"{goalX},{goalY}")
+            f.close
+            return True
+        except: # 오류 발생시 실패를 알린다
+            print("저장 실패")
+            return False
     
 def player(event): #플레이어 생성
 
-    global playerCanvas, playerX, playerY
+    global playerCanvas, playerX, playerY, PWidth, PHeight
 
     if isMap():
 
         playerX = round((pyautogui.position()[0] - mapOrigin) / tileSize, 1)
         playerY = round(pyautogui.position()[1] / tileSize, 1)
-        positionLabel.config(text = f"{playerX},{playerY}")
 
-        if isNumeric(playerWidth.get()) and isNumeric(playerHeight.get()): #플레이어 키와 너비가 실수인지 확인
+        if isNumeric(playerWidth.get()) and isNumeric(playerHeight.get()) and float(playerWidth.get()) < mapX and float(playerHeight.get()) < mapY: #플레이어 키와 너비가 실수인지, 맵보다 작은지 확인
             
-            halfPWidth = float(playerWidth.get()) / 2 #플레이어 폭의 절반
-            halfPHeight = float(playerHeight.get()) / 2 #플레이어 높이의 절반
+            PWidth = float(playerWidth.get()) #플레이어 폭
+            PHeight = float(playerHeight.get()) #플레이어 높이
 
             #플레이어가 맵 밖에 있을 경우 맵 안으로 자동조정
+
+            halfPWidth = PWidth/2 #플레이어 폭의 절반
+            halfPHeight = PHeight/2 #플레이어 높이의 절반
 
             if playerX - halfPWidth <= 0: #플레이어 좌측이 맵 밖일 경우
                 playerX = halfPWidth + 0.1
@@ -167,35 +164,37 @@ def player(event): #플레이어 생성
             mouseY = (playerY - halfPHeight) * tileSize #Y
         
             playerCanvas.destroy()
-            playerCanvas = tk.Canvas(width = float(playerWidth.get()) * tileSize, height = float(playerHeight.get()) * tileSize)
-            playerCanvas.create_rectangle(0, 0, float(playerWidth.get()) * tileSize, float(playerHeight.get()) * tileSize, fill = "olive")
+            playerCanvas = tk.Canvas(width = PWidth * tileSize, height = PHeight * tileSize)
+            playerCanvas.create_rectangle(0, 0, PWidth * tileSize, PHeight * tileSize, fill = "olive")
             playerCanvas.place(x = mouseX , y = mouseY) 
             
             return
         
 def isNumeric(s): #문자열 실수 판단
     try:
-        float(s)
-        return True
+        if float(s) != 0:
+            return True
+        else:
+            return False
     except ValueError:
         return False
     
 def close(): #종료 함수
     window.destroy() #창 닫기
 
- 
 def goal(evnet): #도착지점 생성 (넓이 1*2)
 
     global goalCanvas, goalX, goalY
 
     if isMap(): #클릭 좌표가 맵 안인지
+
         goalX = round((pyautogui.position()[0] - mapOrigin) / tileSize, 2)
         goalY = round(pyautogui.position()[1] / tileSize, 2)
 
         #도착지점 X값 조정
-        if goalX - 0.5 <= 0: #도착지점이 맵을 넘어가는 경우
+        if goalX - 0.5 <= 0: #도착지점 좌측이 맵 밖일 경우
             goalX = 0.5
-        elif goalX + 0.5 >= mapX:
+        elif goalX + 0.5 >= mapX: #도착지점 우측이 맵 밖일 경우
             goalX = mapX - 0.5
         else: #도착지점 좌표 0.5 기준으로 조정
             if goalX - trunc(goalX) <= 0.25:
@@ -204,10 +203,11 @@ def goal(evnet): #도착지점 생성 (넓이 1*2)
                 goalX = trunc(goalX) + 0.5
             elif 0.75 < goalX - trunc(goalX):
                 goalX = trunc(goalX) + 1
+
         #도착지점 Y값 조정
-        if goalY - 1 <= 0: #도착지점이 맵을 넘어가는 경우
+        if goalY - 1 <= 0: #도착지점 하단이 맵 밖일 경우
             goalY = 1
-        elif goalY + 1 >= mapY :
+        elif goalY + 1 >= mapY: #도착지점 하단이 맵 밖일 경우
             goalY = mapY - 1
         else: #도착지점 좌표 0.5 기준으로 조정
             if goalY - trunc(goalY) <= 0.25: 
@@ -224,12 +224,25 @@ def goal(evnet): #도착지점 생성 (넓이 1*2)
 
         return
 
+def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
 
+    check = re.compile("[^a-zA-Z0-9]") #영어와 숫자가 아닌 값들을 검사
+    
+    try:
+        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(speed.get()), PWidth, background.get(), goalX] #검사할 값 목록
+
+        if all(valueList) and not check.search(mapName.get()): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
+            return True
+        else:
+            return False
+        
+    except: #값이 정의되지 않았을 때(예 : 맵 생성 버튼을 누르지 않음)
+        return False
 
 def runEditor():
 
-    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, positionLabel, canvas, playerCanvas, goalCanvas
-
+    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas
+    
     buttonX = SCRSIZEX / 35 #버튼 사이의 X축 간격
     buttonY = SCRSIZEY / 30 #버튼 사이의 Y축 간격
     
@@ -241,18 +254,17 @@ def runEditor():
 
     window.resizable(False, False) #창 크기 조절 가능 여부
     window.attributes("-fullscreen", True) #전체화면
-    window.bind("<Button-3>", player) #좌클릭 감지 -> player함수 실행
-    window.bind("<Button-2>", goal) #휠클릭 감지 -> goal함수 실행
+    window.bind("<Button-3>", player) #좌클릭 감지
+    window.bind("<Button-2>", goal) #휠클릭 감지
 
     #레이블 생성
     XLabel = tk.Label(window, text = "맵의 가로 길이 입력")
     YLabel = tk.Label(window, text = "맵의 세로 길이 입력")
-    positionLabel = tk.Label(window, text = "")
     playerWidthLabel = tk.Label(window, text = "플레이어 너비 입력")
     playerHeigheLabel = tk.Label(window, text = "플레이어 키 입력")
     jumpHeightLabel = tk.Label(window, text = "점프 높이 입력")
     jumpTimeLabel = tk.Label(window, text = "점프 시간 입력")
-    mapNameAlert = tk.Label(window, text = "저장할 이름 입력")
+    mapNameLabel = tk.Label(window, text = "저장할 이름 입력")
     speedLabel = tk.Label(window, text = "이동 속도 입력")
     backgroundLabel = tk.Label(window, text = "배경사진 이름 입력")
 
@@ -269,16 +281,17 @@ def runEditor():
 
     #버튼 생성
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
-    saveButton = tk.Button(window, text = "맵 저장", command = save)
-    closeButton = tk.Button(window, text = "종료", command = close)
+    saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./maps/"))
+    closeButton = tk.Button(window, text = "에디터 종료", command = close)
+    mapUpload = tk.Button(window, text = "맵업로드", command = lambda: save("./temp/"))
 
     colorButton = []
     for i in range(9):
-        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorTuple[i], width = 5))
+        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorList[i], width = 5))
 
     switchButton = []
     for i in range(7):
-        switchButton.append(tk.Button(window, command = lambda i=i: setSwitchColor(i+1), bg = colorTuple[i+1], width = 5, text = "스위치"))
+        switchButton.append(tk.Button(window, command = lambda i=i: setSwitchColor(i+1), bg = colorList[i+1], width = 5, text = "스위치"))
     
     #캔버스 생성
     canvas = tk.Canvas()
@@ -300,7 +313,6 @@ def runEditor():
     for i in range(7):
         switchButton[6-i].place(x = buttonX * 2, y = SCRSIZEY - buttonY * (i+3))
 
-    positionLabel.grid()
     playerHeigheLabel.grid()
     playerHeight.grid()
     playerWidthLabel.grid()
@@ -311,12 +323,13 @@ def runEditor():
     jumpTime.grid()
     speedLabel.grid()
     speed.grid()
-    mapNameAlert.grid()
+    mapNameLabel.grid()
     mapName.grid()
     backgroundLabel.grid()
     background.grid()
     saveButton.grid()
     closeButton.grid()
+    mapUpload.grid()
     window.mainloop()
 
     return
