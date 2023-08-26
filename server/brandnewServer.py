@@ -94,9 +94,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def run(self): #시작
         
-        heatBeatThread = threading.Thread(target = self.heartBeat, args=(self, )) #하트비트 시작
+        heatBeatThread = threading.Thread(target = self.heartBeat) #하트비트 시작
         heatBeatThread.start()
-        self.recvMsg() #요놈은 스레드가 아니라 본 함수다
+        recvThread = threading.Thread(target=self.recvMsg) #받기 시작
+        recvThread.start()
 
 
     def shutDown(self): #종료
@@ -110,25 +111,27 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
         while True:
             self.alive = False
-            self.soc.sendMsg("7777".encode()) #SIGPIPELINE(비정상적인 끊김을 확인하기 위한 heartbeat 기능)
-            time.sleep(3) #처리 중일 수 있으므로
+            time.sleep(30) #30쵸에 한번씩
             if self.alive:
                 self.alive = False #문제 없음
+                self.aliveStack = 0
+                print("잘 살아잇다!")
             else:
                 self.alive = False
                 self.aliveStack += 1 #스택 +1
+                print("어른이 말하면 들어야지!")
             
             
             
             
             if self.aliveStack > 3: #4번 이상 무시하면
-                print("no heart")
+                print("no heart") 
                 self.aliveStack = 0
                 self.shutDown()
                 break
             else:
                 pass
-            time.sleep(30) #30쵸에 한번씩
+            
         sys.exit() #현재 스레드 종료     
 
             
@@ -148,7 +151,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def joinRoom(self, roomName):
         if roomName in roomList:
             roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
-            self.inRoom = True
+            #self.inRoom = True
             self.roomHandler = roomName #클래스에 핸들러 설정
             return True
         return False
@@ -178,6 +181,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                 print(f"{datetime.now()} :  {self.addr}")
                 msg = data.decode()
 
+                if msg:
+                    self.alive = True #요청보내면 살아있다 표시
+
+
                 if not self.inEditor:
                     if msg == "9999": #연결 종료 사안
                         self.shutDown()
@@ -187,8 +194,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     if "2000" in msg: #에디터연결일 때
                         self.inEditor = True
 
-                    if msg == "7777": #hearBeat 응답
-                        self.alive = True
 
                     if not self.inRoom: #방 목록 탐색기에 있을때.
                         if msg == "0000":
@@ -267,7 +272,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 self.inEditor = False
                                 self.soc.close() #소켓 닫기
                                 break
-                            sys.exit() #스레드 종료
+                            
 
 
 
@@ -289,7 +294,7 @@ def checkMapList():
     result = '!'.join(os.listdir("./Maps")) #Maps 디렉토리의 맵 파일 이름들을 가져와 문자열로 만들기
     return result
 
-def evaler(self, cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때문에 함수로 만듬, 주로 room+방이름으로 된 방 객체를 호출하기 위함.
+def evaler(cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때문에 함수로 만듬, 주로 room+방이름으로 된 방 객체를 호출하기 위함.
     try:
         if cmd != "": #인젝션을 통한 해킹 방지를 위해, 정규식으로 해결!
             result = re.sub(r"[^a-zA-Z0-9]", "", cmd) #문자 숫자 빼고 전부 삭제 

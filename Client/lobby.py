@@ -466,13 +466,8 @@ class conTcp():
             print("연결 시작")
             self.tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
 
-<<<<<<< HEAD
             print("연결 성공")
             
-            sel.register(self.tcpSock, selectors.EVENT_READ, self.heartBeat)  #현재 소켓 이벤트 감지기에 등록, 메세지 받을 시 hearBeat 실행
-=======
-            print("연결 성공...")
->>>>>>> aa146aae54be5a2fd8a350dbd0904fb61aa7ec10
 
             return True #연결 되면, 연결 됨 표시
 
@@ -481,22 +476,6 @@ class conTcp():
             print("연결 실패!")
             return False #연결 실패시, 연결 실패 표시
 
-    def heartBeat(self):
-<<<<<<< HEAD
-        if self.tcpSock.recv(1024).decode() == "7777":
-            self.tcpSock.send("7777".encode())
-=======
-        while True:
-
-            data = self.tcpSock.recv(1024) #신호받음
-            data = data.decode()
-
-            if data == "7777":
-                self.tcpSock.send("0080".encode())
-
-            pass
-        pass
->>>>>>> aa146aae54be5a2fd8a350dbd0904fb61aa7ec10
     
 
     def setName(self, nickName): #메세지를 받는 핸들러
