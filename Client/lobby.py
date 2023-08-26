@@ -4,11 +4,12 @@ import editor
 import ctypes
 import re
 
+
 #요 아래는 서버용
 import socket
 import threading
 
-HOST = ""
+HOST = "172.16.121.57"
 PORT = 8080
 
 
@@ -88,6 +89,8 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
 currentImageList = []# 현재 사용중인 이미지의 리스트
 currentButtonList = [] # 현재 사용중인 버튼의 리스트
 
+global refreshRoomList #룸 새로고침 여부
+
 pygame.init() # initialize pygame
 
 clock = pygame.time.Clock() #FPS 설정
@@ -111,6 +114,14 @@ GREEN = [0, 255, 0]
 BLUE = [0, 0, 255]
 LIGHTBLUE = [200, 200, 255]
 
+#THEME1
+T1_BG = [24, 61, 61]
+T1_BTNBG = [4, 13, 18]
+T1_TEXT = [147, 177, 166]
+T1_OBJ = [92, 131, 116]
+
+
+
 def quit(): #종료함수
     global done
     done = True
@@ -123,10 +134,10 @@ def lobbyButtons(): #처음 시작 장면
     global currentundo
     currentundo = None
 
-    currentButtonList.append(Button( BLACK,"SINGLE PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
-    currentButtonList.append(Button( BLACK,"MULTI PLAYER", WHITE, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
-    currentButtonList.append(Button( BLACK,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, serverRoomList, 1))
-    currentButtonList.append(Button( BLACK,"QUIT", WHITE, SCRSIZEX // 9, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
+    currentButtonList.append(Button( T1_OBJ,"SINGLE PLAYER", T1_BTNBG, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
+    currentButtonList.append(Button( T1_OBJ,"MULTI PLAYER", T1_BTNBG, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
+    #currentButtonList.append(Button( T1_BTNBG,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, serverRoomList, 1))
+    currentButtonList.append(Button( T1_OBJ,"QUIT", T1_BTNBG, SCRSIZEX // 9, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
 
 def singleButtons(): #싱글플레이
@@ -141,10 +152,10 @@ def singleButtons(): #싱글플레이
     currentImageList.append(Image("custom", SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2 ))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
-    currentButtonList.append(Button( BLACK,"STORY", WHITE, SCRSIZEX // 21, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
-    currentButtonList.append(Button( BLACK,"CUSTOM", WHITE, SCRSIZEX // 30,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, editor.runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"STORY", WHITE, SCRSIZEX // 21, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
+    currentButtonList.append(Button( T1_BTNBG,"CUSTOM", WHITE, SCRSIZEX // 30,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, editor.runEditor))
     return
 
 def storyButtons(): #스토리모드 = 챕터선택창
@@ -154,14 +165,14 @@ def storyButtons(): #스토리모드 = 챕터선택창
     global currentundo
     currentundo = singleButtons
 
-    currentButtonList.append(Button( GRAY,"SELECT CHAPTER", BLACK, SCRSIZEX // 20, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
+    currentButtonList.append(Button( T1_OBJ,"SELECT CHAPTER", T1_TEXT, SCRSIZEX // 20, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
     for i in range(5):
         currentImageList.append(Image(f"chaptericons/{i+1}", SCRSIZEX * (i * 8 + 1) // 40 , SCRSIZEY // 2 - SCRSIZEX * 3 // 40, SCRSIZEX * 3 // 20, SCRSIZEX * 3 // 20))
-        currentButtonList.append(Button( GRAY, "", BLACK, 0, SCRSIZEX * (i * 8 + 1) // 40, SCRSIZEY // 2 - SCRSIZEX * 3 // 40, SCRSIZEX * 3 // 20, SCRSIZEX * 3 // 20, chapterButtons, i + 1))
+        currentButtonList.append(Button( GRAY, "", T1_BTNBG, 0, SCRSIZEX * (i * 8 + 1) // 40, SCRSIZEY // 2 - SCRSIZEX * 3 // 40, SCRSIZEX * 3 // 20, SCRSIZEX * 3 // 20, chapterButtons, i + 1))
 
     return
 
@@ -184,10 +195,10 @@ def chapterButtons(chapter:int): #챕터 내부 = 레벨선택창
                 clearedList = list(map(lambda x: int(x),temp.split(","))) #문자열의 정수들을 리스트에 저장 
 
 
-    currentButtonList.append(Button( GRAY,"SELECT LEVEL", BLACK, SCRSIZEX // 17, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
+    currentButtonList.append(Button( T1_OBJ,"SELECT LEVEL", T1_TEXT, SCRSIZEX // 17, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
     
     
     margin = SCRSIZEX // (levelCount * 4)
@@ -244,18 +255,19 @@ def undo():
 def multiButtons(): #멀티플레이, 시작 전 화면
 
     regularFilter = re.compile("^a-zA-Z0-9") #문자나 숫자 아닌것들 필터
-    name = "" #이름 변수 설정
+    nickName = "" #이름 변수 설정
 
     flagEntering = False #이름입력창에서 나가는 트리거
 
     font = pygame.font.SysFont(None, 20, False, False) #폰트 설정 (크기 20)
 
-    nameScrenner = Button(None, name, WHITE, 0, SCRSIZEX//4, SCRSIZEY//4, len(name) * 30, 60)
-    nameRule1 = Button(None, "Nickname must be 12 characters or less.", WHITE, 0, SCRSIZEX//4, SCRSIZEY //2, SCRSIZEY * 3 // 4, SCRSIZEY//20)
-    nameRule2 = Button(None, "You can't use anything other than English and numbers", WHITE, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+    nameScrenner = Button(None, nickName, T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//4, len(nickName) * 30, 60)
+    nameRule1 = Button(None, "Nickname must be 12 characters or less.", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY //2, SCRSIZEY * 3 // 4, SCRSIZEY//20)
+    nameRule2 = Button(None, "You can't use anything other than English and numbers", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
     
+    nameError = Button(None, "Error on your Name, please check out your name", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
 
-    connecting = Button(None, "Nickname must be 12 characters or less.", WHITE, 0, SCRSIZEX//2, SCRSIZEY //2, SCRSIZEY * 3 // 8, SCRSIZEY//20) #서버 연결 메세지 표시
+    connecting = Button(None, "Nickname must be 12 characters or less.", T1_TEXT, 0, SCRSIZEX//2, SCRSIZEY //2, SCRSIZEY * 3 // 8, SCRSIZEY//20) #서버 연결 메세지 표시
 
     connectError = font.render("Fail to connect, shuting down game..", True, [255, 255, 255]) #서버 연결 메세지 표시
 
@@ -267,7 +279,7 @@ def multiButtons(): #멀티플레이, 시작 전 화면
                 if event.key == pygame.K_SPACE: #스페이스면
                     pass #무시
                 elif event.key == pygame.K_RETURN: #엔터면
-                    if not regularFilter.search(name) and len(name) <= 12: #name함수에 영어나 숫자외 다른게 없고 12자 내면
+                    if not regularFilter.search(nickName) and len(nickName) <= 12: #name함수에 영어나 숫자외 다른게 없고 12자 내면
                         flagEntering = True #반복 중단(다음 단계 진행)
                     else:
                         pass
@@ -276,15 +288,15 @@ def multiButtons(): #멀티플레이, 시작 전 화면
                     done = True
 
                 elif event.key == pygame.K_BACKSPACE: #뒤로가기
-                    name = name[:-1] #맨 오른쪽 빼고 저장
+                    nickName = nickName[:-1] #맨 오른쪽 빼고 저장
                 else:
-                    if len(name) < 12: #12글자 미만일 때만
-                        name += event.unicode #쓰기
+                    if len(nickName) < 12: #12글자 미만일 때만
+                        nickName += event.unicode #쓰기
             
             #이름 지정
-            nameScrenner = Button(None, name, WHITE, 0, SCRSIZEX//4, SCRSIZEY//4, len(name) * 30, 60)
+            nameScrenner = Button(None, nickName, T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//4, len(nickName) * 30, 60)
         
-        screen.fill(BLACK) #검은 화면
+        screen.fill(T1_BG) #검은 화면
         
         #화면에 띄우기
         nameScrenner.displayButton() 
@@ -295,32 +307,40 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
     if done:
         return
-    
-    try : 
-        tcpHandler = conTcp(name=name) #tcp 핸들러 시작 (반복문 벗어나면)
-        while True:
-            screen.fill([0, 0, 0]) #검은 화면
+     
+    tcpHandler = conTcp() #tcp 핸들러 시작 (반복문 벗어나면)
+    while True:
+        screen.fill(T1_BG) #검은 화면
 
-            connecting.displayButton()
-            #screen.blit(connecting, (SCRSIZEX // 2, SCRSIZEY // 2)) #대기 메세지 출력
+        connecting.displayButton()
+        #screen.blit(connecting, (SCRSIZEX // 2, SCRSIZEY // 2)) #대기 메세지 출력
 
-            if(tcpHandler.run()): #run했을때, 실행 완료(True)면
-                return #대충 매뉴화면 나오게 하는 함수 (미 구현)
-            
-            else:
-                screen.fill([0, 0, 0]) #검은 화면 (기존 메세지 지우기)
-                screen.bilt(connectError, (SCRSIZEX // 2, SCRSIZEY // 2)) #오류 메세지 출력
-
+        if(tcpHandler.run()): #run했을때, 실행 완료(True)면
+            if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
                 
+                refreshRoomList = False
+                serverRoomList(1, tcpHandler) #대충 매뉴화면 나오게 하는 함수
+                break #반복문 멈추기
+            else:
+                screen.fill(T1_BG) 
+                nameError.displayButton() #이름 재설정 부탁해요 띄우기.
+                done = False
+                flagEntering = False #이름 설정창으로 돌아가기
+                break
+
+        else:
+            screen.fill(T1_BG) #검은 화면 (기존 메세지 지우기)
+            screen.bilt(connectError, (SCRSIZEX // 2, SCRSIZEY // 2)) #오류 메세지 출력
             
-            pygame.display.flip()
-    except:
-        print("서버 연결 오류")
+
+            
+        
+        pygame.display.flip()
 
     return
                 
 
-def serverRoomList(page):
+def serverRoomList(page, handler: classmethod): 
 
     global currentImageList, currentButtonList
     currentImageList, currentButtonList = [],[] #초기화
@@ -332,26 +352,29 @@ def serverRoomList(page):
     currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
     
     currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #새로고침 버튼
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, refreshRoomList = False)) #새로고침 버튼
 
     #임시 방 리스트(수정예정)
-    roomList = ["dlwodyd", "rlfhrgus", "xlfhrtls", "rlrlrlfhrgus", "dkdlrhsks", "andxoddl", "1", "2", "3", "4", "5", "6"]
+    
+    if not refreshRoomList:
+        roomList = handler.checkRoomList() #리스트를 반환한다,
+        print(roomList)
+        roomCount = len(roomList)
 
-    roomCount = len(roomList)
+        pageCount = (roomCount - 1) // 5 + 1
 
-    pageCount = (roomCount - 1) // 5 + 1
+        if roomCount == 0: #방이 없네
+            refreshRoomList = True
+            pass
 
-    if roomCount == 0: #방이 없네
-        pass
+        else: #방이 있다
+            currentPageRooms = roomList[page * 5 - 5:page * 5 - 1] #현재 페이지의 방 목록 불러오기
 
-    else: #방이 있다
-        currentPageRooms = roomList[page * 5 - 5:page * 5 - 1] #현재 페이지의 방 목록 불러오기
-
-        for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
-            roomName = currentPageRooms[i]
-            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8)) #undo 버튼
-
-        pass
+            for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
+                roomName = currentPageRooms[i]
+                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8)) #undo 버튼
+            refreshRoomList = True
+            pass
 
         
 
@@ -370,8 +393,7 @@ def test():
 
 
 class conTcp():
-    def __init__(self, name: str):
-        self.name = name #클래스에 이름 저장.
+    def __init__(self):
         self.players = []
 
 
@@ -388,11 +410,12 @@ class conTcp():
         return True #연결 되면, 연결 됨 표시
     
 
-    def setName(self, name): #메세지를 받는 핸들러
-        self.tcpSock.send(f"0001{name}".encode())
+    def setName(self, nickName): #메세지를 받는 핸들러
+        self.tcpSock.send(f"0001{nickName}".encode())
         data = self.tcpSock.recv(1024)
         if(data.decode() == "0080"):
             del data #변수 참조 삭제
+            self.nickName = nickName
             return True #성공 메세지 받을 시
         else:
             del data
@@ -402,8 +425,12 @@ class conTcp():
         self.tcpSock.send("0002".encode()) #룸 리스트 받기 형식 > 방이름!방이름!
         data = self.tcpSock.recv(1024)
         data = data.decode()
-        return data.split("!")
-    
+        if data == "NULL":
+            return ["EMPTY"]
+        else:
+            return data.split("!")
+
+
     def makeRoom(self, roomCode: str): #방 만들기 (서버 상에서 자동으로 방 참여가 된다.) 이름 규칙 : 12자 내외 영문만
         self.tcpSock.send(f"0003{roomCode}".encode()) #방 생성 요청
         data = self.tcpSock.recv(1024)
@@ -446,7 +473,7 @@ while not done: # loop the game
 
     clock.tick(60) #FPS는 60으로
 
-    screen.fill(LIGHTBLUE) #임시 배경색 (차후에 이미지로 변경될수 있음)
+    screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
 
     for button in currentButtonList: #버튼들 모두 출력
         button.displayButton()

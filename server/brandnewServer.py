@@ -5,7 +5,7 @@ import os
 import sys
 import selectors
 
-HOST = "172.30.1.72"
+HOST = "172.16.121.57"
 PORT = 8080
 
 sele = selectors.DefaultSelector() #셀렉터 생성
@@ -15,6 +15,7 @@ sele = selectors.DefaultSelector() #셀렉터 생성
 global roomList
 roomList = []
 
+players = []
 
 class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유지 한채로, UDP소켓 열기.
     def __init__(self, roomName): #Room(roomName)으로 객체 만들기
@@ -78,13 +79,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         self.soc = soc
         self.inRoom = False
         self.inGamePlayer = False
-        print("실행 한다")
-        self.run()
-        print("실행 했다.")
         self.addr = addr[0]
         self.name = "" #플레이어 닉네임
         self.inEditor = False #에디터화면 일때
-
+        self.recvMsg() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
         
 
     
@@ -121,19 +119,20 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def checkRoom(self):
         print("checkroom")
         result = '!'.join(x.roomName for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
-        return result #결과 값 반환.
+        if result:
+            return result #결과 값 반환.
+        else:
+            return "NULL"
 
-
-    def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러
+    def recvMsg(self: classmethod): #클라이언트로 부터의 메세지 수신 핸들러
             while True:
-                
-                print("data listening..")
                 data = self.soc.recv(1024)
-                print("get data")
+                print(f"on {self.addr}")
                 msg = data.decode()
 
                 if not self.inEditor:
                     if msg == "9999": #연결 종료 사안
+                        players.remove(self.name)
                         self.soc.close() #소켓 닫기
                         del self
                         sys.exit() #현재 스레드 종료
@@ -148,8 +147,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             print("ok")
                             self.soc.send("0080".encode()) #OK sign
                         elif "0001" in msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
-                            self.name = msg.replace("0001", "") #잘라내기 이름 설정
-                            self.soc.send("0080".encode()) #OK sign
+                            if not msg in players:
+                                self.name = msg.replace("0001", "") #잘라내기 이름 설정
+                                players.append(self.name) #플레이어 목록에 이름추가
+                                self.soc.send("0080".encode()) #OK sign
+
+                            else:
+                                self.soc.send("0000")
                         elif msg == "0002": #방 목록 수신
                             result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
                             self.soc.send(result.encode())
@@ -226,10 +230,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         return True
 
 
-    def run(self):
-        msgRecv = threading.Thread(target = self.recvMsg, args = ())
-        msgRecv.start()
-
+   # def run(self):
+        #msgRecv = threading.Thread(target = self.recvMsg, args = (self,)) #메세지 받는 스레드 시작 (스레드는 개별 객체라 self를 보내줘야 함)
+        #msgRecv.start()
+    #    self.recvMsg()
 
 
     
