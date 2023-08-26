@@ -252,13 +252,10 @@ def openStoryMap(chapter: int,level: int): #[챕터번호, 레벨번호]
     
     return clear
 
-def undo(parameter = None):
+def undo():
 
     if currentundo != None: #현재 undo로 지정된 함수 실행
-        if parameter == None:
-            currentundo()
-        else:
-            currentundo(parameter)
+        currentundo()
 
     return
 
@@ -318,7 +315,7 @@ def multiButtons(): #멀티플레이, 시작 전 화면
     global connected
     
     if connected: #연결이 되어있다면, 바로 방 목록으로 ㄱㄱ
-        serverRoomList(1, tcpHandler)
+        serverRoomList(tcpHandler, 1)
 
     nameError = Button(None, "Error on your Name, please check out your name", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
 
@@ -348,7 +345,7 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
         if connected:
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
-                serverRoomList(1, tcpHandler) #대충 매뉴화면 나오게 하는 함수
+                serverRoomList(tcpHandler, 1) #대충 매뉴화면 나오게 하는 함수
 
         elif tcpHandler.run(): #run했을때, 실행 완료(True)면
 
@@ -357,7 +354,7 @@ def multiButtons(): #멀티플레이, 시작 전 화면
             print("here")
 
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
-                serverRoomList(1, tcpHandler) #대충 매뉴화면 나오게 하는 함수
+                serverRoomList(tcpHandler) #대충 매뉴화면 나오게 하는 함수
                 
             else:
                 screen.fill(T1_BG) 
@@ -382,7 +379,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
     currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
     
     currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverRoomList, 1, handler)) #새로고침 버튼
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverRoomList, handler, 1)) #새로고침 버튼
 
     #임시 방 리스트(수정예정)
     
@@ -404,6 +401,15 @@ def serverRoomList(handler: classmethod, page:int = 1):
             roomName = currentPageRooms[i]
             currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8)) #undo 버튼
         pass
+    
+    if page != 1: #1페이지가 아니라면
+            #왼쪽으로 버튼 추가
+            currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList, handler, page - 1))
+
+    if page != pageCount: #끝 페이지가 아니라면
+        #오른쪽으로 버튼 추가
+        currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList,handler, page + 1))
+    pass
 
     #방 추가 버튼
     currentButtonList.append(Button( GRAY,"MAKE ROOM", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
@@ -460,19 +466,37 @@ class conTcp():
             print("연결 시작")
             self.tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
 
+<<<<<<< HEAD
             print("연결 성공")
             
             sel.register(self.tcpSock, selectors.EVENT_READ, self.heartBeat)  #현재 소켓 이벤트 감지기에 등록, 메세지 받을 시 hearBeat 실행
+=======
+            print("연결 성공...")
+>>>>>>> aa146aae54be5a2fd8a350dbd0904fb61aa7ec10
 
             return True #연결 되면, 연결 됨 표시
 
 
         except: #연결 실패시
+            print("연결 실패!")
             return False #연결 실패시, 연결 실패 표시
 
     def heartBeat(self):
+<<<<<<< HEAD
         if self.tcpSock.recv(1024).decode() == "7777":
             self.tcpSock.send("7777".encode())
+=======
+        while True:
+
+            data = self.tcpSock.recv(1024) #신호받음
+            data = data.decode()
+
+            if data == "7777":
+                self.tcpSock.send("0080".encode())
+
+            pass
+        pass
+>>>>>>> aa146aae54be5a2fd8a350dbd0904fb61aa7ec10
     
 
     def setName(self, nickName): #메세지를 받는 핸들러
