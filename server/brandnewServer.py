@@ -19,6 +19,7 @@ roomList = []
 
 players = []
 
+
 class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유지 한채로, UDP소켓 열기.
     def __init__(self, roomName): #Room(roomName)으로 객체 만들기
         self.whos = {} #ip와 핸들러를 모아놓은 딕셔너리 > ip(식별자) : 핸들러
@@ -84,13 +85,18 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         self.addr = addr[0]
         self.name = "" #플레이어 닉네임
         self.inEditor = False #에디터화면 일때
-        self.recvMsg() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
+        self.alive = True
+        self.aliveStack = 0 #최대 몇번까지 봐줄건가
+
+        self.run() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
+        
         
 
-    def run(self):
-        self.recvMsg()
+    def run(self): #시작
+        
         heatBeatThread = threading.Thread(target = self.heartBeat, args=(self, )) #하트비트 시작
         heatBeatThread.start()
+        self.recvMsg() #요놈은 스레드가 아니라 본 함수다
 
 
     def shutDown(self): #종료
@@ -103,13 +109,25 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
         while True:
+            self.alive = False
             self.soc.sendMsg("7777".encode()) #SIGPIPELINE(비정상적인 끊김을 확인하기 위한 heartbeat 기능)
-            if self.soc.recv(1024).decode() == "0080":
-                pass
+            time.sleep(3) #처리 중일 수 있으므로
+            if self.alive:
+                self.alive = False #문제 없음
             else:
+                self.alive = False
+                self.aliveStack += 1 #스택 +1
+            
+            
+            
+            
+            if self.aliveStack > 3: #4번 이상 무시하면
                 print("no heart")
+                self.aliveStack = 0
                 self.shutDown()
                 break
+            else:
+                pass
             time.sleep(30) #30쵸에 한번씩
         sys.exit() #현재 스레드 종료     
 
@@ -169,6 +187,8 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     if "2000" in msg: #에디터연결일 때
                         self.inEditor = True
 
+                    if msg == "7777": #hearBeat 응답
+                        self.alive = True
 
                     if not self.inRoom: #방 목록 탐색기에 있을때.
                         if msg == "0000":
