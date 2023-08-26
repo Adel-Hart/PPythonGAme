@@ -95,9 +95,9 @@ class conTcp():
             del data
             return False
         
-    def leaveRoom(self, roomCode: str):
+    def leaveRoom(self):
 
-        self.tcpSock.send(f"1003{roomCode}".encode()) #방 나가기 요청
+        self.tcpSock.send("1003".encode()) #방 나가기 요청
 
         data = self.tcpSock.recv(1024)
 
@@ -357,6 +357,8 @@ def undo():
 
 def getString(filter, lengthLimit = 12):
 
+    print("getst")
+
     string = ""
 
     strDone = False    
@@ -429,11 +431,8 @@ def multiButtons(): #멀티플레이, 시작 전 화면
         return
      
     tcpHandler = conTcp() #tcp 핸들러 시작 (반복문 벗어나면)
-
-    while True:
-
-        
-
+    nameDone = False
+    while not nameDone:
         nickName = getString(re.compile('[a-zA-Z0-9]+')) #이름 변수 설정
 
         print("이름 입력 완료")
@@ -452,11 +451,12 @@ def multiButtons(): #멀티플레이, 시작 전 화면
                 serverRoomList(tcpHandler) #대충 매뉴화면 나오게 하는 함수
 
         elif tcpHandler.run(): #run했을때, 실행 완료(True)면
-
+            connected = True
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
                 
                 print("이름 설정 성공")
                 serverRoomList(tcpHandler) #방 목록 나오는 함수
+                nameDone = True
                 
             else:
                 screen.fill(T1_BG) 
@@ -465,7 +465,7 @@ def multiButtons(): #멀티플레이, 시작 전 화면
             print("이름 설정 실패")
             return    
         
-        connected = True
+        
 
         pygame.display.update()
 
@@ -523,7 +523,9 @@ def serverRoomList(handler: classmethod, page:int = 1):
 
 def serverMakeRoom(handler: classmethod):
 
-    while True: #계속 반복
+    roomDone = False
+
+    while not roomDone: #계속 반복
 
         print("방만드는중")
 
@@ -536,6 +538,8 @@ def serverMakeRoom(handler: classmethod):
         
         if handler.makeRoom(roomName): #방 만들기
             print("만들기 성공")
+            roomDone = True
+
             global joinedRoomName
             joinedRoomName = roomName
             serverJoinedRoom(handler)
@@ -550,11 +554,13 @@ def serverJoinedRoom(handler: classmethod):
     print(joinedRoomName, "들어옴")
 
     roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, 0, len(joinedRoomName) * 75, 150)
-
+    
     while joinedRoomName != None:
         
         screen.fill(T1_BG)
         roomTitleButton.displayButton()
+
+        pygame.display.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # 종료 이벤트
@@ -562,7 +568,7 @@ def serverJoinedRoom(handler: classmethod):
                 done=True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
-                    if handler.leaveRoom(joinedRoomName):
+                    if handler.leaveRoom():
                         print(joinedRoomName, "나가기 완료")
                         joinedRoomName = None
                         return
