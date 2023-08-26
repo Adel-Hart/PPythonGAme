@@ -4,8 +4,10 @@ import re #정규식
 import os
 import sys
 import selectors
+from datetime import datetime
+import time
 
-HOST = "172.16.121.57"
+HOST = "175.201.42.104"
 PORT = 8080
 
 sele = selectors.DefaultSelector() #셀렉터 생성
@@ -85,7 +87,34 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         self.recvMsg() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
         
 
+    def run(self):
+        self.recvMsg()
+        heatBeatThread = threading.Thread(target = self.heartBeat, args=(self, )) #하트비트 시작
+        heatBeatThread.start()
+
+
+    def shutDown(self): #종료
+        
+        self.soc.close()
+        players.remove(self.name)
+        print("shutdown the thread")
+        del self
+
     
+    def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
+        while True:
+            self.soc.sendMsg("7777".encode()) #SIGPIPELINE(비정상적인 끊김을 확인하기 위한 heartbeat 기능)
+            if self.soc.recv(1024).decode() == "0080":
+                pass
+            else:
+                print("no heart")
+                self.shutDown()
+                break
+            time.sleep(30) #30쵸에 한번씩
+        sys.exit() #현재 스레드 종료     
+
+            
+
 
     def makeRoom(self, roomName): #방 생성
         if not roomName in roomList:
@@ -116,6 +145,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         
         return True
 
+
     def checkRoom(self):
         print("checkroom")
         result = '!'.join(x.roomName for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
@@ -127,14 +157,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def recvMsg(self: classmethod): #클라이언트로 부터의 메세지 수신 핸들러
             while True:
                 data = self.soc.recv(1024)
-                print(f"on {self.addr}")
+                print(f"{datetime.now()} :  {self.addr}")
                 msg = data.decode()
 
                 if not self.inEditor:
                     if msg == "9999": #연결 종료 사안
-                        players.remove(self.name)
-                        self.soc.close() #소켓 닫기
-                        del self
+                        self.shutDown()
                         sys.exit() #현재 스레드 종료
                         
 
@@ -244,7 +272,7 @@ def checkMapList():
 def evaler(self, cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때문에 함수로 만듬, 주로 room+방이름으로 된 방 객체를 호출하기 위함.
     try:
         if cmd != "": #인젝션을 통한 해킹 방지를 위해, 정규식으로 해결!
-            result = re.sub(r"[^a-zA-Z0-9_]", "", cmd) #문자 숫자 빼고 전부 삭제 
+            result = re.sub(r"[^a-zA-Z0-9]", "", cmd) #문자 숫자 빼고 전부 삭제 
             return eval("room"+cmd)
         else:
             return False
@@ -352,7 +380,7 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
 '''
                 
 
-
+    
 
 
 
