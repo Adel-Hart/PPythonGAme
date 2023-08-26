@@ -15,12 +15,109 @@ PORT = 8080
 
 connected = False #서버 연결 여부
 
+joinedRoomName = None #현재 접속중인 방의 이름
 
 sel = selectors.DefaultSelector() #셀렉터 초기화
 
 
 def darkColor(color): #색을 더 어둡게 
     return list(map(lambda x: x / 2, color)) #RGB 값을 모두 절반으로
+
+class conTcp():
+    def __init__(self):
+        self.players = []
+
+
+    def run(self): #연결 실행함수
+
+        self.tcpSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #소켓 생성
+
+        try:
+            print("연결 시작")
+            self.tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
+
+            print("연결 성공")
+            
+            sel.register(self.tcpSock, selectors.EVENT_READ, self.heartBeat)  #현재 소켓 이벤트 감지기에 등록, 메세지 받을 시 hearBeat 실행
+
+            return True #연결 되면, 연결 됨 표시
+
+
+        except: #연결 실패시
+            print("연결 실패!")
+            return False #연결 실패시, 연결 실패 표시
+
+    def heartBeat(self):
+        while True:
+
+            data = self.tcpSock.recv(1024) #신호받음
+            data = data.decode()
+
+            if data == "7777":
+                self.tcpSock.send("0080".encode())
+
+            pass
+        pass
+    
+
+    def setName(self, nickName): #메세지를 받는 핸들러
+
+        self.tcpSock.send(f"0001{nickName}".encode())
+
+        data = self.tcpSock.recv(1024)
+
+        if(data.decode() == "0080"):
+            del data #변수 참조 삭제
+            self.nickName = nickName
+            return True #성공 메세지 받을 시
+        else:
+            del data
+            return False
+    
+    def checkRoomList(self):
+        self.tcpSock.send("0002".encode()) #룸 리스트 받기 형식 > 방이름!방이름!
+        data = self.tcpSock.recv(1024)
+        data = data.decode()
+        if data == "NULL":
+            return ["EMPTY"]
+        
+        else:
+            return data.split("!")
+
+
+    def makeRoom(self, roomCode: str): #방 만들기 (서버 상에서 자동으로 방 참여가 된다.) 이름 규칙 : 12자 내외 영문만
+        self.tcpSock.send(f"0003{roomCode}".encode()) #방 생성 요청
+
+        data = self.tcpSock.recv(1024)
+
+        if(data.decode() == "0080"):
+            del data #변수 참조 삭제
+            return True #성공 메세지 받을 시 >> 클라이언트 측 핸들러에서, 룸 용 함수 실행 필요
+        else:
+            del data
+            return False
+        
+    def joinRoom(self, roomCode: str): #방 참여요청
+        self.tcpSock.send(f"0004{roomCode}".encode()) #방 생성 요청 >> "
+        data = self.tcpSock.recv(1024)
+        if(data.decode() == "0080"):
+            del data #변수 참조 삭제
+            return True #성공 메세지 받을 시
+        else:
+            del data
+            return False
+        
+
+
+    def inRoom(self): #방에 접속시 실행됨, 송신 스레드와 수신 스레드가 실행됨
+        return
+
+    def recvRoom(self): #받는 명령어 핸들러
+        data = self.tcpSock.recv(1024).decode()
+        if data.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
+            cmd = data.split(" ")[1]
+            if cmd.startswith("IN"): #누군가 들어왔다는 신호인 경우.
+                self.players.append(cmd.replace("IN", "")) #들어온 사람을 플레이어 리스트에 추가.
 
 class Image: #화면에 표시할 기능없는 이미지
     def __init__(self, imageName:str, posX :int, posY:int, width:int, height:int):    
@@ -263,7 +360,7 @@ def getString(filter, lengthLimit = 12):
 
     string = ""
 
-    done = False    
+    strDone = False    
 
     screen.fill(T1_BG) #배경 띄우기
 
@@ -276,14 +373,19 @@ def getString(filter, lengthLimit = 12):
 
     behindScreener = Button(WHITE, "            ", BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * 45, 90) #이름 입력칸 뒤에 올 것(리셋을 위해)
 
-    while not done: #먼저 이름을 입력 받은 후 서버와 통신한다.
+    while not strDone: #먼저 이름을 입력 받은 후 서버와 통신한다.
         for event in pygame.event.get():
+            if event.type == pygame.QUIT: # 종료 이벤트
+                global done
+                done=True
+                return
+
             if event.type == pygame.KEYDOWN: #키가 눌렸을 때
                 if event.key == pygame.K_SPACE: #스페이스면
                     pass #무시
 
                 elif event.key == pygame.K_RETURN: #엔터면
-                    done = True
+                    strDone = True
                 
                 elif event.key == pygame.K_ESCAPE: #ESC면
                     return "/ESC" #탈출
@@ -349,12 +451,12 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
         elif tcpHandler.run(): #run했을때, 실행 완료(True)면
 
-            connected = True
-
             print("here")
 
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
-                serverRoomList(tcpHandler) #대충 매뉴화면 나오게 하는 함수
+                connected = True
+                print("이름 설정 성공")
+                serverRoomList(tcpHandler, 1) #방 목록 나오는 함수
                 
             else:
                 screen.fill(T1_BG) 
@@ -364,10 +466,12 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
         pygame.display.update()
 
-    return
+    
                 
 
 def serverRoomList(handler: classmethod, page:int = 1): 
+
+    print("srl")
 
     global currentImageList, currentButtonList
     currentImageList, currentButtonList = [],[] #초기화
@@ -425,15 +529,24 @@ def serverMakeRoom(handler: classmethod):
         
         else:
             if handler.makeRoom(roomName): #방 만들기
-                return #성공시 함수 종료
+                global joinedRoomName
+                joinedRoomName = roomName
+                serverJoinedRoom(handler, roomName)
+                return #함수 종료
             
 def serverJoinedRoom(handler: classmethod):
 
-    global currentundo
-    currentundo = multiButtons
 
-    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+
+    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, joinedRoomName * 75, 150)
+
+    while True:
+        
+        
+        roomTitleButton.displayButton()
+
+
+
 
     return
 
@@ -453,110 +566,6 @@ def test():
 
 
 
-class conTcp():
-    def __init__(self):
-        self.players = []
-
-
-    def run(self): #연결 실행함수
-
-        self.tcpSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #소켓 생성
-
-        try:
-            print("연결 시작")
-            self.tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
-
-<<<<<<< HEAD
-            print("연결 성공")
-            
-            sel.register(self.tcpSock, selectors.EVENT_READ, self.heartBeat)  #현재 소켓 이벤트 감지기에 등록, 메세지 받을 시 hearBeat 실행
-=======
-            print("연결 성공...")
->>>>>>> aa146aae54be5a2fd8a350dbd0904fb61aa7ec10
-
-            return True #연결 되면, 연결 됨 표시
-
-
-        except: #연결 실패시
-            print("연결 실패!")
-            return False #연결 실패시, 연결 실패 표시
-
-    def heartBeat(self):
-<<<<<<< HEAD
-        if self.tcpSock.recv(1024).decode() == "7777":
-            self.tcpSock.send("7777".encode())
-=======
-        while True:
-
-            data = self.tcpSock.recv(1024) #신호받음
-            data = data.decode()
-
-            if data == "7777":
-                self.tcpSock.send("0080".encode())
-
-            pass
-        pass
->>>>>>> aa146aae54be5a2fd8a350dbd0904fb61aa7ec10
-    
-
-    def setName(self, nickName): #메세지를 받는 핸들러
-
-        self.tcpSock.send(f"0001{nickName}".encode())
-
-        data = self.tcpSock.recv(1024)
-
-        if(data.decode() == "0080"):
-            del data #변수 참조 삭제
-            self.nickName = nickName
-            return True #성공 메세지 받을 시
-        else:
-            del data
-            return False
-    
-    def checkRoomList(self):
-        self.tcpSock.send("0002".encode()) #룸 리스트 받기 형식 > 방이름!방이름!
-        data = self.tcpSock.recv(1024)
-        data = data.decode()
-        if data == "NULL":
-            return ["EMPTY"]
-        
-        else:
-            return data.split("!")
-
-
-    def makeRoom(self, roomCode: str): #방 만들기 (서버 상에서 자동으로 방 참여가 된다.) 이름 규칙 : 12자 내외 영문만
-        self.tcpSock.send(f"0003{roomCode}".encode()) #방 생성 요청
-
-        data = self.tcpSock.recv(1024)
-
-        if(data.decode() == "0080"):
-            del data #변수 참조 삭제
-            return True #성공 메세지 받을 시 >> 클라이언트 측 핸들러에서, 룸 용 함수 실행 필요
-        else:
-            del data
-            return False
-        
-    def joinRoom(self, roomCode: str): #방 참여요청
-        self.tcpSock.send(f"0004{roomCode}".encode()) #방 생성 요청 >> "
-        data = self.tcpSock.recv(1024)
-        if(data.decode() == "0080"):
-            del data #변수 참조 삭제
-            return True #성공 메세지 받을 시
-        else:
-            del data
-            return False
-        
-
-
-    def inRoom(self): #방에 접속시 실행됨, 송신 스레드와 수신 스레드가 실행됨
-        return
-
-    def recvRoom(self): #받는 명령어 핸들러
-        data = self.tcpSock.recv(1024).decode()
-        if data.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
-            cmd = data.split(" ")[1]
-            if cmd.startswith("IN"): #누군가 들어왔다는 신호인 경우.
-                self.players.append(cmd.replace("IN", "")) #들어온 사람을 플레이어 리스트에 추가.
 
 
 
