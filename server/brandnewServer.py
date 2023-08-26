@@ -31,17 +31,17 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     def joinRoom(self, client, addr, name):
         self.whos[addr] = client #목록에서 핸들러와 아이피 추가 
         print(addr)
-        self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
-        self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
+        #self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
+        #self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
 
     def leaveRoom(self, addr, name):
         self.whos.pop(addr) #목록에서 핸들러와 아이피 지우기
-        self.multiCastCmd(f"OUT{name}, {addr}")
+        #self.multiCastCmd(f"OUT{name}, {addr}")
 
     def setMap(self, mapCode):
         if mapCode in os.listdir("./Maps"):
             self.mapCode = mapCode
-            self.multiCastCmd(f"SETMAP{mapCode}")
+            #self.multiCastCmd(f"SETMAP{mapCode}")
             return "0080"
         else:
             return "0000"
@@ -111,21 +111,21 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
         while True:
             self.alive = False
-            time.sleep(30) #30쵸에 한번씩
+            time.sleep(10) #30쵸에 한번씩
             if self.alive:
                 self.alive = False #문제 없음
                 self.aliveStack = 0
-                print("잘 살아잇다!")
+                print(f"{self.addr} 잘 살아잇다!")
             else:
                 self.alive = False
                 self.aliveStack += 1 #스택 +1
-                print("어른이 말하면 들어야지!")
+                print(f"{self.addr} 어른이 말하면 들어야지!")
             
             
             
             
             if self.aliveStack > 3: #4번 이상 무시하면
-                print("no heart") 
+                print(f"{self.addr} no heart") 
                 self.aliveStack = 0
                 self.shutDown()
                 break
@@ -141,11 +141,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         if not roomName in roomList:
             globals()["room" + roomName] = Room(roomName) #roomroomName의 변수 명으로 Room 클래스 선언(방을 팜)
             roomList.append(evaler(roomName)) #방 목록에 append, eval은 roomroomName을 호출하는 함수로, 클래스를 반환 함 즉, roomList엔 방이름의 인스턴스들이 있다.
+            self.soc.send("0080".encode()) #방 만들기 성공
+            print("방 만들기 성공")
+        
+            return self.joinRoom(evaler(roomName))
 
-            self.joinRoom(evaler(roomName))
-
-
-            return True
+        print("방 제작 실패")
         return False
 
     def joinRoom(self, roomName):
@@ -213,10 +214,21 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                         elif "0003" in msg: #방 만들기 수신 형식은 0003방이름
                             self.makeRoom(msg.split('3')[1])
-                            self.soc.send("0080".encode())
+                            #0080 수신은, 방 join하면 방목록을 보내버려서, 그 전에 보내긱 위해, makeRoom 안에존재.
 
                     else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
-                        if msg == "1000": #맵 목록 조회
+                        if msg == "0002": #방 목록 수신
+                            result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
+                            self.soc.send(result.encode())
+                        
+                        # 디버그
+
+
+
+
+
+
+                        elif msg == "1000": #맵 목록 조회
                             print("맵 view")
                             self.soc.send(checkMapList().encode())
                         elif "1001" in msg: #맵 설정 형식 >> 1001!MapCode >>0080 송신
@@ -228,11 +240,19 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.roomHandler.startGame()
                             self.inGamePlayer = True
                         elif msg == "1003": #방 나가기
-                            if self.leaveRoom():
+
+                            if len(self.roomHandler.whos.keys) == 1: #1명일때
+                                self.roomHandler.deleteRoom() #삭제 요청
+                                del self.roomHandler #핸들러 참조 삭제
                                 self.inRoom = False
                                 self.soc.send("0080".encode())
+
                             else:
-                                self.soc.send("0000".encode())
+                                if self.leaveRoom():
+                                    self.inRoom = False
+                                    self.soc.send("0080".encode())
+                                else:
+                                    self.soc.send("0000".encode())
 
 
 
