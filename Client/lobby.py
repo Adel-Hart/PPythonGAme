@@ -357,8 +357,6 @@ def undo():
 
 def getString(filter, lengthLimit = 12):
 
-    print("getst")
-
     string = ""
 
     strDone = False    
@@ -367,7 +365,12 @@ def getString(filter, lengthLimit = 12):
 
     #규칙 메세지 2줄로
     nameRule1 = Button(None, "Name must be 12 characters or less.", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY //2, SCRSIZEY * 3 // 4, SCRSIZEY//20)
-    nameRule2 = Button(None, "You can't use anything other than English and numbers", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+    
+    if filter == re.compile('[a-zA-Z0-9]+'): #영문 or 숫자
+        nameRule2 = Button(None, "You can't use anything other than English and numbers", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+    
+    elif filter == re.compile('[a-zA-Z]+'): #영문일 경우
+        nameRule2 = Button(None, "You can't use anything other than English, a-z or A-Z", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
     
     nameRule1.displayButton() 
     nameRule2.displayButton()
@@ -474,8 +477,6 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
 def serverRoomList(handler: classmethod, page:int = 1): 
 
-    print("srl")
-
     global currentImageList, currentButtonList
     currentImageList, currentButtonList = [],[] #초기화
     
@@ -488,9 +489,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
     currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverRoomList, handler, 1)) #새로고침 버튼
 
-    #임시 방 리스트(수정예정)
-    
-    roomList = handler.checkRoomList() #리스트를 반환한다,
+    roomList = handler.checkRoomList() #방 목록을 리스트로 반환한다,
 
     print(roomList)
 
@@ -509,14 +508,14 @@ def serverRoomList(handler: classmethod, page:int = 1):
             currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8))
         pass
     
-    if page != 1: #1페이지가 아니라면
-            #왼쪽으로 버튼 추가
-            currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList, handler, page - 1))
+        if page != 1: #1페이지가 아니라면
+                #왼쪽으로 버튼 추가
+                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList, handler, page - 1))
 
-    if page != pageCount: #끝 페이지가 아니라면
-        #오른쪽으로 버튼 추가
-        currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList,handler, page + 1))
-    pass
+        if page != pageCount: #끝 페이지가 아니라면
+            #오른쪽으로 버튼 추가
+            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList,handler, page + 1))
+        pass
 
     #방 추가 버튼
     currentButtonList.append(Button( GRAY,"MAKE ROOM", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
@@ -534,10 +533,10 @@ def serverMakeRoom(handler: classmethod):
         if roomName == "/ESC": #탈출
             return
         
-        print(roomName,"방이름")
+        print("방이름 :",roomName)
         
         if handler.makeRoom(roomName): #방 만들기
-            print("만들기 성공")
+            print("방 만들기 성공")
             roomDone = True
 
             global joinedRoomName
@@ -545,7 +544,7 @@ def serverMakeRoom(handler: classmethod):
             serverJoinedRoom(handler)
             return #함수 종료
         else: 
-            print("만들기 실패")
+            print("방 만들기 실패")
             
 def serverJoinedRoom(handler: classmethod):
 
