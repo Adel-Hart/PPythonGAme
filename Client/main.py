@@ -399,8 +399,8 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
  
     
 
-def runGame(mapName): # 게임 실행 함수
-    
+def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
+
     global clear
     clear = False
 
@@ -422,8 +422,15 @@ def runGame(mapName): # 게임 실행 함수
         return
     
     print(str(mapName)+" 로딩 완료")
+    
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
+
+    
+
+    if otherPlayers != None: #다른 플레이어가 있다면
+        playerImageList = []
+        playerImageList.append(showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png")) 
     
     screen.fill(WHITE) # 화면 리셋
     

@@ -7,7 +7,9 @@ import selectors
 from datetime import datetime
 import time
 
-HOST = "175.201.42.104"
+with open("./serverip.txt","r") as f:
+    HOST = f.readline()
+
 PORT = 8080
 
 sele = selectors.DefaultSelector() #셀렉터 생성

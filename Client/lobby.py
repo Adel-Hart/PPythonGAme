@@ -10,7 +10,8 @@ import socket
 import threading
 import selectors
 
-HOST = "175.201.42.104"
+with open("../server/serverip.txt","r") as f:
+    HOST = f.readline()
 PORT = 8080
 
 connected = False #서버 연결 여부
