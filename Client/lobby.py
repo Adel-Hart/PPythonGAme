@@ -35,6 +35,7 @@ class conTcp():
 
         try:
             print("연결 시작")
+            
             self.tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
 
             print("연결 성공")
