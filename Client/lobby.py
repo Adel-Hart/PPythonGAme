@@ -146,10 +146,10 @@ class conTcp():
             time.sleep(10)
 
             self.tcpSock.send("7777".encode()) #7777 하트비트 보내기
-            print("hb 보냄")
+            #print("hb 보냄")
 
             data = self.tcpSock.recv(1024) #받기
-            print("hb 받음", data)
+            #print("hb 받음", data)
 
             if(data.decode() == "0080"): #ok시
                 del data
