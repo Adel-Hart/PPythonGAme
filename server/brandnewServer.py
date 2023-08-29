@@ -228,8 +228,8 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             #0080 수신은, 방 join하면 방목록을 보내버려서, 그 전에 보내긱 위해, makeRoom 안에존재.
 
 
-                        #else: #아무것도 아닌 메세지
-                         #   self.soc.send("NaN".encode())
+                        else: #아무것도 아닌 메세지
+                            self.soc.send("NaN".encode())
 
                     else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
                         if msg == "0002": #방 목록 수신
@@ -256,7 +256,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.inGamePlayer = True
                         elif msg == "1003": #방 나가기
 
-                            if len(self.roomHandler.whos.keys) == 1: #1명일때
+                            if len(self.roomHandler.whos.keys()) == 1: #1명일때
                                 self.roomHandler.deleteRoom() #삭제 요청
                                 del self.roomHandler #핸들러 참조 삭제
                                 self.inRoom = False
@@ -286,8 +286,8 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.soc.send(self.sendRoomInfo().encode())
 
 
-                        #else: #아무것도 아닌 메세지
-                        #    self.soc.send("NaN".encode())
+                        else: #아무것도 아닌 메세지
+                            self.soc.send("NaN".encode())
 
                 else: #에디터 일때.
 
