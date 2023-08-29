@@ -309,38 +309,24 @@ def runEditor():
     playerCanvas = tk.Canvas()
     goalCanvas = tk.Canvas()
 
-
     # ------------------------ GUI 배치 ------------------------
 
-    XLabel.grid()
-    XEntry.grid()
-    YLabel.grid()
-    YEntry.grid()
-    mapButton.grid()
+    guiLayout = [XLabel, XEntry, YLabel, YEntry, mapButton,
+                playerHeigheLabel, playerHeight, playerWidthLabel, playerWidth, 
+                jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, speed,
+                mapNameLabel, mapName, backgroundLabel, background, saveButton, closeButton, mapUpload]
+
+    for i in range(len(guiLayout)):
+        guiLayout[i].grid(row=i)
+
 
     for i in range(9):
-        colorButton[8-i].place(x = buttonX, y = SCRSIZEY - buttonY * (i+2))
+        colorButton[i].grid(row = len(guiLayout)+i+1, column = 0)
 
     for i in range(7):
-        switchButton[6-i].place(x = buttonX * 2, y = SCRSIZEY - buttonY * (i+3))
+        switchButton[i].grid(row = len(guiLayout)+i+2, column = 1)
 
-    playerHeigheLabel.grid()
-    playerHeight.grid()
-    playerWidthLabel.grid()
-    playerWidth.grid()
-    jumpHeightLabel.grid()
-    jumpHeight.grid()
-    jumpTimeLabel.grid()
-    jumpTime.grid()
-    speedLabel.grid()
-    speed.grid()
-    mapNameLabel.grid()
-    mapName.grid()
-    backgroundLabel.grid()
-    background.grid()
-    saveButton.grid()
-    closeButton.grid()
-    mapUpload.grid()
+
     window.mainloop()
 
     return
