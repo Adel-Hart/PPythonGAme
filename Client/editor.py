@@ -121,7 +121,7 @@ def save(fileName): #맵 파일 작성
     if valueCheck():
         try: # 오류 대비
             #temp 폴더는 save될때 마다 만들면 오류 나니까, 너가 먼저 만들고, 저장만 하게 하면 됨 - 김동훈 남김
-            f = open(fileName+mapName.get()+"/map.dat","w") #맵이름 폴더 안에 dat 파일 생성
+            f = open(f"{fileName}{mapName}.dat","w") #맵이름 폴더 안에 dat 파일 생성
             for y in range(mapY):
                 for x in range(mapX):
                     f.write(str(mapArray[x][y]))
@@ -322,7 +322,7 @@ def runEditor():
 
     #버튼 생성
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
-    saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./maps/"))
+    saveButton = tk.Button(window, text = "맵 저장", command = lambda: ("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
     mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", command = uploadMap)
 
