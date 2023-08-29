@@ -145,7 +145,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
     def makeRoom(self, roomName): #방 생성
-        if not roomName in roomList:
+        if roomName not in roomList:
             globals()["room" + roomName] = Room(roomName) #roomroomName의 변수 명으로 Room 클래스 선언(방을 팜)
             roomList.append(evaler(roomName)) #방 목록에 append, eval은 roomroomName을 호출하는 함수로, 클래스를 반환 함 즉, roomList엔 방이름의 인스턴스들이 있다.
             self.soc.send("0080".encode()) #방 만들기 성공
