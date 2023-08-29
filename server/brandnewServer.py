@@ -10,7 +10,6 @@ import time
 with open("./serverip.txt","r") as f:
     HOST = f.readline()
 
-HOST = "192.168.50.47"
 PORT = 8080
 
 sele = selectors.DefaultSelector() #셀렉터 생성
@@ -45,7 +44,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.whos.pop(addr) #목록에서 핸들러와 아이피 지우기
         self.whosReady.pop(name, None) #준비 목록에서 이름 빼고, 오류 날시 오류대신 None반환
         self.multiCastCmd(f"OUT{name}, {addr}")
-        
+
     def setMap(self, mapCode):
         if mapCode in os.listdir("./Maps"):
             self.mapCode = mapCode
