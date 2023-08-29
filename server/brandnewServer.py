@@ -33,6 +33,8 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.whosReady = {} #닉네임 : 준비 여부
 
 
+    
+
     def joinRoom(self, client, addr, name):
         self.whos[addr] = client #목록에서 핸들러와 아이피 추가 
         self.whosReady[name] = False #준비 목록에 추가 + 플레이어 ip가 아닌 이름을 사용하는 리스트로도 겸용한다.

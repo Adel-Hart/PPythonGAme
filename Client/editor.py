@@ -5,7 +5,14 @@ import ctypes
 from math import trunc
 import re
 
+import socket
 
+
+
+
+with open("../server/serverip.txt","r") as f:
+    HOST = f.readline()
+PORT = 8080
 
 '''
 이재용 작성
@@ -114,7 +121,7 @@ def jump(height,time): #점프속도와 중력가속도 계산
 def save(fileName): #맵 파일 작성
     if valueCheck():
         try: # 오류 대비
-            os.makedirs(fileName+mapName.get(), exist_ok=True) # maps/맵이름 혹은 temp/맵이름 폴더 만들기
+            #temp 폴더는 save될때 마다 만들면 오류 나니까, 너가 먼저 만들고, 저장만 하게 하면 됨 - 김동훈 남김
             f = open(fileName+mapName.get()+"/map.dat","w") #맵이름 폴더 안에 dat 파일 생성
             for y in range(mapY):
                 for x in range(mapX):
@@ -241,11 +248,15 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
 
 def runEditor():
 
+
+
+
+
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas
     
     buttonX = SCRSIZEX / 35 #버튼 사이의 X축 간격
     buttonY = SCRSIZEY / 30 #버튼 사이의 Y축 간격
-    
+
 
     # ------------------------ GUI 요소 생성 ------------------------
 
@@ -333,3 +344,48 @@ def runEditor():
     window.mainloop()
 
     return
+
+
+class tcpSock():
+    def __init__(self):
+        pass
+
+    def run(self):
+        self.sock  = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP소켓 생성
+        print("연결 시작")
+        self.tcpSock.connect((HOST, PORT))
+        print("연결성공")
+    
+    def sendMapfile(self, mapCode: str):
+        if f"{mapCode}.dat" in os.listdir("./temp/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
+
+            self.sock.send(f"2000CODE{mapCode}") #맵코드 확인 요청, 정보 : socket의 send함수는 보낸 바이트 수를 반환 합니다.
+            data = self.sock.recv(1024)
+            if data == "0080":
+                with open(mapCode, 'rb') as f:
+                    try:
+                        data = f.read(1024) #파일에서 1024바이트 씩 읽기
+                        while data: #data가 0 (다 읽을 때 까지), 이렇게 하는 이유는 1024바이트 씩 읽고, 없어질때를 더 효과적으로 표현 가능
+                            #만약 while이 없었으면 f.read(1024)를 for문으로 돌려야 했다.
+                            self.sock.send(data.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
+                            data = f.read(1024) #다시 1024만큼 읽어본다.
+
+                        self.sock.send("0080".encode()) #성공시 0080프로토콜 전송
+                        return "COMPLETE" #True 출력
+                         
+                    except Exception as ex:
+                        print(f"전송 중 오류 : {ex}")
+                        self.sock.send("0000".encode()) #오류 시 0000프로토콜
+                        return "SOMETHING ERROR" #오류메세지와 true출력
+
+                        
+                            
+
+            elif data == "0000":
+                return "ALREADYEXIST" #실패시 NAMEFAIL, 클라이언트 측에선 이 함수를 실행할때 변수 안에 넣고, NAMEFAIL시 네임 다시 짓게하면 됨
+            else:
+                pass
+        
+        else:
+            print("파일이 없습니다")
+            return "NOFILE"
