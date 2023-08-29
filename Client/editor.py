@@ -10,8 +10,7 @@ import socket
 
 
 
-with open("../server/serverip.txt","r") as f:
-    HOST = f.readline()
+HOST = "118.40.40.181"
 PORT = 8080
 
 '''
@@ -249,6 +248,8 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
 def uploadMap():
     s = tcpSock() #소켓 객체 연결
     s.run() #객체 시작
+    mapUpload.config(text = "맵 저장하고 업로드하기")
+    save("./temp/") #임시폴더에 저장
     
     mapUpload.config(text="맵 업로드 하기") #버튼 이름 바꾸기
 
@@ -370,7 +371,7 @@ class tcpSock():
     def run(self):
         self.sock  = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP소켓 생성
         print("연결 시작")
-        self.tcpSock.connect((HOST, PORT))
+        self.sock.connect((HOST, PORT))
         print("연결성공")
     
     def sendMapfile(self, mapCode: str):
