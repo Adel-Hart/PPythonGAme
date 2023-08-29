@@ -9,6 +9,7 @@ import re
 import socket
 import threading
 import selectors
+import time
 
 with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
@@ -35,7 +36,7 @@ class conTcp():
 
         try:
             print("연결 시작")
-            
+
             self.tcpSock.connect((HOST, PORT)) #연결 시작, 요청을 보내고 계속 대기
 
             print("연결 성공")
@@ -137,6 +138,24 @@ class conTcp():
         else: #Nan = 무효일시
             del data
             return False
+    def heartBeatBeatBeat(self):
+
+        while True:
+            
+
+            time.sleep(10)
+
+            self.tcpSock.send("7777".encode()) #7777 하트비트 보내기
+            #print("hb 보냄")
+
+            data = self.tcpSock.recv(1024) #받기
+            #print("hb 받음", data)
+
+            if(data.decode() == "0080"): #ok시
+                del data
+        
+            #10초에 한번씩 살아있다는 신호를 보낸다
+
 
 class Image: #화면에 표시할 기능없는 이미지
     def __init__(self, imageName:str, posX :int, posY:int, width:int, height:int):    
@@ -476,12 +495,18 @@ def multiButtons(): #멀티플레이, 시작 전 화면
                 serverRoomList(tcpHandler) #대충 매뉴화면 나오게 하는 함수
 
         elif tcpHandler.run(): #run했을때, 실행 완료(True)면
+
+
             connected = True
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
                 
                 print("이름 설정 성공")
                 serverRoomList(tcpHandler) #방 목록 나오는 함수
                 nameDone = True
+
+                hbThread = threading.Thread(target=tcpHandler.heartBeatBeatBeat)
+                hbThread.daemon = True #데몬 스레드로 설정
+                hbThread.start()
                 
             else:
                 screen.fill(T1_BG) 
