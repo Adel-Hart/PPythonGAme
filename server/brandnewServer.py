@@ -118,7 +118,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
         while True:
             self.alive = False
-            time.sleep(10) #30쵸에 한번씩
+            time.sleep(10) #30초에 한번씩
             if self.alive:
                 self.alive = False #문제 없음
                 self.aliveStack = 0
@@ -185,6 +185,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def recvMsg(self: classmethod): #클라이언트로 부터의 메세지 수신 핸들러
             while True:
+
                 data = self.soc.recv(1024)
 
 
@@ -193,11 +194,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                 print(msg)
 
-                if msg:
+                if msg == "7777": #heartBeat 신호
                     self.alive = True #요청보내면 살아있다 표시
+                    self.soc.send("0080".encode())
+                    
 
-
-                if not self.inEditor:
+                elif not self.inEditor:
                     if msg == "9999": #연결 종료 사안
                         self.shutDown()
                         sys.exit() #현재 스레드 종료
