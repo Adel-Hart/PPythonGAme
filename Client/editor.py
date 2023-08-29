@@ -4,6 +4,7 @@ import os
 import ctypes
 from math import trunc
 import re
+import time
 
 import socket
 
@@ -278,15 +279,7 @@ def uploadMap():
 
 def runEditor():
 
-
-
-
-
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload
-    
-    buttonX = SCRSIZEX / 35 #버튼 사이의 X축 간격
-    buttonY = SCRSIZEY / 30 #버튼 사이의 Y축 간격
-
 
     # ------------------------ GUI 요소 생성 ------------------------
 
@@ -351,7 +344,6 @@ def runEditor():
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
 
-
     for i in range(9):
         colorButton[i].grid(row = len(guiLayout)+i+1, column = 0)
 
@@ -378,16 +370,22 @@ class tcpSock():
         if f"{mapCode}.dat" in os.listdir("./temp/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
 
             self.sock.send(f"2000CODE{mapCode}".encode()) #맵코드 확인 요청, 정보 : socket의 send함수는 보낸 바이트 수를 반환 합니다.
+            time.sleep(2)
             data = self.sock.recv(1024).decode()
+            print(data)
             if data == "0080":
-                with open(mapCode, 'rb') as f:
+                print("전송 시작")
+                with open("./temp/" + mapCode + ".dat", 'r') as f:
+                    print("맵 열기")
                     try:
                         data = f.read(1024) #파일에서 1024바이트 씩 읽기
+                        print("맵 읽음")
                         while data: #data가 0 (다 읽을 때 까지), 이렇게 하는 이유는 1024바이트 씩 읽고, 없어질때를 더 효과적으로 표현 가능
                             #만약 while이 없었으면 f.read(1024)를 for문으로 돌려야 했다.
                             self.sock.send(data.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
+                            print(data)
                             data = f.read(1024) #다시 1024만큼 읽어본다.
-
+                        self.sock.send("EOF".encode())
                         ret = self.sock.recv(1024).decode()  #서버의 메세지를 기다린다.
                         if ret == "0080": #성공
                             return "COMPLETE"
