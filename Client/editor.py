@@ -121,7 +121,7 @@ def save(fileName): #맵 파일 작성
     if valueCheck():
         try: # 오류 대비
             #temp 폴더는 save될때 마다 만들면 오류 나니까, 너가 먼저 만들고, 저장만 하게 하면 됨 - 김동훈 남김
-            f = open(f"{fileName}{mapName}.dat","w") #맵이름 폴더 안에 dat 파일 생성
+            f = open(f"{fileName}{mapName.get()}.dat","w") #맵이름 폴더 안에 dat 파일 생성
             for y in range(mapY):
                 for x in range(mapX):
                     f.write(str(mapArray[x][y]))
@@ -377,8 +377,8 @@ class tcpSock():
     def sendMapfile(self, mapCode: str):
         if f"{mapCode}.dat" in os.listdir("./temp/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
 
-            self.sock.send(f"2000CODE{mapCode}") #맵코드 확인 요청, 정보 : socket의 send함수는 보낸 바이트 수를 반환 합니다.
-            data = self.sock.recv(1024)
+            self.sock.send(f"2000CODE{mapCode}".encode()) #맵코드 확인 요청, 정보 : socket의 send함수는 보낸 바이트 수를 반환 합니다.
+            data = self.sock.recv(1024).decode()
             if data == "0080":
                 with open(mapCode, 'rb') as f:
                     try:
@@ -396,7 +396,6 @@ class tcpSock():
                          
                     except Exception as ex:
                         print(f"전송 중 오류 : {ex}")
-                        self.sock.send("0000".encode()) #오류 시 0000프로토콜
                         return "SOMETHING ERROR" #오류메세지와 true출력
 
                         
