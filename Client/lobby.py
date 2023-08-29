@@ -103,11 +103,12 @@ class conTcp():
         self.tcpSock.send("1003".encode()) #방 나가기 요청
 
         data = self.tcpSock.recv(1024)
-
         if(data.decode() == "0080"):
+            print("나가기 완료")
             del data #변수 참조 삭제
             return True #성공 메세지 받을 시
         else:
+            print("나가기 실패")
             del data
             return False
 
@@ -141,7 +142,6 @@ class conTcp():
     def heartBeatBeatBeat(self):
 
         while True:
-            
 
             time.sleep(10)
 
@@ -202,18 +202,18 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
     
     def displayButton(self): #버튼 표시
         
-        if self.backColor != None and self.function != None: #배경색이 None이 아니라면(존재한다면)
-            if self.checkMouse(): #마우스의 위치가 버튼 안쪽이라면
+        if self.backColor != None: #배경색이 None이 아니라면(존재한다면)
+            if self.checkMouse() and self.function != None: #마우스의 위치가 버튼 안쪽이라면
                 pygame.draw.rect(screen, darkColor(self.backColor), [self.posX, self.posY, self.width, self.height]) #좀더 어둡게 버튼 색상 변경
             else:
                 pygame.draw.rect(screen, self.backColor, [self.posX, self.posY, self.width, self.height]) #기본 버튼 색상
             
         
-
-        font = pygame.font.SysFont("Consolas", 200) #폰트 설정
-        img = font.render(self.text, True, self.textColor) #렌더
-        img = pygame.transform.scale(img, (self.width - self.marginx*2, self.height))
-        screen.blit(img, (self.posX+self.marginx,self.posY)) #텍스트 표시
+        if self.textColor != None: #텍스트 색이 None이 아니라면
+            font = pygame.font.SysFont("Consolas", 200) #폰트 설정
+            img = font.render(self.text, True, self.textColor) #렌더
+            img = pygame.transform.scale(img, (self.width - self.marginx*2, self.height))
+            screen.blit(img, (self.posX+self.marginx,self.posY)) #텍스트 표시
     
     def checkFunction(self): #함수 실행
         if self.checkMouse() and self.function != None:
@@ -415,7 +415,7 @@ def getString(filter, lengthLimit = 12):
     nameRule1.displayButton() 
     nameRule2.displayButton()
 
-    behindScreener = Button(WHITE, "            ", BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * 45, 90) #이름 입력칸 뒤에 올 것(리셋을 위해)
+    behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * 45, 90) #이름 입력칸 뒤에 올 것(리셋을 위해)
 
     while not strDone: #먼저 이름을 입력 받은 후 서버와 통신한다.
         nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, len(string) * 45, 90)
@@ -599,12 +599,16 @@ def serverJoinedRoom(handler: classmethod):
 
     print(joinedRoomName, "들어옴")
 
-    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, 0, len(joinedRoomName) * 75, 150)
+    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, SCRSIZEX // 20, len(joinedRoomName) * 75, 150)
     
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom())) #undo 버튼
+    noFuncButtonList = [] #func가 있는 버튼 리스트 ex) 방 제목, 
+    noFuncButtonList.append(roomTitleButton) #
+
     while joinedRoomName != None:
         
         screen.fill(T1_BG)
-        roomTitleButton.displayButton()
 
         pygame.display.update()
 
@@ -612,15 +616,15 @@ def serverJoinedRoom(handler: classmethod):
             if event.type == pygame.QUIT: # 종료 이벤트
                 global done
                 done=True
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1: #좌클릭이라면   
+                    for button in currentButtonList: #마우스와 겹치는 버튼을 작동시킨다
+                        if button.checkFunction():
+                            break
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
-                    if handler.leaveRoom():
-                        print(joinedRoomName, "나가기 완료")
-                        joinedRoomName = None
-                        return
-
-                    else:
-                        print(joinedRoomName, "나가기 실패")
+                    handler.leaveRoom()
+                        
                 
                 if event.key == pygame.K_SPACE:
                     print(handler.getRoomInfo())
