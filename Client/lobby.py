@@ -118,6 +118,24 @@ class conTcp():
             cmd = data.split(" ")[1]
             if cmd.startswith("IN"): #누군가 들어왔다는 신호인 경우.
                 self.players.append(cmd.replace("IN", "")) #들어온 사람을 플레이어 리스트에 추가.
+    
+    def getRoomInfo(self):
+
+        self.tcpSock.send("1005".encode()) #방 정보 요청
+
+        data = self.tcpSock.recv(1024)
+
+        if(data.decode() != "NaN"): #유효한 정보일시
+
+            return data.decode()
+
+            del data #변수 참조 삭제
+            
+            return True #성공 메세지 받을 시
+        
+        else: #Nan = 무효일시
+            del data
+            return False
 
 class Image: #화면에 표시할 기능없는 이미지
     def __init__(self, imageName:str, posX :int, posY:int, width:int, height:int):    
@@ -188,6 +206,7 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
             return True
         else:
             return False
+
 
 currentImageList = []# 현재 사용중인 이미지의 리스트
 currentButtonList = [] # 현재 사용중인 버튼의 리스트
@@ -575,6 +594,9 @@ def serverJoinedRoom(handler: classmethod):
 
                     else:
                         print(joinedRoomName, "나가기 실패")
+                
+                if event.key == pygame.K_SPACE:
+                    print(handler.getRoomInfo())
 
 
 
