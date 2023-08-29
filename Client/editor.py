@@ -246,13 +246,42 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
     except: #값이 정의되지 않았을 때(예 : 맵 생성 버튼을 누르지 않음)
         return False
 
+def uploadMap():
+    s = tcpSock() #소켓 객체 연결
+    s.run() #객체 시작
+    
+    mapUpload.config(text="맵 업로드 하기") #버튼 이름 바꾸기
+
+    if valueCheck(): #전부 정상이면 True
+        res = s.sendMapfile(mapName.get()) #mapName에 써진 것 (맵 이름)으로 서버에 업로드 요청
+        if res == "COMPLETE":
+            mapUpload.config(text="업로드 완료")
+            s.sock.close()
+        elif res == "SERVERFAILED":
+            mapUpload.config(text="서버의 오류로 실패")
+            s.sock.close()
+        elif res == "SOMETHING ERROR":
+            mapUpload.config(text="예기치 못한 오류로 실패")
+            s.sock.close()
+        elif res == "ALREADYEXIST":
+            mapUpload.config(text="맵파일 이미 존재함(클릭하여 다시 시도)")
+        elif res == "NOFILE":
+            mapUpload.config(text="맵 파일이 존재하지 않습니다.")
+            s.sock.close()
+        else:
+            pass
+
+    else:
+        mapUpload.config(text="필요한 내용을 채워주세요") #버튼 이름 바꾸기
+
+
 def runEditor():
 
 
 
 
 
-    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas
+    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload
     
     buttonX = SCRSIZEX / 35 #버튼 사이의 X축 간격
     buttonY = SCRSIZEY / 30 #버튼 사이의 Y축 간격
@@ -294,7 +323,9 @@ def runEditor():
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
     saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
-    mapUpload = tk.Button(window, text = "맵업로드", command = lambda: save("./temp/"))
+    mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", command = uploadMap)
+
+
 
     colorButton = []
     for i in range(9):
@@ -356,8 +387,11 @@ class tcpSock():
                             self.sock.send(data.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
                             data = f.read(1024) #다시 1024만큼 읽어본다.
 
-                        self.sock.send("0080".encode()) #성공시 0080프로토콜 전송
-                        return "COMPLETE" #True 출력
+                        ret = self.sock.recv(1024).decode()  #서버의 메세지를 기다린다.
+                        if ret == "0080": #성공
+                            return "COMPLETE"
+                        elif ret == "0000": #서버 오류 실패
+                            return "SERVER FAILED" 
                          
                     except Exception as ex:
                         print(f"전송 중 오류 : {ex}")
