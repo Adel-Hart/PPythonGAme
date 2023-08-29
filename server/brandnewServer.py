@@ -5,7 +5,7 @@ import os
 import sys
 import selectors
 
-HOST = "172.16.121.57"
+HOST = "192.168.50.47"
 PORT = 8080
 
 sele = selectors.DefaultSelector() #셀렉터 생성
@@ -20,19 +20,24 @@ players = []
 class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유지 한채로, UDP소켓 열기.
     def __init__(self, roomName): #Room(roomName)으로 객체 만들기
         self.whos = {} #ip와 핸들러를 모아놓은 딕셔너리 > ip(식별자) : 핸들러
-        self.mapCode = 0
+        self.mapCode = ""
         self.inGame = False
         self.roomName = roomName
         self.startPos = []
 
+        self.whosReady = {} #닉네임 : 준비 여부
+
+
     def joinRoom(self, client, addr, name):
         self.whos[addr] = client #목록에서 핸들러와 아이피 추가 
+        self.whosReady[name] = False #준비 목록에 추가 + 플레이어 ip가 아닌 이름을 사용하는 리스트로도 겸용한다.
         print(addr)
         self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
         self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
 
     def leaveRoom(self, addr, name):
         self.whos.pop(addr) #목록에서 핸들러와 아이피 지우기
+        self.whosReady.pop(name, None) #준비 목록에서 이름 빼고, 오류 날시 오류대신 None반환
         self.multiCastCmd(f"OUT{name}, {addr}")
 
     def setMap(self, mapCode):
@@ -162,6 +167,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.makeRoom(msg.split('3')[1])
                             self.soc.send("0080".encode())
 
+
+                        else: #아무것도 아닌 메세지
+                            self.soc.send("NaN")
+
                     else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
                         if msg == "1000": #맵 목록 조회
                             print("맵 view")
@@ -181,7 +190,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             else:
                                 self.soc.send("0000".encode())
 
-
+            
 
                         elif msg == "1004": #방 파쇄 (플레이어가 1명 밖에 없을때만 가능)
                             if len(self.roomHandler.whos.keys) == 1:
@@ -192,6 +201,14 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 self.soc.send("0080".encode()) #완료메세지
                             else:
                                 self.soc.send("0000".encode())
+
+
+                        elif msg == "1005": #방 정보 요청
+                            self.soc.send(self.sendRoomInfo())
+
+
+                        else: #아무것도 아닌 메세지
+                            self.soc.send("NaN")
 
                 else: #에디터 일때.
 
@@ -228,6 +245,22 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def sendMsg(self, msg: str):
         self.soc.send(msg.encode())
         return True
+
+
+    def sendRoomInfo(self):
+        #방이름, 방 플레이목록, 맵 코드, 플레이어 준비현황(맵 다운됐을 때 준비가능), 게임시작여부
+        
+        '''
+        클라이언트 측에서, 1초 간격으로 방 정보를 요청함
+        
+        형식 : 방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
+        '''
+
+
+        infoData = f"{self.roomHandler.roomName}!{self.roomHandler.whosReady.keys()}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
+        return infoData
+
+
 
 
    # def run(self):

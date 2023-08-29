@@ -307,7 +307,8 @@ def multiButtons(): #멀티플레이, 시작 전 화면
 
     if done:
         return
-     
+    
+ 
     tcpHandler = conTcp() #tcp 핸들러 시작 (반복문 벗어나면)
     while True:
         screen.fill(T1_BG) #검은 화면
