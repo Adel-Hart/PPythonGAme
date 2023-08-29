@@ -11,7 +11,7 @@ import socket
 
 
 
-HOST = "118.40.40.181"
+HOST = "192.168.50.47"
 PORT = 8080
 
 '''
@@ -132,6 +132,7 @@ def save(fileName): #맵 파일 작성
             f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
             f.write("\n$" + background.get())
             f.write("\n%" + f"{goalX},{goalY}")
+            f.write("*") #종료를 나타내는 *을 쓴다.
             f.close
             return True
         except: # 오류 발생시 실패를 알린다
@@ -247,14 +248,16 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
         return False
 
 def uploadMap():
-    s = tcpSock() #소켓 객체 연결
-    s.run() #객체 시작
-    mapUpload.config(text = "맵 저장하고 업로드하기")
-    save("./temp/") #임시폴더에 저장
-    
-    mapUpload.config(text="맵 업로드 하기") #버튼 이름 바꾸기
-
     if valueCheck(): #전부 정상이면 True
+        save("./temp/") #임시폴더에 저장
+        s = tcpSock() #소켓 객체 연결
+        s.run() #객체 시작
+        mapUpload.config(text = "맵 저장하고 업로드하기")
+        
+        
+        mapUpload.config(text="맵 업로드 하기") #버튼 이름 바꾸기
+
+    
         res = s.sendMapfile(mapName.get()) #mapName에 써진 것 (맵 이름)으로 서버에 업로드 요청
         if res == "COMPLETE":
             mapUpload.config(text="업로드 완료")
@@ -385,7 +388,6 @@ class tcpSock():
                             self.sock.send(data.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
                             print(data)
                             data = f.read(1024) #다시 1024만큼 읽어본다.
-                        self.sock.send("EOF".encode())
                         ret = self.sock.recv(1024).decode()  #서버의 메세지를 기다린다.
                         if ret == "0080": #성공
                             return "COMPLETE"

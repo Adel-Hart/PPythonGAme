@@ -224,11 +224,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 try:
                                     print("2")
                                     stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
-                                    print(stream)
-                                    while not stream: #EOF명령을 받으면, 쓰기 종료
+                                    print(bool(stream))
+                                    end = True
+                                    while end: #EOF명령을 받으면, 쓰기 종료
                                         f.write(stream) #stream 쓰기
                                         print("받아오는중,,,")
-                                        stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
+                                        if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
+                                            end = False #종료
+                                            stream = 0
+                                        else:
+                                            stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
 
                                     print("완료")
                                     f.close() #파일 저장
