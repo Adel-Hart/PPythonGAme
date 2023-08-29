@@ -159,7 +159,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def joinRoom(self, roomName):
         if roomName in roomList:
             roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
-            #self.inRoom = True
+            self.inRoom = True
             self.roomHandler = roomName #클래스에 핸들러 설정
             return True
         return False
@@ -186,8 +186,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def recvMsg(self: classmethod): #클라이언트로 부터의 메세지 수신 핸들러
             while True:
                 data = self.soc.recv(1024)
+
+
                 print(f"{datetime.now()} :  {self.addr}")
                 msg = data.decode()
+
+                print(msg)
 
                 if msg:
                     self.alive = True #요청보내면 살아있다 표시
@@ -224,8 +228,8 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             #0080 수신은, 방 join하면 방목록을 보내버려서, 그 전에 보내긱 위해, makeRoom 안에존재.
 
 
-                        else: #아무것도 아닌 메세지
-                            self.soc.send("NaN")
+                        #else: #아무것도 아닌 메세지
+                         #   self.soc.send("NaN".encode())
 
                     else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
                         if msg == "0002": #방 목록 수신
@@ -279,11 +283,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
                         elif msg == "1005": #방 정보 요청
-                            self.soc.send(self.sendRoomInfo())
+                            self.soc.send(self.sendRoomInfo().encode())
 
 
-                        else: #아무것도 아닌 메세지
-                            self.soc.send("NaN")
+                        #else: #아무것도 아닌 메세지
+                        #    self.soc.send("NaN".encode())
 
                 else: #에디터 일때.
 
@@ -332,8 +336,9 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         '''
 
 
-        infoData = f"{self.roomHandler.roomName}!{self.roomHandler.whosReady.keys()}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
+        infoData = f"{self.roomHandler.roomName}!{str(list(self.roomHandler.whosReady.keys()))}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
         return infoData
+        #.keys()는 dic_list객체라, list로 만들고 다시 문자열 str로 감싸야 함
 
 
 
