@@ -90,7 +90,7 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
         rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
         screen.blit(self.realimage, rect) #스크린에 출력
     
-class showImage: #타일, 플레이어, 배경을 제외하고 게임 화면에 나올 수 있는 모든 이미지들 
+class showImage: #타일, 주인공, 배경을 제외하고 게임 화면에 나올 수 있는 모든 이미지들 
     def __init__(self, cx, cy, zx, zy, image): #이미지의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
         self.coordX = cx
@@ -399,8 +399,8 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
  
     
 
-def runGame(mapName): # 게임 실행 함수
-    
+def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
+
     global clear
     clear = False
 
@@ -422,8 +422,15 @@ def runGame(mapName): # 게임 실행 함수
         return
     
     print(str(mapName)+" 로딩 완료")
+    
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
+
+    
+
+    if otherPlayers != None: #다른 플레이어가 있다면
+        playerImageList = []
+        playerImageList.append(showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png")) 
     
     screen.fill(WHITE) # 화면 리셋
     

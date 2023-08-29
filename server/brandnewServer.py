@@ -4,6 +4,11 @@ import re #정규식
 import os
 import sys
 import selectors
+from datetime import datetime
+import time
+
+with open("./serverip.txt","r") as f:
+    HOST = f.readline()
 
 HOST = "192.168.50.47"
 PORT = 8080
@@ -16,6 +21,7 @@ global roomList
 roomList = []
 
 players = []
+
 
 class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유지 한채로, UDP소켓 열기.
     def __init__(self, roomName): #Room(roomName)으로 객체 만들기
@@ -32,18 +38,18 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.whos[addr] = client #목록에서 핸들러와 아이피 추가 
         self.whosReady[name] = False #준비 목록에 추가 + 플레이어 ip가 아닌 이름을 사용하는 리스트로도 겸용한다.
         print(addr)
-        self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
-        self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
+        #self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
+        #self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
 
     def leaveRoom(self, addr, name):
         self.whos.pop(addr) #목록에서 핸들러와 아이피 지우기
         self.whosReady.pop(name, None) #준비 목록에서 이름 빼고, 오류 날시 오류대신 None반환
         self.multiCastCmd(f"OUT{name}, {addr}")
-
+        
     def setMap(self, mapCode):
         if mapCode in os.listdir("./Maps"):
             self.mapCode = mapCode
-            self.multiCastCmd(f"SETMAP{mapCode}")
+            #self.multiCastCmd(f"SETMAP{mapCode}")
             return "0080"
         else:
             return "0000"
@@ -87,26 +93,74 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         self.addr = addr[0]
         self.name = "" #플레이어 닉네임
         self.inEditor = False #에디터화면 일때
-        self.recvMsg() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
+        self.alive = True
+        self.aliveStack = 0 #최대 몇번까지 봐줄건가
+
+        self.run() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
+        
         
 
+    def run(self): #시작
+        
+        heatBeatThread = threading.Thread(target = self.heartBeat) #하트비트 시작
+        heatBeatThread.start()
+        recvThread = threading.Thread(target=self.recvMsg) #받기 시작
+        recvThread.start()
+
+
+    def shutDown(self): #종료
+        
+        self.soc.close()
+        players.remove(self.name)
+        print("shutdown the thread")
+        del self
+
     
+    def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
+        while True:
+            self.alive = False
+            time.sleep(10) #30쵸에 한번씩
+            if self.alive:
+                self.alive = False #문제 없음
+                self.aliveStack = 0
+                print(f"{self.addr} 잘 살아잇다!")
+            else:
+                self.alive = False
+                self.aliveStack += 1 #스택 +1
+                print(f"{self.addr} 어른이 말하면 들어야지!")
+            
+            
+            
+            
+            if self.aliveStack > 3: #4번 이상 무시하면
+                print(f"{self.addr} no heart") 
+                self.aliveStack = 0
+                self.shutDown()
+                break
+            else:
+                pass
+            
+        sys.exit() #현재 스레드 종료     
+
+            
+
 
     def makeRoom(self, roomName): #방 생성
         if not roomName in roomList:
             globals()["room" + roomName] = Room(roomName) #roomroomName의 변수 명으로 Room 클래스 선언(방을 팜)
             roomList.append(evaler(roomName)) #방 목록에 append, eval은 roomroomName을 호출하는 함수로, 클래스를 반환 함 즉, roomList엔 방이름의 인스턴스들이 있다.
+            self.soc.send("0080".encode()) #방 만들기 성공
+            print("방 만들기 성공")
+        
+            return self.joinRoom(evaler(roomName))
 
-            self.joinRoom(evaler(roomName))
-
-
-            return True
+        print("방 제작 실패")
         return False
 
     def joinRoom(self, roomName):
         if roomName in roomList:
             roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
-            self.inRoom = True
+            #self.inRoom = True
             self.roomHandler = roomName #클래스에 핸들러 설정
             return True
         return False
@@ -121,6 +175,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         
         return True
 
+
     def checkRoom(self):
         print("checkroom")
         result = '!'.join(x.roomName for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
@@ -132,14 +187,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def recvMsg(self: classmethod): #클라이언트로 부터의 메세지 수신 핸들러
             while True:
                 data = self.soc.recv(1024)
-                print(f"on {self.addr}")
+                print(f"{datetime.now()} :  {self.addr}")
                 msg = data.decode()
+
+                if msg:
+                    self.alive = True #요청보내면 살아있다 표시
+
 
                 if not self.inEditor:
                     if msg == "9999": #연결 종료 사안
-                        players.remove(self.name)
-                        self.soc.close() #소켓 닫기
-                        del self
+                        self.shutDown()
                         sys.exit() #현재 스레드 종료
                         
 
@@ -165,14 +222,25 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                         elif "0003" in msg: #방 만들기 수신 형식은 0003방이름
                             self.makeRoom(msg.split('3')[1])
-                            self.soc.send("0080".encode())
+                            #0080 수신은, 방 join하면 방목록을 보내버려서, 그 전에 보내긱 위해, makeRoom 안에존재.
 
 
                         else: #아무것도 아닌 메세지
                             self.soc.send("NaN")
 
                     else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
-                        if msg == "1000": #맵 목록 조회
+                        if msg == "0002": #방 목록 수신
+                            result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
+                            self.soc.send(result.encode())
+                        
+                        # 디버그
+
+
+
+
+
+
+                        elif msg == "1000": #맵 목록 조회
                             print("맵 view")
                             self.soc.send(checkMapList().encode())
                         elif "1001" in msg: #맵 설정 형식 >> 1001!MapCode >>0080 송신
@@ -184,11 +252,19 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.roomHandler.startGame()
                             self.inGamePlayer = True
                         elif msg == "1003": #방 나가기
-                            if self.leaveRoom():
+
+                            if len(self.roomHandler.whos.keys) == 1: #1명일때
+                                self.roomHandler.deleteRoom() #삭제 요청
+                                del self.roomHandler #핸들러 참조 삭제
                                 self.inRoom = False
                                 self.soc.send("0080".encode())
+
                             else:
-                                self.soc.send("0000".encode())
+                                if self.leaveRoom():
+                                    self.inRoom = False
+                                    self.soc.send("0080".encode())
+                                else:
+                                    self.soc.send("0000".encode())
 
             
 
@@ -236,7 +312,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 self.inEditor = False
                                 self.soc.close() #소켓 닫기
                                 break
-                            sys.exit() #스레드 종료
+                            
 
 
 
@@ -274,10 +350,10 @@ def checkMapList():
     result = '!'.join(os.listdir("./Maps")) #Maps 디렉토리의 맵 파일 이름들을 가져와 문자열로 만들기
     return result
 
-def evaler(self, cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때문에 함수로 만듬, 주로 room+방이름으로 된 방 객체를 호출하기 위함.
+def evaler(cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때문에 함수로 만듬, 주로 room+방이름으로 된 방 객체를 호출하기 위함.
     try:
         if cmd != "": #인젝션을 통한 해킹 방지를 위해, 정규식으로 해결!
-            result = re.sub(r"[^a-zA-Z0-9_]", "", cmd) #문자 숫자 빼고 전부 삭제 
+            result = re.sub(r"[^a-zA-Z0-9]", "", cmd) #문자 숫자 빼고 전부 삭제 
             return eval("room"+cmd)
         else:
             return False
@@ -385,7 +461,7 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
 '''
                 
 
-
+    
 
 
 
