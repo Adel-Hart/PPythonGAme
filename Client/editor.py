@@ -11,7 +11,8 @@ import socket
 
 
 
-HOST = "192.168.1.6"
+with open("../server/serverip.txt","r") as f:
+    HOST = f.readline()
 PORT = 8080
 
 '''
@@ -266,23 +267,24 @@ def uploadMap():
             mapUpload.config(text="서버의 오류로 실패")
             s.sock.close()
         elif res == "SOMETHING ERROR":
-            mapUpload.config(text="예기치 못한 오류로 실패")
+            mapUpload.config(text="예기치 못한\n오류로 실패")
             s.sock.close()
         elif res == "ALREADYEXIST":
-            mapUpload.config(text="맵파일 이미 존재함(클릭하여 다시 시도)")
+            mapUpload.config(text="맵파일 이미 존재함\n(클릭하여 다시 시도)")
         elif res == "NOFILE":
-            mapUpload.config(text="맵 파일이 존재하지 않습니다.")
+            mapUpload.config(text="맵 파일이\n존재하지 않습니다.")
             s.sock.close()
         else:
             pass
 
     else:
-        mapUpload.config(text="필요한 내용을 채워주세요") #버튼 이름 바꾸기
+        mapUpload.config(text="필요한 내용을\n채워주세요") #버튼 이름 바꾸기
 
 
 def runEditor():
 
-    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload
+    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, \
+        playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload
 
     # ------------------------ GUI 요소 생성 ------------------------
 
@@ -320,7 +322,7 @@ def runEditor():
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
     saveButton = tk.Button(window, text = "맵 저장", command = lambda: ("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
-    mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", command = uploadMap)
+    mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", height = 2, bg = "skyblue", command = uploadMap)
 
 
 
