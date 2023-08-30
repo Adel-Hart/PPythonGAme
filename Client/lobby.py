@@ -141,6 +141,8 @@ class conTcp():
 
         elif self.data.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
             cmd = self.data.split(" ")[1]
+
+        
             
 
 
@@ -522,9 +524,9 @@ def multiButtons(): #멀티플레이, 시작 전 화면
                 serverRoomList(tcpHandler) #방 목록 나오는 함수
                 nameDone = True
 
-                hbThread = threading.Thread(target=tcpHandler.heartBeatBeatBeat)
-                hbThread.daemon = True #데몬 스레드로 설정
-                hbThread.start()
+                handlerThread = threading.Thread(target=tcpHandler.recvRoom)
+                handlerThread.daemon = True #데몬 스레드로 설정
+                handlerThread.start()
                 
             else:
                 screen.fill(T1_BG) 
@@ -621,8 +623,8 @@ def serverJoinedRoom(handler: classmethod):
     
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
     currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom())) #undo 버튼
-    noFuncButtonList = [] #func가 있는 버튼 리스트 ex) 방 제목, 
-    noFuncButtonList.append(roomTitleButton) #
+    funcButtonList = [] #func가 있는 버튼 리스트 ex) 방 제목, 
+    funcButtonList.append(roomTitleButton) #
 
     while joinedRoomName != None:
         
