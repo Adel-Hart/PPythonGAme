@@ -11,7 +11,7 @@ import socket
 
 
 
-HOST = "192.168.1.4"
+HOST = "192.168.1.6"
 PORT = 8080
 
 '''
