@@ -65,7 +65,7 @@ class conTcp():
             return False
     
     def checkRoomList(self):
-        self.tcpSock.send("0002".encode()) #룸 리스트 받기 형식 > 방이름!방이름!
+        self.tcpSock.send("0002".encode()) #룸 리스트 받기 형식 > ROOMLIST방이름!방이름!
         data = self.tcpSock.recv(1024)
         data = data.decode()
         if data == "NULL":
@@ -78,84 +78,102 @@ class conTcp():
     def makeRoom(self, roomCode: str): #방 만들기 (서버 상에서 자동으로 방 참여가 된다.) 이름 규칙 : 12자 내외 영문만
         self.tcpSock.send(f"0003{roomCode}".encode()) #방 생성 요청
 
-        data = self.tcpSock.recv(1024)
 
-        if(data.decode() == "0080"):
-            del data #변수 참조 삭제
+        if(self.data.decode() == "0080"):
+            #del data #변수 참조 삭제
             return True #성공 메세지 받을 시 >> 클라이언트 측 핸들러에서, 룸 용 함수 실행 필요
         
         else:
-            del data
+            #del data
             return False
         
     def joinRoom(self, roomCode: str): #방 참여요청
         self.tcpSock.send(f"0004{roomCode}".encode()) #방 생성 요청 >> "
-        data = self.tcpSock.recv(1024)
-        if(data.decode() == "0080"):
-            del data #변수 참조 삭제
+
+        if(self.data.decode() == "0080"):
+            #del data #변수 참조 삭제
             return True #성공 메세지 받을 시
         else:
-            del data
+            #del data
             return False
         
     def leaveRoom(self):
 
         self.tcpSock.send("1003".encode()) #방 나가기 요청
 
-        data = self.tcpSock.recv(1024)
-        if(data.decode() == "0080"):
+        if(self.data.decode() == "0080"):
             print("나가기 완료")
-            del data #변수 참조 삭제
+            #del data #변수 참조 삭제
             return True #성공 메세지 받을 시
         else:
             print("나가기 실패")
-            del data
+            #del data
             return False
 
     def inRoom(self): #방에 접속시 실행됨, 송신 스레드와 수신 스레드가 실행됨
         return
 
+
+
+
+
+
+    '''
+    받는 명령어 핸들러를 스레드로 작동시키고, 방 정보 가져오는 건 핸들ㄹ러에서 처리하고, 각자 함수를 가져 스레드를 켜논 동시에
+    데이터를 받아와야 하는 명령을 할시에 전역 변수 threadOn을 꺼서, 스레드에서 명령어를 가져오는걸 잠시 멈추게 한다.
+
+    또는
+
+    핸들러에서 받는 메세지를 전역변수화 시켜서, 함수에서 가져오는 것이다. <이게 좀 더 괜찮은 듯?
+
+    
+    
+    
+    '''
     def recvRoom(self): #받는 명령어 핸들러
-        data = self.tcpSock.recv(1024).decode()
-        if data.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
-            cmd = data.split(" ")[1]
-            if cmd.startswith("IN"): #누군가 들어왔다는 신호인 경우.
-                self.players.append(cmd.replace("IN", "")) #들어온 사람을 플레이어 리스트에 추가.
+        self.data = ""
+
+        self.data = self.tcpSock.recv(1024).decode()
+
+
+        if self.data == "7777": #서버가 보낸 heartBeat신호일 시
+            self.tcpSock.send("7780".encode()) #응답하기
+
+        elif self.data.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
+            cmd = self.data.split(" ")[1]
+            
+
+
+
+
+
+        #서버 메세지 필터링
+        
+
+            
     
     def getRoomInfo(self):
 
         self.tcpSock.send("1005".encode()) #방 정보 요청
 
-        data = self.tcpSock.recv(1024)
+        #data = self.tcpSock.recv(1024), 스레드에서 읽어온걸 가져오자!
 
-        if(data.decode() != "NaN"): #유효한 정보일시
 
-            return data.decode()
+        if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
+            if(self.data.decode() != "NaN"): #유효한 정보일시
 
-            del data #변수 참조 삭제
+                return self.data.decode()
             
-            return True #성공 메세지 받을 시
-        
-        else: #Nan = 무효일시
-            del data
-            return False
-    def heartBeatBeatBeat(self):
 
-        while True:
+            #형식 ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
 
-            time.sleep(10)
-
-            self.tcpSock.send("7777".encode()) #7777 하트비트 보내기
-            #print("hb 보냄")
-
-            data = self.tcpSock.recv(1024) #받기
-            #print("hb 받음", data)
-
-            if(data.decode() == "0080"): #ok시
-                del data
-        
-            #10초에 한번씩 살아있다는 신호를 보낸다
-
+                #del data #변수 참조 삭제,  받는 변수로 바뀌어서 삭제하면 안된다.
+                
+                #return True #성공 메세지 받을 시 <<어짜피 실행 안될텐데
+            
+            else: #Nan = 무효일시
+                #del data
+                return False
 
 class Image: #화면에 표시할 기능없는 이미지
     def __init__(self, imageName:str, posX :int, posY:int, width:int, height:int):    
