@@ -75,7 +75,7 @@ class conTcp():
 
         if self.data == "NULL":
             self.data = None 
-            return ["EMPTY"]
+            return ["*EMPTY*"]
         else:
             temp = self.data
             self.data = None 
@@ -98,17 +98,18 @@ class conTcp():
             
         
     def joinRoom(self, roomCode: str): #방 참여요청
-        self.tcpSock.send(f"0004{roomCode}".encode()) #방 생성 요청 >> "
+        self.tcpSock.send(f"0004{roomCode}".encode()) #방 입장 요청
 
         while self.data == None:
             pass #기다리기:
 
-        self.data = None 
+
+        
         if(self.data == "0080"):
-            self.data = None 
+            global joinedRoomName
+            joinedRoomName = roomCode
             return True #성공 메세지 받을 시
         else:
-            self.data = None 
             return False
         
     def leaveRoom(self):
@@ -162,7 +163,9 @@ class conTcp():
                 cmd = self.data.split(" ")[1]
 
             else:
+
                 self.data = recvMsg
+                print(self.data)
 
         
             
@@ -182,7 +185,9 @@ class conTcp():
 
         #data = self.tcpSock.recv(1024), 스레드에서 읽어온걸 가져오자!
 
-
+        while self.data == None:
+            pass #기다리기
+        
         if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
             if(self.data != "NaN"): #유효한 정보일시
                 
@@ -316,7 +321,7 @@ def lobbyButtons(): #처음 시작 장면
     currentImageList, currentButtonList = [],[] #초기화
 
     global currentundo
-    currentundo = None
+    currentundo = quit
 
     currentButtonList.append(Button( T1_OBJ,"SINGLE PLAYER", T1_BTNBG, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
     currentButtonList.append(Button( T1_OBJ,"MULTI PLAYER", T1_BTNBG, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
@@ -595,7 +600,8 @@ def serverRoomList(handler: classmethod, page:int = 1):
 
         for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
             roomName = currentPageRooms[i]
-            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
+            if roomName != "*EMPTY*": #비어있을 경우 표시 X
+                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
         pass
     
         if page != 1: #1페이지가 아니라면
@@ -680,7 +686,8 @@ def serverJoinedRoom(handler: classmethod):
                         
                 
                 if event.key == pygame.K_SPACE:
-                    print(handler.getRoomInfo())
+                    roominfo = handler.getRoomInfo()
+                    print(roominfo)
 
         
 
@@ -725,6 +732,9 @@ while not done: # loop the game
 
     pygame.display.update()
 
+    if joinedRoomName != None: #방 입장시
+        serverJoinedRoom(tcpHandler)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT: # 종료 이벤트
             done=True
@@ -736,6 +746,8 @@ while not done: # loop the game
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE: #ESC 누를시 undo 기능
                 undo()
+
+
             
 
 pygame.quit() # quit pygame
