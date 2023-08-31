@@ -191,7 +191,10 @@ class conTcp():
         if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
             if(self.data != "NaN"): #유효한 정보일시
                 
-                return self.data
+                roomIf = self.data.strip("ROOMINFO")
+                roomIf = roomIf.split("!")
+
+                return roomIf
             
 
             #형식 ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
