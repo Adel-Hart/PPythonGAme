@@ -354,12 +354,12 @@ def runEditor():
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
     saveButton = tk.Button(window, text = "맵 저장", command = lambda: ("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
-    mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", command = uploadMap)
+    mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", height = 2, command = uploadMap)
     infoButton = tk.Button(window, text = "help", command = infoWindow)
 
     colorButton = []
     for i in range(9):
-        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorList[i], width = 5, height = 2))
+        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorList[i], width = 5))
 
     switchButton = []
     for i in range(7):
