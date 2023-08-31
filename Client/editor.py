@@ -189,7 +189,7 @@ def isNumeric(s): #문자열 실수 판단
 def close(): #종료 함수
     window.destroy() #창 닫기
 
-def goal(evnet): #도착지점 생성 (넓이 1*2)
+def goal(evnet): #도착지점 생성 (크기 1*2)
 
     global goalCanvas, goalX, goalY
 
@@ -249,7 +249,7 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
 def uploadMap():
     s = tcpSock() #소켓 객체 연결
     s.run() #객체 시작
-    mapUpload.config(text = "맵 저장하고 업로드하기")
+    mapUpload.config(text = "맵 저장하고\n업로드하기")
     save("./temp/") #임시폴더에 저장
     
     mapUpload.config(text="맵 업로드 하기") #버튼 이름 바꾸기
@@ -260,29 +260,53 @@ def uploadMap():
             mapUpload.config(text="업로드 완료")
             s.sock.close()
         elif res == "SERVERFAILED":
-            mapUpload.config(text="서버의 오류로 실패")
+            mapUpload.config(text="서버의 오류로\n실패")
             s.sock.close()
         elif res == "SOMETHING ERROR":
-            mapUpload.config(text="예기치 못한 오류로 실패")
+            mapUpload.config(text="예기치 못한\n오류로 실패")
             s.sock.close()
         elif res == "ALREADYEXIST":
-            mapUpload.config(text="맵파일 이미 존재함(클릭하여 다시 시도)")
+            mapUpload.config(text="맵파일 이미 존재함\n(클릭하여 다시 시도)")
         elif res == "NOFILE":
-            mapUpload.config(text="맵 파일이 존재하지 않습니다.")
+            mapUpload.config(text="맵 파일이\n존재하지 않습니다.")
             s.sock.close()
         else:
             pass
 
     else:
-        mapUpload.config(text="필요한 내용을 채워주세요") #버튼 이름 바꾸기
+        mapUpload.config(text="필요한 내용을\n채워주세요") #버튼 이름 바꾸기
 
 def infoWindow():
+    
+    infoY = 1200
 
-    info = tk.Tk()
-    info.title("test") #창의 이름
-    info.geometry("700x400")
+    #창 설정
+    info = tk.Tk() #에디터 설명 팝업 생성
+    info.title("Info") #창의 이름
+    info.geometry(f"1200x{infoY}")
     info.resizable(False, False) #창 크기 조절 가능 여부
     info.attributes("-fullscreen", False)
+
+    texts = []
+    fontSize = 16 #글자 크기
+    with open("./editorInfo.txt","r", encoding="UTF-8") as f: #한글 가능하게 UTF-8로 인코딩
+
+        for text in f.readlines():
+
+            if "!" in text:
+                text = text.strip("!")
+                fontSize = 16
+                slant = "bold"
+            else:
+                text = "    " + text
+                fontSize = 12
+                slant = ""
+            texts.append(tk.Label(info, text = text, font = ("맑은 고딕", fontSize, slant))) 
+
+    for i in range(len(texts)):
+        texts[i].place(x=0, y=infoY/len(texts)*i)
+
+
 
     info.mainloop()
     
@@ -295,12 +319,13 @@ def runEditor():
 
     # ------------------------ GUI 요소 생성 ------------------------#
 
+    #창 설정
     window = tk.Tk()
     window.title("맵에디터") #창의 이름
     window.resizable(False, False) #창 크기 조절 가능 여부
     window.attributes("-fullscreen", True) #전체화면
 
-    window.bind("<Button-3>", player) #좌클릭 감지
+    window.bind("<Button-3>", player) #우클릭 감지
     window.bind("<Button-2>", goal) #휠클릭 감지
 
     #레이블 생성
@@ -310,7 +335,7 @@ def runEditor():
     playerHeigheLabel = tk.Label(window, text = "플레이어 키 입력")
     jumpHeightLabel = tk.Label(window, text = "점프 높이 입력")
     jumpTimeLabel = tk.Label(window, text = "점프 시간 입력")
-    mapNameLabel = tk.Label(window, text = "저장할 이름 입력")
+    mapNameLabel = tk.Label(window, text = "맵 이름 입력")
     speedLabel = tk.Label(window, text = "이동 속도 입력")
     backgroundLabel = tk.Label(window, text = "배경사진 이름 입력")
 
@@ -330,11 +355,11 @@ def runEditor():
     saveButton = tk.Button(window, text = "맵 저장", command = lambda: ("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
     mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", command = uploadMap)
-    infoButton = tk.Button(window, text = "에디터 설명", command = infoWindow)
+    infoButton = tk.Button(window, text = "help", command = infoWindow)
 
     colorButton = []
     for i in range(9):
-        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorList[i], width = 5))
+        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorList[i], width = 5, height = 2))
 
     switchButton = []
     for i in range(7):
@@ -350,7 +375,8 @@ def runEditor():
     guiLayout = [XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
                 playerHeigheLabel, playerHeight, playerWidthLabel, playerWidth, 
                 jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed,
-                mapNameLabel, mapName, backgroundLabel, background, saveButton, closeButton, mapUpload, infoButton]
+                backgroundLabel, background,
+                mapNameLabel, mapName, saveButton, closeButton, mapUpload, infoButton]
 
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
@@ -370,7 +396,6 @@ def runEditor():
     window.mainloop()
 
     return
-
 
 class tcpSock():
     def __init__(self):
