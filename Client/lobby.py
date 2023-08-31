@@ -204,6 +204,33 @@ class conTcp():
                 #del data
                 return False
 
+
+class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
+    def __init__(self, players: list):
+        self.udpSock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) #기본 udp 소켓 설정
+        self.playerList = {}
+        for p in players:
+            self.playerList[p] = [0, 0]
+
+
+    def udpSendHandler(self, msg):
+        self.udpSock.sendto(msg.encode(), (HOST, PORT))
+
+
+    def udpRecvHandler(self):
+        data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
+        
+        if data.startswith('P'): #위치 정보를 수신
+            data = data.replace("P", "") #P삭제
+            data = data.split("!") #구분자가 !라서 !를 기준으로 분리
+
+            
+
+        
+        
+
+
+
 class Image: #화면에 표시할 기능없는 이미지
     def __init__(self, imageName:str, posX :int, posY:int, width:int, height:int):    
 
