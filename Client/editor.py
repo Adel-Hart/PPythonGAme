@@ -11,8 +11,7 @@ import socket
 
 
 
-with open("../server/serverip.txt","r") as f:
-    HOST = f.readline()
+HOST = "118.40.40.181"
 PORT = 8080
 
 '''
@@ -114,10 +113,10 @@ def setSwitchColor(color): #스위치 버튼 클릭 시
     brushColor = color
     return
 
-def jump(height,time): #점프속도와 중력가속도 계산
+def playerStatus(height,time,speed): #플레이어 정보 계산
     v = height * 4 / time
     g = height * 8 / (time * time)
-    return f"{v},{g},"
+    return f"{v},{g},{speed}"
 
 def save(fileName): #맵 파일 작성
     if valueCheck():
@@ -130,10 +129,9 @@ def save(fileName): #맵 파일 작성
                 f.write("\n") 
             f.write("!" + f"{playerX},{playerY}")
             f.write("\n@" + f"{PWidth},{PHeight}")
-            f.write("\n#" + jump(float(jumpHeight.get()), float(jumpTime.get())) + speed.get())
+            f.write("\n#" + playerStatus(float(jumpHeight.get()), float(jumpTime.get()), float(playerSpeed.get())))
             f.write("\n$" + background.get())
             f.write("\n%" + f"{goalX},{goalY}")
-            f.write("*") #종료를 나타내는 *을 쓴다.
             f.close
             return True
         except: # 오류 발생시 실패를 알린다
@@ -238,7 +236,7 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
     check = re.compile("[^a-zA-Z0-9]") #영어와 숫자가 아닌 값들을 검사
     
     try:
-        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(speed.get()), PWidth, background.get(), goalX] #검사할 값 목록
+        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, background.get(), goalX] #검사할 값 목록
 
         if all(valueList) and not check.search(mapName.get()): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
             return True
@@ -249,16 +247,14 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
         return False
 
 def uploadMap():
-    if valueCheck(): #전부 정상이면 True
-        save("./temp/") #임시폴더에 저장
-        s = tcpSock() #소켓 객체 연결
-        s.run() #객체 시작
-        mapUpload.config(text = "맵 저장하고 업로드하기")
-        
-        
-        mapUpload.config(text="맵 업로드 하기") #버튼 이름 바꾸기
-
+    s = tcpSock() #소켓 객체 연결
+    s.run() #객체 시작
+    mapUpload.config(text = "맵 저장하고 업로드하기")
+    save("./temp/") #임시폴더에 저장
     
+    mapUpload.config(text="맵 업로드 하기") #버튼 이름 바꾸기
+
+    if valueCheck(): #전부 정상이면 True
         res = s.sendMapfile(mapName.get()) #mapName에 써진 것 (맵 이름)으로 서버에 업로드 요청
         if res == "COMPLETE":
             mapUpload.config(text="업로드 완료")
@@ -267,32 +263,43 @@ def uploadMap():
             mapUpload.config(text="서버의 오류로 실패")
             s.sock.close()
         elif res == "SOMETHING ERROR":
-            mapUpload.config(text="예기치 못한\n오류로 실패")
+            mapUpload.config(text="예기치 못한 오류로 실패")
             s.sock.close()
         elif res == "ALREADYEXIST":
-            mapUpload.config(text="맵파일 이미 존재함\n(클릭하여 다시 시도)")
+            mapUpload.config(text="맵파일 이미 존재함(클릭하여 다시 시도)")
         elif res == "NOFILE":
-            mapUpload.config(text="맵 파일이\n존재하지 않습니다.")
+            mapUpload.config(text="맵 파일이 존재하지 않습니다.")
             s.sock.close()
         else:
             pass
 
     else:
-        mapUpload.config(text="필요한 내용을\n채워주세요") #버튼 이름 바꾸기
+        mapUpload.config(text="필요한 내용을 채워주세요") #버튼 이름 바꾸기
+
+def infoWindow():
+
+    info = tk.Tk()
+    info.title("test") #창의 이름
+    info.geometry("700x400")
+    info.resizable(False, False) #창 크기 조절 가능 여부
+    info.attributes("-fullscreen", False)
+
+    info.mainloop()
+    
 
 
 def runEditor():
 
-    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, speed, playerWidth, \
-        playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload
+    global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, playerSpeed,\
+          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload
 
-    # ------------------------ GUI 요소 생성 ------------------------
+    # ------------------------ GUI 요소 생성 ------------------------#
 
     window = tk.Tk()
     window.title("맵에디터") #창의 이름
-
     window.resizable(False, False) #창 크기 조절 가능 여부
     window.attributes("-fullscreen", True) #전체화면
+
     window.bind("<Button-3>", player) #좌클릭 감지
     window.bind("<Button-2>", goal) #휠클릭 감지
 
@@ -313,7 +320,7 @@ def runEditor():
     jumpHeight = tk.Entry(window)
     jumpTime = tk.Entry(window)
     mapName = tk.Entry(window)
-    speed = tk.Entry(window)
+    playerSpeed = tk.Entry(window)
     playerWidth = tk.Entry(window)
     playerHeight = tk.Entry(window)
     background = tk.Entry(window)
@@ -322,9 +329,8 @@ def runEditor():
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
     saveButton = tk.Button(window, text = "맵 저장", command = lambda: ("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
-    mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", height = 2, bg = "skyblue", command = uploadMap)
-
-
+    mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", command = uploadMap)
+    infoButton = tk.Button(window, text = "에디터 설명", command = infoWindow)
 
     colorButton = []
     for i in range(9):
@@ -339,12 +345,12 @@ def runEditor():
     playerCanvas = tk.Canvas()
     goalCanvas = tk.Canvas()
 
-    # ------------------------ GUI 배치 ------------------------
+    # ------------------------ GUI 배치 ------------------------#
 
-    guiLayout = [XLabel, XEntry, YLabel, YEntry, mapButton,
+    guiLayout = [XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
                 playerHeigheLabel, playerHeight, playerWidthLabel, playerWidth, 
-                jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, speed,
-                mapNameLabel, mapName, backgroundLabel, background, saveButton, closeButton, mapUpload]
+                jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed,
+                mapNameLabel, mapName, backgroundLabel, background, saveButton, closeButton, mapUpload, infoButton]
 
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
@@ -355,6 +361,11 @@ def runEditor():
     for i in range(7):
         switchButton[i].grid(row = len(guiLayout)+i+2, column = 1)
 
+    playerHeight.insert(0, "1.6") #초기값 지정
+    playerWidth.insert(0, "0.7")
+    jumpHeight.insert(0, "4")
+    jumpTime.insert(0, "40")
+    playerSpeed.insert(0, "0.2")
 
     window.mainloop()
 
@@ -390,6 +401,7 @@ class tcpSock():
                             self.sock.send(data.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
                             print(data)
                             data = f.read(1024) #다시 1024만큼 읽어본다.
+                        self.sock.send("EOF".encode())
                         ret = self.sock.recv(1024).decode()  #서버의 메세지를 기다린다.
                         if ret == "0080": #성공
                             return "COMPLETE"
