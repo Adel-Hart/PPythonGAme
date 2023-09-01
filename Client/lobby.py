@@ -19,6 +19,8 @@ connected = False #서버 연결 여부
 
 joinedRoomName = None #현재 접속중인 방의 이름
 
+choosedMultiMap = False #멀티에서 맵을 고를 시 True로 바뀜, 다시 방 화면으로 ㄱㄱ
+
 sel = selectors.DefaultSelector() #셀렉터 초기화
 
 
@@ -115,7 +117,22 @@ class conTcp():
         else:
             self.data = None
             return False
+    
+    def setMap(self, mapCode):
+        self.tcpSock.send(f"1001!{mapCode}".encode()) #맵 설정 요청
+
+        while self.data == None:
+            pass #기다리기
         
+        if(self.data == "0080"):
+            print(f"맵코드설정:{mapCode}")
+            self.data = None 
+            return True #성공 메세지 받을 시
+        else:
+            print("맵코드 실패?")
+            self.data = None
+            return False
+
     def leaveRoom(self):
 
         self.tcpSock.send("1003".encode()) #방 나가기 요청
@@ -133,6 +150,8 @@ class conTcp():
             print("나가기 실패")
             self.data = None
             return False
+
+
 
     def inRoom(self): #방에 접속시 실행됨, 송신 스레드와 수신 스레드가 실행됨
         return
@@ -183,13 +202,13 @@ class conTcp():
         #서버 메세지 필터링
         
 
-            
+    
     
     def getRoomInfo(self):
         
         self.tcpSock.send("1005".encode()) #방 정보 요청
         
-        while self.data == None:
+        while self.data == None: #데이터 도착까지 기다리기
             pass
         
         if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
@@ -214,6 +233,20 @@ class conTcp():
             
         else:
             return "NONE"
+        
+    def getMapCodeList(self):
+        self.tcpSock.send("1000".encode()) #맵코드 목록 요청
+
+        while self.data == None: #데이터 도착까지 기다리기
+            pass
+        
+        mapCodes = self.data.split("!") #맵 코드로 된 리스트 생성
+        self.data = None #데이터 삭제
+
+        return mapCodes #맵코드 목록 반환
+
+
+
 
 class Image: #화면에 표시할 기능없는 이미지
     def __init__(self, imageName:str, posX :int, posY:int, width:int, height:int):    
@@ -227,7 +260,7 @@ class Image: #화면에 표시할 기능없는 이미지
         screen.blit(self.image, (self.posX, self.posY))
 
 class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
-    def __init__(self, backColor, text : str, textColor, marginx:int ,posX :int, posY:int, width:int, height:int, function = None, parameter1 = None, parameter2 = None): 
+    def __init__(self, backColor, text : str, textColor, marginx:int ,posX :int, posY:int, width:int, height:int, function = None, parameter1 = None, parameter2 = None, parameter3 = None): 
         # backColor: 버튼의 색상
         # text, textColor: 버튼에 표시될 문자열, 그 색상
         # marginx = text의 x방향 여백
@@ -246,7 +279,7 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
         self.function = function
         self.parameter1 = parameter1
         self.parameter2 = parameter2
-
+        self.parameter3 = parameter3
         return
 
     def checkMouse(self): # 마우스가 버튼 위에 있는지 여부 반환
@@ -275,12 +308,14 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
     
     def checkFunction(self): #함수 실행
         if self.checkMouse() and self.function != None:
-            if self.parameter1 == None:
-                self.function()
-            elif self.parameter1 != None and self.parameter2 != None:
+            if self.parameter3 != None:
+                self.function(self.parameter1, self.parameter2,self.parameter3)
+            elif self.parameter2 != None:
                 self.function(self.parameter1, self.parameter2)
-            else:
+            elif self.parameter1 != None:
                 self.function(self.parameter1)
+            else:
+                self.function()
             return True
         else:
             return False
@@ -517,8 +552,11 @@ def getString(filter, lengthLimit = 12):
 def multiButtons(): #멀티플레이, 시작 전 화면
     global connected
     global tcpHandler
+    print("connected:",connected)
+
     if connected: #연결이 되어있다면, 바로 방 목록으로 ㄱㄱ
         serverRoomList(tcpHandler, 1)
+        return
 
     nameError = Button(None, "Error on your Name, please check out your name", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
 
@@ -547,6 +585,8 @@ def multiButtons(): #멀티플레이, 시작 전 화면
         screen.fill(T1_BG) #검은 화면
 
         connecting.displayButton()
+
+
 
         if connected:
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
@@ -607,7 +647,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
         pass
 
     else: #방이 있다
-        currentPageRooms = roomList[page * 5 - 5:page * 5 - 1] #현재 페이지의 방 목록 불러오기
+        currentPageRooms = roomList[page * 5 - 5:page * 5] #현재 페이지의 방 목록 불러오기
 
         for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
             roomName = currentPageRooms[i]
@@ -656,19 +696,31 @@ def serverMakeRoom(handler: classmethod):
 def serverJoinedRoom(handler: classmethod):
 
     global joinedRoomName
+    global choosedMultiMap
     fixedButtonList, fixedImageList = [], []
 
     print(joinedRoomName, "들어옴")
 
     roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, SCRSIZEX // 20, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEX // 20) #방 제목
+    setMapCodeButton = Button( GRAY,"CHANGE MAP", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverBrowseMap, handler, handler.getMapCodeList())
+
+
     fixedButtonList = [] #변하지 않는 버튼 리스트 ex) 방 제목, 나가기
     fixedButtonList.append(roomTitleButton)
+    fixedButtonList.append(setMapCodeButton)
     fixedImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
     fixedButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom)) #undo 버튼
 
     while joinedRoomName != None:
         
         screen.fill(T1_BG)
+
+        if choosedMultiMap != False: #맵을 골랐을 시!!
+            if choosedMultiMap == "*NONE*":
+                choosedMultiMap = False #무효일시 넘어가기
+            else: #유효할 시
+                handler.setMap(choosedMultiMap) #맵 설정 요청
+                choosedMultiMap = False #맵을 다시 고를 수 있다는 뜻
 
         roominfo = handler.getRoomInfo()
 
@@ -679,9 +731,17 @@ def serverJoinedRoom(handler: classmethod):
         isGameReady = strToBool(roominfo[4])
         
         playerButtonList = []
+
         for i, player in enumerate(playerList):
             showingText = str(i) + player + " " +str(playerReadyDict[player]) #플레이어 이름과 준비상태로 텍스트 만들기
             playerButtonList.append(Button( WHITE, showingText, RED, 0, 0, SCRSIZEX // 20 * (i+2), SCRSIZEX // 40 * len(showingText), SCRSIZEX // 20))
+
+        if currentMapCode == "": #현재 맵코드가 없을시
+            mapCodeText = "mapcode:*EMPTY*" #맵이 없음
+        else: #맵코드가 있을시
+            mapCodeText = f"mapcode:{currentMapCode}"
+
+        mapCodeButton = Button( None, mapCodeText, BLUE, 0, SCRSIZEX // 2 - (SCRSIZEX * len(mapCodeText) // 50) // 2, SCRSIZEX // 30, SCRSIZEX * len(mapCodeText) // 50, SCRSIZEX // 30)
 
         for button in fixedButtonList: #버튼들 모두 출력
             button.displayButton()
@@ -691,6 +751,10 @@ def serverJoinedRoom(handler: classmethod):
 
         for button in fixedImageList: #이미지들 모두 출력
             button.displayImage()
+
+        mapCodeButton.displayButton()
+
+        
 
         pygame.display.update()
 
@@ -709,16 +773,78 @@ def serverJoinedRoom(handler: classmethod):
 
     print("joinedroom탈출!")
         
-        
-
-
-
-
-        
-
-
-
     return
+
+def chooseMap(mapCode): #전역변수 choosedMultiMap를 변화시키는 함수
+    global choosedMultiMap
+    choosedMultiMap = mapCode
+    return
+
+def serverBrowseMap(handler ,mapCodeList:list, page:int = 1): #맵을 서버에서 검색하는 함수
+    
+    print(mapCodeList)
+    currentImageList, currentButtonList = [],[] #초기화
+
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, chooseMap, "*NONE*")) #undo 버튼
+    
+    currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverBrowseMap, handler, mapCodeList,1)) #새로고침 버튼
+
+    mapCount = len(mapCodeList)
+
+    pageCount = (mapCount - 1) // 5 + 1
+
+    if mapCount == 0: #맵이 없네
+        pass
+
+    else: #맵이 있다
+        currentPageMaps = mapCodeList[page * 5 - 5:page * 5] #현재 페이지의 맵 목록 불러오기
+
+        for i in range(len(currentPageMaps)): #현재 페이지의 맵 수만큼
+            mapCode = currentPageMaps[i] 
+            currentButtonList.append(Button( GRAY,mapCode, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, chooseMap, mapCode))
+        pass
+    
+        if page != 1: #1페이지가 아니라면
+                #왼쪽으로 버튼 추가
+                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap, handler, mapCodeList,page - 1))
+
+        if page != pageCount: #끝 페이지가 아니라면
+            #오른쪽으로 버튼 추가
+            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap,handler, mapCodeList,page + 1))
+        pass
+
+    #안내 버튼
+    currentButtonList.append(Button( GRAY,"CHOOSE MAP!", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30))
+
+    screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
+
+    for button in currentButtonList: #버튼들 모두 출력
+        button.displayButton()
+
+    for button in currentImageList: #이미지들 모두 출력
+        button.displayImage()
+        
+    pygame.display.update() #디스플레이 업데이트
+
+    global choosedMultiMap
+    while choosedMultiMap == False: #반복문, 맵을 고를 시 함수 종료
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: # 종료 이벤트
+                global done
+                done=True
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1: #좌클릭이라면   
+                    for button in currentButtonList: #마우스와 겹치는 버튼을 작동시킨다
+                        if button.checkFunction():
+                            break
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE: #ESC 누를시
+                    choosedMultiMap = "*NONE*" # 고르지 않았다는 뜻
+    
+    return choosedMultiMap #맵을 골랐다는 뜻
 
 def strToDict(string:str):
     string = string.replace(" ", "") #공백 제거
