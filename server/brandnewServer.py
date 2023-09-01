@@ -47,6 +47,9 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.whosReady.pop(name, None) #준비 목록에서 이름 빼고, 오류 날시 오류대신 None반환
         #self.multiCastCmd(f"OUT{name}, {addr}")
 
+        self.garbageCollector()
+
+
     def setMap(self, mapCode):
         if mapCode in os.listdir("./Maps"):
             self.mapCode = mapCode
@@ -59,7 +62,9 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     
     def startGame(self):
         self.inGame = True
-        self.gameHandler = udpGame(self.whos.keys(), self) #참여자 ip리스트와 방 핸들러를 넣어준다.
+        for c in self.whos.values():
+            c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
+        self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
         self.gameHandler.run()
 
     def endGame(self):
@@ -83,9 +88,9 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         target.sendMsg("CMD " + msg) 
 
 
-
-
-
+    def garbageCollector(self):
+        if len(self.whos.keys()) == 0: #방 인원이 0 명이면
+            self.deleteRoom()
 
 
 
@@ -147,7 +152,18 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             if heartStack > 3:
                 break
 
+        if self.inRoom: #방에 있을 때는
+            self.inRoom = False
+            self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
+            del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
+                #룸 핸들러의 참조가 모두 사라지면, 파이썬의 garbage collector가 자동으로 룸 핸들러를 삭제시킴
 
+
+        elif self.inGamePlayer: #게임 중 (UDP 통신 중일 시에는)
+            self.roomHandler.gameHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
+            del self.roomHandler
+
+        self.shutDown() #연결 종료
         sys.exit() #현재 스레드 종료     
 
             
@@ -414,16 +430,23 @@ def evaler(cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때�
 class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
 
 
-    def __init__(self, clients: list, room: Room): #clients : 참여자들 ip '리스트', room : 방 핸들러
+    def __init__(self, clientsName: list, room: Room): #clientsName : 참여자들 닉네임 '리스트', room : 방 핸들러
 
         self.room = room #udp가 실행된 room 방 객체를 가져온다.
-        self.clientPos = {}
+        self.clientPos = {} #플레이어들의 위치 값
+        self.clientAddr = {} #접속 한 클라이언트의 아이피주소와 포트의 튜플 값 key:닉네임, value : 튜플
         self.rgb = [0, 0, 0] #rgb 값 저장할 리스트
         self.change = self.rgb #rgb의 변화량 감지 리스트
+        self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
+        self.done = False #스레드의 while문을 종료시킬 원격 함수
 
-        for c in clients:
-            self.clientPos[c] = "0, 0" #클라이언트 ip : "x, y" 위치정보를 저장
-            
+
+
+        for c in clientsName:
+            self.clientPos[c] = "0, 0" #클라이언트  이름: "x, y" 위치정보를 저장
+            self.clientAddr[c] = ("", 0000) #주소값 초기화
+
+        
 
         
         
@@ -434,56 +457,109 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
         self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
         print("udp game server listening")
 
-        sele.register(self.udpSock, selectors.EVENT_READ, self.recvMsg)
-        #사용자가 연결시 recvMsg를 통해 메세지를 받고, 데이터를 리턴해 전송
-
-        while True: #셀렉터를 통해, 데이터 수신시 스레드(비스무리) 생성
-            events = sele.select() #이벤트 감지
-            for key, mask in events:
-                callback = key.data #콜백함수 적용 key.data = 실행되는 함수(괄호 안에 쓴것)
-                callback(key.fileobj) #함수 실행 인자는 key.fileobj >  register(fileobj, events, data=None)¶
+        self.standingBy() #플레이어 준비 받기
 
     
     def recvMsg(self): #클라이언트로의 메세지를 분별 및 확인하여 전송
-        while(True):
+        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
             msg, fromAddr = self.udpSock.recvfrom(1024)
             msg = msg.encode()
-            fixAddr = fromAddr[0] #fromAddr 리턴이 (아이피, 소켓주소)라서
-            msg = msg.split('!') #!로 구분함  >  형식 : !방이름!위치정보
-                                # RGB변경시 메세지 > 형식 : _!방이름!R,G,B
+            msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름
+                                # RGB변경시 메세지 > 형식 : R방이름!R,G,B!이름
                                 #게임 종료 메세지 > @!
             #방 이름이 없는데 요청한경우 오류가 나기 때문에.
-            if msg[1] == self.room.roomName: #해당 방이름의 요청에만 응답!
-                if msg[0] == "_": #RGB변경 메세지 일때
-                    self.rgb[0] = msg[2].spilt(',')[0]
-                    self.rgb[1] = msg[2].spilt(',')[1]
-                    self.rgb[2] = msg[2].spilt(',')[2] #Rgb정보 저장
 
-                elif msg[0] == "": #위치정보 저장 (거의 대부분 이게 요청 됨.)
-                    self.clientPos[fixAddr] = msg[2]
+
+            if msg[0][1:] == self.room.roomName: #해당 방이름의 요청에만 응답!   msg[1] > P방이름 or R방이름 , msg[1:] >> R과 P (앞글자가 사라짐)
+                if msg[0][0] == "R": #RGB변경 메세지 일때     msg[0][0] >> 슬라이스 된 값의 앞글자 한글자
+                    self.rgb[0] = msg[1].spilt(',')[0]
+                    self.rgb[1] = msg[1].spilt(',')[1]
+                    self.rgb[2] = msg[1].spilt(',')[2] #Rgb정보 저장
+
+                elif msg[0][0] == "P": #위치정보 저장 (거의 대부분 이게 요청 됨.)
+                    self.clientPos[msg[2]] = msg[1]
                 elif msg[0] == "@":
                     self.room.multiCastCmd("GAMEOUT") #TCP모듈에 게임 끝 선언
-                    self.udpSock.close() #udp소켓 닫기
-                    self.room.endGame() #방에 게임 끝 신호 보내기 (GameHandler 인스턴스 삭제)
+                    self.endGame()
+    
+            self.endGame()
+            sys.exit(0) #self.done 이 켜지면 스레드 종료
 
-            self.sendMsg(fromAddr) #리턴
+    def sendMsg(self): #스레드 1개 사용
+        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.       
+
+            if self.change == self.rgb: #rgb값이 변하지 않았을 때는, 위치정보만 전달.  >>위치정보는 P로 시작, RGB는 R로 시작
+                for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
+                    for t in self.clientAddr.keys():
+                        self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}", self.clientAddr[t])
+                        #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
 
 
 
-    def sendMsg(self, sendAddr):
-        if self.change == self.rgb: #rgb값이 변하지 않았을 때는, 위치정보만 전달.  >>위치정보는 P로 시작, RGB는 R로 시작
-            res = "P"
-            for c in self.clientPos.keys():
-                res += f"{c}:{self.clientPos[c]}!"   #"P192.168.0.1:20,1!981.352.21.62:20,6!.."   
-            self.udpSock.sendto(res.encode(), sendAddr) #전송
-        else:
-            #rgb의 값을 클라이언트에게 전송 + 그 후 위치정보도 같이 전달
-            self.change = self.rgb
-            res = ",".join(self.rgb)
-            self.udpSock.sendto(f"R{res}".encode(), sendAddr)
+            else:
+                #rgb의 값을 클라이언트에게 전송 + 그 후 위치정보도 같이 전달
+                self.change = self.rgb
+                res = ",".join(self.rgb)
+                for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
+                    for t in self.clientAddr.keys():
+                        self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}", self.clientAddr[t])
+                        #사람 한명당 4명의 위치 정보가 필요하니 2중for문
+                        #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
+                    self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[t]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
         
+        self.endGame()
+        sys.exit(0) #self.done 이 켜지면 스레드 종료
 
 
+    def standingBy(self):
+        #가장 먼저 실행되고, 플레이어가 모두 준비 되면, 신호를 보내고 리시브와 센드 메세지의 스레드를 실행한다.
+        #처음 플레이어들에게서 준비가 되면, 초기화 메세지(기본 위치, 클라이언트 주소)를 받는다.
+
+
+        #준비 메세지 : S이름!기본좌표
+        while True:
+            msg, fromAddr = self.udpSock.recvfrom(1024)
+            msg = msg.decode()
+            
+            if msg.startwith("S"):
+                msg = msg.replace("S", "").split("!") #!기준으로 나누기
+                self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
+                self.clientPos[msg[0]] = msg[1]
+                self.readyStack += 1 #준비 인원 +!
+
+                self.udpSock.sendto("0080".encode(), fromAddr)
+
+            else:
+                self.udpSock.sendto("0000".encode(), fromAddr)
+
+            if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
+                self.room.inGame = True
+                self.startGame()
+
+    def startGame(self):
+        
+        udpRecv = threading.Thread(target=self.recvMsg)
+        udpSend = threading.Thread(target=self.sendMsg) #스레드 세팅
+
+        for c in self.clientAddr.keys():
+            self.udpSock.sendto("5555".encode(), self.clientAddr[c]) #시작 시그널 보내기
+
+        udpRecv.start()
+        udpSend.start() #스레드 시작
+
+
+    def endGame(self):
+        self.done = True
+        self.udpSock.close()
+
+        del self
+
+
+    def connDown(self, targetC): #플레이어 연결이 예상치 못하게 끊켰을 때 목록에서 지우는 것
+        self.clientAddr.pop(targetC)
+        self.clientPos.pop(targetC)
+
+        self.udpSock.sendto(f"S{targetC}", self.clientAddr[targetC])
 
 
 '''
