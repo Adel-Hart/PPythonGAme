@@ -98,6 +98,8 @@ class conTcp():
             
         
     def joinRoom(self, roomCode: str): #방 참여요청
+
+        print(roomCode)
         self.tcpSock.send(f"0004{roomCode}".encode()) #방 입장 요청
 
         while self.data == None:
@@ -665,8 +667,6 @@ def serverJoinedRoom(handler: classmethod):
     fixedButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom)) #undo 버튼
 
     while joinedRoomName != None:
-
-
         
         screen.fill(T1_BG)
 
@@ -789,6 +789,7 @@ while not done: # loop the game
     pygame.display.update()
 
     if joinedRoomName != None: #방 입장시
+
         serverJoinedRoom(tcpHandler)
 
     for event in pygame.event.get():
