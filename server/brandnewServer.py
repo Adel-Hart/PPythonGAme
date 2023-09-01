@@ -173,7 +173,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         if roomName not in roomList:
             globals()["room" + roomName] = Room(roomName) #roomroomName의 변수 명으로 Room 클래스 선언(방을 팜)
             roomList.append(evaler(roomName)) #방 목록에 append, eval은 roomroomName을 호출하는 함수로, 클래스를 반환 함 즉, roomList엔 방이름의 인스턴스들이 있다.
-            self.soc.send("0080".encode()) #방 만들기 성공
+            self.sendMsg("0080") #방 만들기 성공
             print("방 만들기 성공")
         
             return self.joinRoom(evaler(roomName))
@@ -245,11 +245,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 if reqMap+".dat" in os.listdir("./Maps/"): #!로 구분된 문자열이 출력이라, 변환해야 함
                                     
                                         print("0000 전송")
-                                        self.soc.send("0000".encode()) #이미 존재
+                                        self.sendMsg("0000") #이미 존재
 
                                 else:
                                     print("0080전송")
-                                    self.soc.send("0080".encode()) #전송시작.
+                                    self.sendMsg("0080") #전송시작.
                                     
                                     with open(f"./Maps/{reqMap}.dat", "w") as f: #파일 읽어서 저장 시작
                                         print("파일 읽기")
@@ -269,7 +269,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                                             print("완료")
                                             f.close() #파일 저장
-                                            self.soc.send("0080".encode()) #성공 메세지 전송
+                                            self.sendMsg("0080") #성공 메세지 전송
                                             print("완료 전송")
                                             self.inEditor = False
                                             print("소켓 닫기")
@@ -277,7 +277,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                             break
 
                                         except Exception:
-                                            self.soc.send("0000".encode()) #오류 메세지 전송
+                                            self.sendMsg("0000") #오류 메세지 전송
                                             print("오류 전송") 
                                             self.inEditor = False
                                             self.soc.close() #소켓 닫기
@@ -286,18 +286,18 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         if not self.inRoom: #방 목록 탐색기에 있을때.
                             if self.msg == "0000":
                                 print("ok")
-                                self.soc.send("0080".encode()) #OK sign
+                                self.sendMsg("0080") #OK sign
                             elif "0001" in self.msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
                                 if not self.msg in players:
                                     self.name = self.msg.replace("0001", "") #잘라내기 이름 설정
                                     players.append(self.name) #플레이어 목록에 이름추가
-                                    self.soc.send("0080".encode()) #OK sign
+                                    self.sendMsg("0080") #OK sign
 
                                 else:
-                                    self.soc.send("0000")
+                                    self.sendMsg("0000")
                             elif self.msg == "0002": #방 목록 수신
                                 result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
-                                self.soc.send(result.encode())
+                                self.sendMsg(result)
 
                             elif "0003" in self.msg: #방 만들기 수신 형식은 0003방이름
                                 self.makeRoom(self.msg.split('3')[1])
@@ -309,7 +309,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                                 self.joinRoom(roomName)
 
-                                self.soc.send("0080".encode()) #OK sign
+                                self.sendMsg("0080") #OK sign
                             
 
 
@@ -320,7 +320,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
                             if self.msg == "0002": #방 목록 수신
                                 result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
-                                self.soc.send(result.encode())
+                                self.sendMsg(result)
                             
                             # 디버그
 
@@ -331,11 +331,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                             elif self.msg == "1000": #맵 목록 조회
                                 print("맵 view")
-                                self.soc.send(checkMapList().encode())
+                                self.sendMsg(checkMapList())
                             elif "1001" in self.msg: #맵 설정 형식 >> 1001!MapCode >>0080 송신
                                 mapCode = self.msg.split("!")[1]
                                 self.roomHandler.setMap(mapCode)
-                                self.soc.send("0080".encode())
+                                self.sendMsg("0080")
 
                             elif self.msg == "1002": #게임 시작
                                 self.roomHandler.startGame()
@@ -346,14 +346,14 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                     self.roomHandler.deleteRoom() #삭제 요청
                                     del self.roomHandler #핸들러 참조 삭제
                                     self.inRoom = False
-                                    self.soc.send("0080".encode())
+                                    self.sendMsg("0080")
 
                                 else:
                                     if self.leaveRoom():
                                         self.inRoom = False
-                                        self.soc.send("0080".encode())
+                                        self.sendMsg("0080")
                                     else:
-                                        self.soc.send("0000".encode())
+                                        self.sendMsg("0000")
 
                 
 
@@ -363,13 +363,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                     del self.roomHandler #핸들러 참조 삭제
                                     
                                     self.inRoom = False
-                                    self.soc.send("0080".encode()) #완료메세지
+                                    self.sendMsg("0080") #완료메세지
                                 else:
-                                    self.soc.send("0000".encode())
+                                    self.sendMsg("0000")
 
 
                             elif self.msg == "1005": #방 정보 요청
-                                self.soc.send(self.sendRoomInfo().encode())
+                                self.sendMsg(self.sendRoomInfo())
 
 
 
@@ -398,7 +398,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         '''
 
 
-        infoData = f"{self.roomHandler.roomName}!{str(list(self.roomHandler.whosReady.keys()))}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
+        infoData = f"ROOMINFO{self.roomHandler.roomName}!{str(list(self.roomHandler.whosReady.keys()))}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
         return infoData
         #.keys()는 dic_list객체라, list로 만들고 다시 문자열 str로 감싸야 함
 
