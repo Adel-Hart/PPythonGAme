@@ -106,10 +106,12 @@ class conTcp():
 
         
         if(self.data == "0080"):
-            global joinedRoomName
+            global joinedRoomNam
             joinedRoomName = roomCode
+            self.data = None
             return True #성공 메세지 받을 시
         else:
+            self.data = None
             return False
         
     def leaveRoom(self):
@@ -180,21 +182,19 @@ class conTcp():
             
     
     def getRoomInfo(self):
-
+        
         self.tcpSock.send("1005".encode()) #방 정보 요청
-
+        if self.data == "0080":
+            self.data = None
         #data = self.tcpSock.recv(1024), 스레드에서 읽어온걸 가져오자!
-
-        while self.data == None:
-            pass #기다리기
         
         if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
             if(self.data != "NaN"): #유효한 정보일시
                 
                 roomIf = self.data.strip("ROOMINFO")
-                roomIf = roomIf.split("!")
-
-                return roomIf
+                roomIfList = roomIf.split("!")
+                print(roomIfList)
+                return roomIfList
             
 
             #형식 ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
@@ -206,6 +206,9 @@ class conTcp():
             else: #Nan = 무효일시
                 #del data
                 return False
+            
+        else:
+            return "NONE"
 
 class Image: #화면에 표시할 기능없는 이미지
     def __init__(self, imageName:str, posX :int, posY:int, width:int, height:int):    
@@ -689,8 +692,22 @@ def serverJoinedRoom(handler: classmethod):
                         
                 
                 if event.key == pygame.K_SPACE:
+
                     roominfo = handler.getRoomInfo()
+
                     print(roominfo)
+                    pass
+
+                    joinedRoomName = roominfo[0]
+                    playerList = strToList(roominfo[1])
+                    currentMapCode = roominfo[2]
+                    playerReadyDict = strToDict(roominfo[3])
+
+
+                    isGameReady = strToBool(roominfo[4])
+
+                    print(roominfo, joinedRoomName, playerList, currentMapCode, playerReadyDict, isGameReady)
+
 
         
 
@@ -698,7 +715,38 @@ def serverJoinedRoom(handler: classmethod):
 
     return
 
+def strToDict(string:str):
+    string = string.replace(" ", "") #공백 제거
+    string = string.replace("{", "")
+    string = string.replace("}", "") #중괄호 제거
+    string = string.replace("'", "")
+    string = string.replace('"', "") #따옴표 제거
+    strDict = {}
+
+    for keyValue in string.split(","):
+        keyValueList = keyValue.split(":")
         
+
+        strDict[keyValueList[0]] = strToBool(keyValueList[1])
+    
+    return strDict
+
+def strToBool(string:str):
+    if string == "True":
+        return True
+    elif string == "False":
+        return False
+    else:
+        return string
+
+
+def strToList(string:str):
+    string = string.replace(" ", "") #공백 제거
+    string = string.replace("[", "")
+    string = string.replace("]", "") #대괄호 제거
+    string = string.replace("'", "")
+    string = string.replace('"', "") #따옴표 제거
+    return string.split(",")
 
 
 
