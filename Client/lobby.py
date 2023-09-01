@@ -229,9 +229,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
         elif data.startswith('R'): #RGB변경 정보를 수신
             
-
-
-            
+    
 
         
         
