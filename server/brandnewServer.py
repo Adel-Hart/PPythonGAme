@@ -59,7 +59,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     
     def startGame(self):
         self.inGame = True
-        self.gameHandler = udpGame(self.whos.keys(), self) #참여자 ip리스트와 방 핸들러를 넣어준다.
+        self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
         self.gameHandler.run()
 
     def endGame(self):
@@ -414,16 +414,20 @@ def evaler(cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때�
 class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
 
 
-    def __init__(self, clients: list, room: Room): #clients : 참여자들 ip '리스트', room : 방 핸들러
+    def __init__(self, clientsName: list, room: Room): #clientsName : 참여자들 닉네임 '리스트', room : 방 핸들러
 
         self.room = room #udp가 실행된 room 방 객체를 가져온다.
         self.clientPos = {}
+        self.clientAddr = {}
         self.rgb = [0, 0, 0] #rgb 값 저장할 리스트
         self.change = self.rgb #rgb의 변화량 감지 리스트
+        self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
 
-        for c in clients:
-            self.clientPos[c] = "0, 0" #클라이언트 ip : "x, y" 위치정보를 저장
-            
+        for c in clientsName:
+            self.clientPos[c] = "0, 0" #클라이언트  이름: "x, y" 위치정보를 저장
+            self.clientAddr[c] = ("", 0000) #주소값 초기화
+
+        
 
         
         
@@ -474,7 +478,7 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
         if self.change == self.rgb: #rgb값이 변하지 않았을 때는, 위치정보만 전달.  >>위치정보는 P로 시작, RGB는 R로 시작
             res = "P"
             for c in self.clientPos.keys():
-                res += f"{c}:{self.clientPos[c]}!"   #"P192.168.0.1:20,1!981.352.21.62:20,6!.."   
+                res += f"{c}:{self.clientPos[c]}!"   #"P닉네임:20,1!닉네임22:20,6!.."   
             self.udpSock.sendto(res.encode(), sendAddr) #전송
         else:
             #rgb의 값을 클라이언트에게 전송 + 그 후 위치정보도 같이 전달
@@ -483,6 +487,30 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
             self.udpSock.sendto(f"R{res}".encode(), sendAddr)
         
 
+
+
+    def standingBy(self):
+        #가장 먼저 실행되고, 플레이어가 모두 준비 되면, 신호를 보내고 리시브와 센드 메세지의 스레드를 실행한다.
+        #처음 플레이어들에게서 준비가 되면, 초기화 메세지(기본 위치, 클라이언트 주소)를 받는다.
+
+
+        #준비 메세지 : S이름!기본좌표
+        while True:
+            msg, fromAddr = self.udpSock.recvfrom(1024)
+            msg = msg.decode()
+            
+            if msg.startwith("S"):
+                msg = msg.replace("S", "").split("!") #!기준으로 나누기
+                self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
+                self.clientPos[msg[0]] = msg[1]
+                self.readyStack += 1 #준비 인원 +!
+
+
+
+            else:
+                pass
+
+            if self.readyStack == self.clientPos.keys()
 
 
 

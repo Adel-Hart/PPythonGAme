@@ -206,11 +206,11 @@ class conTcp():
 
 
 class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
-    def __init__(self, players: list):
+    def __init__(self, players: list, initPos: list): #players는 참여자들 닉네임 list, initPos는 플레이할 맵의 플레이어 기본위치
         self.udpSock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) #기본 udp 소켓 설정
         self.playerList = {}
         for p in players:
-            self.playerList[p] = [0, 0]
+            self.playerList[p] = initPos #플레이어 좌표 초기 설정
 
 
     def udpSendHandler(self, msg):
@@ -220,9 +220,16 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
     def udpRecvHandler(self):
         data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
         
+        data = data.decode()
         if data.startswith('P'): #위치 정보를 수신
             data = data.replace("P", "") #P삭제
             data = data.split("!") #구분자가 !라서 !를 기준으로 분리
+            pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
+            self.playerList[data[0]] = [pos[0], pos[1]] #위치정보를 멤버 변수에 저장
+
+        elif data.startswith('R'): #RGB변경 정보를 수신
+            
+
 
             
 
