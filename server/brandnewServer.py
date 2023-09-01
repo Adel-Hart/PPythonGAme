@@ -205,10 +205,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     self.msg = data.decode()
 
                     if self.msg != "7780": 
-                        print(f"{datetime.now()} :  {self.addr}")
+                        # print(f"{datetime.now()} :  {self.addr}")
                         
 
-                        print(self.msg)
+                        # print(self.msg)
 
                         # if self.msg == "7777": #heartBeat 신호
                         #     self.alive = True #요청보내면 살아있다 표시
@@ -289,10 +289,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                             elif "0004" in self.msg: #방 입장 수신 형식 0004방이름
 
-                                roomName = self.msg.replace("0001", "") #잘라내기 이름 설정
+                                roomName = self.msg.replace("0004", "") #잘라내기 이름 설정
 
                                 self.joinRoom(roomName)
-
+                                
                                 self.sendMsg("0080") #OK sign
                             
 

@@ -106,7 +106,7 @@ class conTcp():
 
         
         if(self.data == "0080"):
-            global joinedRoomNam
+            global joinedRoomName
             joinedRoomName = roomCode
             self.data = None
             return True #성공 메세지 받을 시
@@ -160,14 +160,16 @@ class conTcp():
 
             if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                 self.tcpSock.send("7780".encode()) #응답하기
+                self.data = None
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 cmd = self.data.split(" ")[1]
 
             else:
-
                 self.data = recvMsg
-                print(self.data)
+                if type(self.data) == str:
+                    if not self.data.startswith("ROOMINFO"):
+                        print(self.data)
 
         
             
@@ -184,16 +186,16 @@ class conTcp():
     def getRoomInfo(self):
         
         self.tcpSock.send("1005".encode()) #방 정보 요청
-        if self.data == "0080":
-            self.data = None
-        #data = self.tcpSock.recv(1024), 스레드에서 읽어온걸 가져오자!
+        
+        while self.data == None:
+            pass
         
         if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
             if(self.data != "NaN"): #유효한 정보일시
                 
                 roomIf = self.data.strip("ROOMINFO")
                 roomIfList = roomIf.split("!")
-                print(roomIfList)
+                self.data = None
                 return roomIfList
             
 
@@ -205,6 +207,7 @@ class conTcp():
             
             else: #Nan = 무효일시
                 #del data
+                self.data = None
                 return False
             
         else:
@@ -651,28 +654,42 @@ def serverMakeRoom(handler: classmethod):
 def serverJoinedRoom(handler: classmethod):
 
     global joinedRoomName
-    currentButtonList, currentImageList = [], []
+    fixedButtonList, fixedImageList = [], []
 
     print(joinedRoomName, "들어옴")
 
-    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, SCRSIZEX // 20, len(joinedRoomName) * 75, 150)
-    
-    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom)) #undo 버튼
-
-    currentButtonList.append(roomTitleButton)
-    funcButtonList = [] #func가 있는 버튼 리스트 ex) 방 제목, 
-    funcButtonList.append(roomTitleButton) #
+    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, SCRSIZEX // 20, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEX // 20) #방 제목
+    fixedButtonList = [] #변하지 않는 버튼 리스트 ex) 방 제목, 나가기
+    fixedButtonList.append(roomTitleButton)
+    fixedImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
+    fixedButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom)) #undo 버튼
 
     while joinedRoomName != None:
+
+
         
         screen.fill(T1_BG)
-        
 
-        for button in currentButtonList: #버튼들 모두 출력
+        roominfo = handler.getRoomInfo()
+
+        joinedRoomName = roominfo[0]
+        playerList = strToList(roominfo[1])
+        currentMapCode = roominfo[2]
+        playerReadyDict = strToDict(roominfo[3])
+        isGameReady = strToBool(roominfo[4])
+        
+        playerButtonList = []
+        for i, player in enumerate(playerList):
+            showingText = str(i) + player + " " +str(playerReadyDict[player]) #플레이어 이름과 준비상태로 텍스트 만들기
+            playerButtonList.append(Button( WHITE, showingText, RED, 0, 0, SCRSIZEX // 20 * (i+2), SCRSIZEX // 40 * len(showingText), SCRSIZEX // 20))
+
+        for button in fixedButtonList: #버튼들 모두 출력
             button.displayButton()
 
-        for button in currentImageList: #이미지들 모두 출력
+        for button in playerButtonList: #플레이어 이름 모두 출력
+            button.displayButton()
+
+        for button in fixedImageList: #이미지들 모두 출력
             button.displayImage()
 
         pygame.display.update()
@@ -683,30 +700,18 @@ def serverJoinedRoom(handler: classmethod):
                 done=True
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1: #좌클릭이라면   
-                    for button in currentButtonList: #마우스와 겹치는 버튼을 작동시킨다
+                    for button in fixedButtonList: #마우스와 겹치는 버튼을 작동시킨다
                         if button.checkFunction():
                             break
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
                     handler.leaveRoom()
-                        
-                
-                if event.key == pygame.K_SPACE:
 
-                    roominfo = handler.getRoomInfo()
-
-                    print(roominfo)
-                    pass
-
-                    joinedRoomName = roominfo[0]
-                    playerList = strToList(roominfo[1])
-                    currentMapCode = roominfo[2]
-                    playerReadyDict = strToDict(roominfo[3])
+    print("joinedroom탈출!")
+        
+        
 
 
-                    isGameReady = strToBool(roominfo[4])
-
-                    print(roominfo, joinedRoomName, playerList, currentMapCode, playerReadyDict, isGameReady)
 
 
         
