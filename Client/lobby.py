@@ -168,7 +168,7 @@ class conTcp():
 
     또는
 
-    핸들러에서 받는 메세지를 전역변수화 시켜서, 함수에서 가져오는 것이다. <이게 좀 더 괜찮은 듯?
+    핸들러에서 받는 메세지를 전역변수화 시켜서, 함수에서 가져오는 것이다. <이게 좀 더 괜찮은 듯?  < 8/29 채택
 
     
     
@@ -185,6 +185,9 @@ class conTcp():
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 cmd = self.data.split(" ")[1]
+
+            
+
 
             else:
                 self.data = recvMsg
