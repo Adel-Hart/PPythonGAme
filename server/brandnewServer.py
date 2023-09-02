@@ -36,9 +36,10 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     
 
     def joinRoom(self, client, addr, name):
+
         self.whos[name] = client #목록에서 핸들러와 아이피 추가 
         self.whosReady[name] = False #준비 목록에 추가 + 플레이어 ip가 아닌 이름을 사용하는 리스트로도 겸용한다.
-        print(addr)
+        print(addr, name + "입장")
         #self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
         #self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
 
@@ -177,12 +178,15 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             self.sendMsg("0080") #방 만들기 성공
             print("방 만들기 성공")
         
-            return self.joinRoom(evaler(roomName))
+            return self.joinRoom(roomName) #방 이름만 문자열로 보낸다
 
         print("방 제작 실패")
         return False
 
     def joinRoom(self, roomName):
+
+        roomName = evaler(roomName) #evaler는 여기서 적용한다
+
         if roomName in roomList:
             roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
             self.inRoom = True

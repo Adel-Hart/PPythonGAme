@@ -182,7 +182,6 @@ class conTcp():
 
             if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                 self.tcpSock.send("7780".encode()) #응답하기
-                print("7780")
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 cmd = self.data.split(" ")[1]
