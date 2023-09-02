@@ -387,6 +387,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                             elif self.msg == "1005": #방 정보 요청
                                 self.sendMsg(self.sendRoomInfo())
+
+                            elif self.msg == "1006": #준비 sign
+                                self.roomHandler.readyPlayer(self.name)
+                            elif self.msg == "1007": #준비 해제 sign
+                                self.roomHandler.noreadyPlayer(self.name)
                         
                     else: #hearbeat 신호일시
                         self.heartStack = 0
@@ -394,10 +399,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         
 
   
-                            elif self.msg == "1006": #준비 sign
-                                self.roomHandler.readyPlayer(self.name)
-                            elif self.msg == "1007": #준비 해제 sign
-                                self.roomHandler.noreadyPlayer(self.name)
+                            
 
                                 
 
