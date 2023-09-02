@@ -64,6 +64,7 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
             backgroundImage = line
         elif "%" in line: # %가 있는 줄은 도착지점 좌표
             line = line.strip("%") #% 제거
+            line = line.strip("*") #* 제거
             Pos = line.split(",") #, 기준으로 문자열 나누기
             Gpos = pos(float(Pos[0]), float(Pos[1])) #도착지점 좌표
             pass 
