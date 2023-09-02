@@ -289,7 +289,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 print("ok")
                                 self.sendMsg("0080") #OK sign
                             elif "0001" in self.msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
-                                if not self.msg in players:
+                                if not self.msg.replace("0001", "") in players:
                                     self.name = self.msg.replace("0001", "") #잘라내기 이름 설정
                                     players.append(self.name) #플레이어 목록에 이름추가
                                     self.sendMsg("0080") #OK sign

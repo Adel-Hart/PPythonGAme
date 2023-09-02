@@ -112,6 +112,7 @@ class conTcp():
             global joinedRoomName
             joinedRoomName = roomCode
             print(roomCode, self.data)
+
             self.data = None
             return True #성공 메세지 받을 시
         else:
