@@ -517,7 +517,7 @@ def getChapterInfo(chapter: int): #현재 챕터의 info.dat 파일 해석, 내�
 def openStoryMap(chapter: int,level: int): #[챕터번호, 레벨번호]
 
     while True:
-        clear = main.runGame(f"story/chapter{chapter}/level{level}")
+        clear = main.runGame(f"maps/story/chapter{chapter}/level{level}")
         if clear == 1: #레벨 클리어시
 
             levelCount, clearedList = getChapterInfo(chapter)
@@ -963,7 +963,7 @@ while not done: # loop the game
     clock.tick(60) #FPS는 60으로
 
     screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
-
+    
     for button in currentButtonList: #버튼들 모두 출력
         button.displayButton()
 

@@ -33,7 +33,7 @@ class pos: # 좌표값 class, 오브젝트마다 pos가 필요해서, 클래스�
         self.y = y
 
 def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표를 반환하는 함수
-    f = open("./maps/"+str(MapName)+"/map.dat", "r") #파일 읽기
+    f = open(f"./{MapName}.dat", "r") #파일 읽기
 
     lines = f.readlines()
     backgroundImage = "None"

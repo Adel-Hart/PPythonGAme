@@ -11,7 +11,8 @@ import socket
 
 
 
-HOST = "118.40.40.181"
+with open("../server/serverip.txt","r") as f:
+    HOST = f.readline()
 PORT = 8080
 
 '''
