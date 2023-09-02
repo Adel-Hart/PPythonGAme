@@ -24,7 +24,7 @@ players = []
 
 class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유지 한채로, UDP소켓 열기.
     def __init__(self, roomName): #Room(roomName)으로 객체 만들기
-        self.whos = {} #ip와 핸들러를 모아놓은 딕셔너리 > ip(식별자) : 핸들러
+        self.whos = {} #닉네임과 핸들러를 모아놓은 딕셔너리 > 닉네임 : 핸들러
         self.mapCode = ""
         self.inGame = False
         self.roomName = roomName
@@ -36,14 +36,14 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     
 
     def joinRoom(self, client, addr, name):
-        self.whos[addr] = client #목록에서 핸들러와 아이피 추가 
+        self.whos[name] = client #목록에서 핸들러와 아이피 추가 
         self.whosReady[name] = False #준비 목록에 추가 + 플레이어 ip가 아닌 이름을 사용하는 리스트로도 겸용한다.
         print(addr)
         #self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
         #self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
 
     def leaveRoom(self, addr, name):
-        self.whos.pop(addr) #목록에서 핸들러와 아이피 지우기
+        self.whos.pop(name) #목록에서 핸들러와 아이피 지우기
         self.whosReady.pop(name, None) #준비 목록에서 이름 빼고, 오류 날시 오류대신 None반환
         #self.multiCastCmd(f"OUT{name}, {addr}")
 
