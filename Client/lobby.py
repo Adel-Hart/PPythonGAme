@@ -111,6 +111,8 @@ class conTcp():
         if(self.data == "0080"):
             global joinedRoomName
             joinedRoomName = roomCode
+            print(roomCode, self.data)
+
             self.data = None
             return True #성공 메세지 받을 시
         else:
@@ -180,7 +182,6 @@ class conTcp():
 
             if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                 self.tcpSock.send("7780".encode()) #응답하기
-                self.data = None
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 cmd = self.data.split(" ")[1]
@@ -274,7 +275,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
         while not self.done: #게임 끝나는 신호 오기 전까지
-            res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
+            #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
+            pass
         self._postMan()
 
 
@@ -627,6 +629,7 @@ def multiButtons(): #멀티플레이, 시작 전 화면
     
     tcpHandler = conTcp() #tcp 핸들러 시작 (반복문 벗어나면)
     nameDone = False
+
     while not nameDone:
         nickName = getString(re.compile('[a-zA-Z0-9]+')) #이름 변수 설정
 
@@ -646,6 +649,7 @@ def multiButtons(): #멀티플레이, 시작 전 화면
         if connected:
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
                 serverRoomList(tcpHandler) #대충 매뉴화면 나오게 하는 함수
+                nameDone = True
 
         elif tcpHandler.run(): #run했을때, 실행 완료(True)면
 
@@ -658,8 +662,10 @@ def multiButtons(): #멀티플레이, 시작 전 화면
             if tcpHandler.setName(nickName): #이름 설정 요청 보냈을 때 성공이면 True 변환
                 
                 print("이름 설정 성공")
-                serverRoomList(tcpHandler) #방 목록 나오는 함수
                 nameDone = True
+                serverRoomList(tcpHandler) #방 목록 나오는 함수
+                
+                return
 
                 
             else:

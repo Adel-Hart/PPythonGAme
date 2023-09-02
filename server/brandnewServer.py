@@ -36,9 +36,10 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     
 
     def joinRoom(self, client, addr, name):
+
         self.whos[name] = client #목록에서 핸들러와 아이피 추가 
         self.whosReady[name] = False #준비 목록에 추가 + 플레이어 ip가 아닌 이름을 사용하는 리스트로도 겸용한다.
-        print(addr)
+        print(addr, name + "입장")
         #self.castCmd("INFO"+"!".join(self.whos.keys()), client) #접속한 플레이어 에게만, 방 인원 정보
         #self.multiCastCmd(f"IN{name}, {addr}") #플레이어들에게, 플레이어 추가 로그
 
@@ -144,18 +145,19 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
-        heartStack = 0
-        while True:
+        self.heartStack = 0
+        while self.heartStack <= 3:
             time.sleep(5) #5초간격으로
             self.sendMsg("7777") #7777이라는 hearbeat 신호 보내기 
             #응답 없으면 stack 1쌓임, 응답 7780 받으면 ok 
-            if self.msg == "7780": #recv스레드로 부터 받은 신호가 7780이면
-                heartStack = 0 #잘 살아 있으니, 스택 초기화 해주자!
-            else:
-                heartStack += 1 #응답이 없으면 스택 1올리기 (총 3 초과시 사망!)
+            # if self.msg == "7780": #recv스레드로 부터 받은 신호가 7780이면
+            #     heartStack = 0 #잘 살아 있으니, 스택 초기화 해주자!
+            #     print("7780받음")
+            # else:
+            #     heartStack += 1 #응답이 없으면 스택 1올리기 (총 3 초과시 사망!)
                 
 
-            if heartStack > 3:
+            if self.heartStack > 3:
                 break
 
         if self.inRoom: #방에 있을 때는
@@ -182,12 +184,15 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             self.sendMsg("0080") #방 만들기 성공
             print("방 만들기 성공")
         
-            return self.joinRoom(evaler(roomName))
+            return self.joinRoom(roomName) #방 이름만 문자열로 보낸다
 
         print("방 제작 실패")
         return False
 
     def joinRoom(self, roomName):
+
+        roomName = evaler(roomName) #evaler는 여기서 적용한다
+
         if roomName in roomList:
             if len(roomName.whos.keys()) < 4: #방 인원이 4명 이내일 때만
                 roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
@@ -299,7 +304,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 print("ok")
                                 self.sendMsg("0080") #OK sign
                             elif "0001" in self.msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
-                                if not self.msg in players:
+                                if not self.msg.replace("0001", "") in players:
                                     self.name = self.msg.replace("0001", "") #잘라내기 이름 설정
                                     players.append(self.name) #플레이어 목록에 이름추가
                                     self.sendMsg("0080") #OK sign
@@ -382,6 +387,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                             elif self.msg == "1005": #방 정보 요청
                                 self.sendMsg(self.sendRoomInfo())
+                        
+                    else: #hearbeat 신호일시
+                        self.heartStack = 0
+                        pass
+                        
 
   
                             elif self.msg == "1006": #준비 sign
