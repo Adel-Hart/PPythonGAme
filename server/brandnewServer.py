@@ -93,6 +93,12 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
             self.deleteRoom()
 
 
+    def readyPlayer(self, name: str): #플레이어 준비 시키기
+        self.whosReady[name] = True #어짜피 클라이언트에서 정보 요청시 준비 목록이 가기 때문에, 값만 바꾸고 바뀐값 전송 안해도 ok!
+
+    def noreadyPlayer(self, name: str): #플레이어 준비 해제 시키기
+        self.whosReady[name] = False
+
 
 
     def deleteRoom(self):
@@ -183,10 +189,15 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def joinRoom(self, roomName):
         if roomName in roomList:
-            roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
-            self.inRoom = True
-            self.roomHandler = roomName #클래스에 핸들러 설정
-            return True
+            if len(roomName.whos.keys()) < 4: #방 인원이 4명 이내일 때만
+                roomName.joinRoom(self, self.addr, self.name) #self는 클래스 자신을 의미, 즉 현재 핸들러를 보내려면 자기자신 self를 보낸다.
+                self.inRoom = True
+                self.roomHandler = roomName #클래스에 핸들러 설정
+                return True
+            
+            else:
+                return False
+
         return False
     
 
@@ -202,13 +213,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def checkRoom(self):
         print("checkroom")
-        result = '!'.join(x.roomName for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
+        result = '!'.join(f"{x.roomName},{len(x.whos.keys())}" for x in roomList)#roomList를 문자열로 '!'를 사용하여 구분하여 문자열로 만듬 , + 메모리 절약으로 실행속도 개선
         if result:
             return result #결과 값 반환.
         else:
             return "NULL"
 
-    def recvMsg(self: classmethod): #클라이언트로 부터의 메세지 수신 핸들러
+    def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러    조심! self파라미터에는 힌트 (: 속성) 작성 금지!, vscode에서 함수 내 코드가 힌트를 못 불러온다,
             
             self.msg = ""
 
@@ -236,7 +247,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.shutDown()
                             sys.exit() #현재 스레드 종료
                             
-                        elif "2000" in self.msg:
+                        elif "2000" in self.msg: #에디터 통신일 때
 
                                 reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
                                 print("이게 맵 " + reqMap)
@@ -307,8 +318,9 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                                 roomName = self.msg.replace("0004", "") #잘라내기 이름 설정
 
-                                self.joinRoom(roomName)
-                                
+                                res = self.joinRoom(roomName)
+                                if not res:
+                                    self.sendMsg("0000")
                                 self.sendMsg("0080") #OK sign
                             
 
@@ -371,6 +383,14 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             elif self.msg == "1005": #방 정보 요청
                                 self.sendMsg(self.sendRoomInfo())
 
+  
+                            elif self.msg == "1006": #준비 sign
+                                self.roomHandler.readyPlayer(self.name)
+                            elif self.msg == "1007": #준비 해제 sign
+                                self.roomHandler.noreadyPlayer(self.name)
+
+                                
+
 
 
                         
@@ -398,7 +418,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         '''
 
 
-        infoData = f"ROOMINFO{self.roomHandler.roomName}!{str(list(self.roomHandler.whosReady.keys()))}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
+        infoData = f"CMD ROOMINFO{self.roomHandler.roomName}!{str(list(self.roomHandler.whosReady.keys()))}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
         return infoData
         #.keys()는 dic_list객체라, list로 만들고 다시 문자열 str로 감싸야 함
 
