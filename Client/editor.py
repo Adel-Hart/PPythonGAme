@@ -328,6 +328,10 @@ def runEditor():
     window.bind("<Button-3>", player) #우클릭 감지
     window.bind("<Button-2>", goal) #휠클릭 감지
 
+    #프레임 생성
+    buttonFrame = tk.Frame(width = mapOrigin)
+ 
+
     #레이블 생성
     XLabel = tk.Label(window, text = "맵의 가로 길이 입력")
     YLabel = tk.Label(window, text = "맵의 세로 길이 입력")
@@ -352,19 +356,19 @@ def runEditor():
 
     #버튼 생성
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
-    saveButton = tk.Button(window, text = "맵 저장", command = lambda: ("./maps/"))
+    saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
     mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", height = 2, command = uploadMap)
     infoButton = tk.Button(window, text = "help", command = infoWindow)
 
     colorButton = []
     for i in range(9):
-        colorButton.append(tk.Button(window, command = lambda i=i: setBrushColor(i), bg = colorList[i], width = 5))
+        colorButton.append(tk.Button(buttonFrame, command = lambda i=i: setBrushColor(i), bg = colorList[i], width = 5))
 
     switchButton = []
     for i in range(7):
-        switchButton.append(tk.Button(window, command = lambda i=i: setSwitchColor(i+1), bg = colorList[i+1], width = 5, text = "스위치"))
-    
+        switchButton.append(tk.Button(buttonFrame, command = lambda i=i: setSwitchColor(i+1), bg = colorList[i+1], width = 5, text = "스위치"))
+
     #캔버스 생성
     canvas = tk.Canvas()
     playerCanvas = tk.Canvas()
@@ -377,21 +381,25 @@ def runEditor():
                 jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed,
                 backgroundLabel, background,
                 mapNameLabel, mapName, saveButton, closeButton, mapUpload, infoButton]
+    
+
+    buttonFrame.grid(row = len(guiLayout)+1)
 
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
 
     for i in range(9):
-        colorButton[i].grid(row = len(guiLayout)+i+1, column = 0)
+        colorButton[i].grid(row = i, column = 0)
 
     for i in range(7):
-        switchButton[i].grid(row = len(guiLayout)+i+2, column = 1)
+        switchButton[i].grid(row = i+1, column = 1)
 
     playerHeight.insert(0, "1.6") #초기값 지정
     playerWidth.insert(0, "0.7")
     jumpHeight.insert(0, "4")
     jumpTime.insert(0, "40")
     playerSpeed.insert(0, "0.2")
+    background.insert(0, "test")
 
     window.mainloop()
 
