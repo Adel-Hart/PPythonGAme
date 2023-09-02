@@ -106,7 +106,7 @@ class conTcp():
         while self.data == None:
             pass #기다리기:
 
-
+        
         
         if(self.data == "0080"):
             global joinedRoomName
@@ -115,6 +115,11 @@ class conTcp():
 
             self.data = None
             return True #성공 메세지 받을 시
+        
+        
+        elif(self.data == "0000"):
+            return False
+        
         else:
             self.data = None
             return False
@@ -302,6 +307,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 self.rgb[2] = data[2] #rgb정보 저장
         
         
+    
 
 
 
@@ -713,7 +719,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
         for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
             roomName = currentPageRooms[i]
             if roomName != "*EMPTY*": #비어있을 경우 표시 X
-                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
+                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handfler.joinRoom, roomName))
         pass
     
         if page != 1: #1페이지가 아니라면

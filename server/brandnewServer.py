@@ -147,7 +147,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
         self.heartStack = 0
         while self.heartStack <= 3:
-            time.sleep(5) #5초간격으로
+            time.sleep(5) #5초간격으로, 스레드 안에서 진행이라 논 블락킹이다! ㅎㅎ
             self.sendMsg("7777") #7777이라는 hearbeat 신호 보내기 
             #응답 없으면 stack 1쌓임, 응답 7780 받으면 ok 
             # if self.msg == "7780": #recv스레드로 부터 받은 신호가 7780이면
