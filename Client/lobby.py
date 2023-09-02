@@ -111,6 +111,7 @@ class conTcp():
         if(self.data == "0080"):
             global joinedRoomName
             joinedRoomName = roomCode
+            print(roomCode, self.data)
             self.data = None
             return True #성공 메세지 받을 시
         else:
@@ -180,7 +181,7 @@ class conTcp():
 
             if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                 self.tcpSock.send("7780".encode()) #응답하기
-                self.data = None
+                print("7780")
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 cmd = self.data.split(" ")[1]
@@ -271,7 +272,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
         while not self.done: #게임 끝나는 신호 오기 전까지
-            res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
+            #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
+            pass
         self._postMan()
 
 

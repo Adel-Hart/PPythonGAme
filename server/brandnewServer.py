@@ -138,18 +138,19 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
-        heartStack = 0
-        while True:
+        self.heartStack = 0
+        while self.heartStack <= 3:
             time.sleep(5) #5초간격으로
             self.sendMsg("7777") #7777이라는 hearbeat 신호 보내기 
             #응답 없으면 stack 1쌓임, 응답 7780 받으면 ok 
-            if self.msg == "7780": #recv스레드로 부터 받은 신호가 7780이면
-                heartStack = 0 #잘 살아 있으니, 스택 초기화 해주자!
-            else:
-                heartStack += 1 #응답이 없으면 스택 1올리기 (총 3 초과시 사망!)
+            # if self.msg == "7780": #recv스레드로 부터 받은 신호가 7780이면
+            #     heartStack = 0 #잘 살아 있으니, 스택 초기화 해주자!
+            #     print("7780받음")
+            # else:
+            #     heartStack += 1 #응답이 없으면 스택 1올리기 (총 3 초과시 사망!)
                 
 
-            if heartStack > 3:
+            if self.heartStack > 3:
                 break
 
         if self.inRoom: #방에 있을 때는
@@ -370,6 +371,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                             elif self.msg == "1005": #방 정보 요청
                                 self.sendMsg(self.sendRoomInfo())
+                        
+                    else: #hearbeat 신호일시
+                        self.heartStack = 0
+                        pass
+                        
 
 
 
