@@ -17,10 +17,12 @@ sele = selectors.DefaultSelector() #셀렉터 생성
 
 
 global roomList
+
 roomList = []
 
 players = []
 
+mapDownloading = False
 
 class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유지 한채로, UDP소켓 열기.
     def __init__(self, roomName): #Room(roomName)으로 객체 만들기
@@ -71,10 +73,11 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         #인원이 안되는건 클라이언트에서 감지한다
 
 
-
+        global mapDownloading
         self.inGame = True #방의 게임중 시그널 키기
         for c in self.whos.values():
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
+        mapDownloading = True #하트비트 잠깐 끄기
         self._sendMap2Client()
 
 
@@ -129,7 +132,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         
         '''
 
-
+        global mapDownloading
 
         self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
         self.gameHandler.run() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
@@ -140,6 +143,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.values(): #핸들러들에게, mapSend실행
             
             print("핸들러 맵 보내기 시작")
+            
             res = c.sendMapfile(self.mapCode) #sendMapfile은 파라미터에 맵코드가 들어간다
 
             print("결과 나옴")
@@ -147,18 +151,23 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
                 self.gameHandler.clientAddr.pop(c.name)
                 self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #클라이언트의 방 나가기 실행
+                mapDownloading = False #하트비트 잠깐 끄기
             elif res == "SOMETHING ERROR": #다운 중 뭔가 오류가 일어난 경우
                 self.castCmd("smterr", c)
                 self.gameHandler.clientAddr.pop(c.name)
                 self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #오류 메세지 전송하고, 방에서 내보내기
+                mapDownloading = False #하트비트 잠깐 끄기
 
             elif res == "NOFILE": #서버에 맵 파일이 없는 경우
                 self.castCmd("nofile", c)
+                mapDownloading = False #하트비트 잠깐 끄기
                 pass #이경우는, 그냥 다시 시도하면 되는 것이기에 다시 화면으로 돌아가깅
 
             else: #다른 문제다 그러면 그냥 넘겨도 되기에, 0080전송
                 self.castCmd('0080', c)
+                mapDownloading = False #하트비트 잠깐 끄기
+            
 
 
 
@@ -196,33 +205,38 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
-        self.heartStack = 0
-        while self.heartStack <= self.howAlive:
-            time.sleep(5) #5초간격으로, 스레드 안에서 진행이라 논 블락킹이다! ㅎㅎ
-            try:
-                self.sendMsg("7777") #7777이라는 hearbeat 신호 보내기 
-                self.heartStack += 1
-            except: #오류 발생시 그냥 보내버리기
-                break
+        global mapDownloading
+        if not mapDownloading:
+            print(mapDownloading)
+            self.heartStack = 0
+            while self.heartStack <= self.howAlive:
+                time.sleep(10) #10초간격으로, 스레드 안에서 진행이라 논 블락킹이다! ㅎㅎ
+                try:
+                    #self.sendMsg("7777") #7777이라는 hearbeat 신호 보내기 
+                    self.heartStack += 1
+                except: #오류 발생시 그냥 보내버리기
+                    break
 
-            if self.heartStack > self.howAlive:
-                break
+                if self.heartStack > self.howAlive:
+                    break
 
-        if self.inRoom: #방에 있을 때는
-            self.inRoom = False
-            self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
-            del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
-                #룸 핸들러의 참조가 모두 사라지면, 파이썬의 garbage collector가 자동으로 룸 핸들러를 삭제시킴
+            if self.inRoom: #방에 있을 때는
+                self.inRoom = False
+                self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
+                del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
+                    #룸 핸들러의 참조가 모두 사라지면, 파이썬의 garbage collector가 자동으로 룸 핸들러를 삭제시킴
 
 
-        elif self.inGamePlayer: #게임 중 (UDP 통신 중일 시에는)
-            self.roomHandler.gameHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
-            del self.roomHandler
-            
+            elif self.inGamePlayer: #게임 중 (UDP 통신 중일 시에는)
+                self.roomHandler.gameHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
+                del self.roomHandler
+                
 
-        self.shutDown() #연결 종료
-        sys.exit() #현재 스레드 종료     
+            self.shutDown() #연결 종료
+            sys.exit() #현재 스레드 종료     
 
+        else:
+            print("심장 멈춤 ㅅㄱ")
             
 
 
@@ -499,9 +513,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def sendMapfile(self, mapCode: str): #return이 문자열이라, 실행시 인스턴스처럼 실행시키고 조건문으로 결과비교 필요   맵 파일을 클라에게 전송
         print(mapCode)
         print(os.listdir("./Maps/"))
+        
         if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
-        
-        
+            
+            
+            self.msg = None #메세지 초기화
             print("맵 요청 시작")
             self.soc.send(f"1008{mapCode}".encode()) #맵 요청
             
@@ -510,8 +526,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             while self.msg == None: #데이터 도착까지 기다리기
                 pass
 
+            print(self.msg)
 
             if self.msg == "0000": #클라이언트가 맵이 있대!!
+                print("클라가 맵이 있다는데")
                 return "ALREADY" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
 
 
@@ -549,6 +567,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     
                 
             else:
+                
                 pass #아무 메세지도 아닌경우
             
             

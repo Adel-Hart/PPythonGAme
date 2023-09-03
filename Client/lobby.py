@@ -187,26 +187,27 @@ class conTcp():
         while True:
 
             if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
+                print("나 받는당")
                 recvMsg = self.tcpSock.recv(1024).decode()
 
                 if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                     self.tcpSock.send("7780".encode()) #응답하기
+                    
+                    
 
                 elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                     self.cmd = recvMsg.replace("CMD ", "")
-
-                
-
 
                 else:
                     self.data = recvMsg
                     if type(self.data) == str:
                         if not self.data.startswith("ROOMINFO"):
+                            print(self.mapDownloading)
                             print(self.data)
             
             else:
-                self.data = None #서버가 맵 정보를 받는 중이기 때문에 거의 모든 작업 보류
-        
+                #self.data = None #서버가 맵 정보를 받는 중이기 때문에 거의 모든 작업 보류
+                pass
             
 
 
@@ -260,13 +261,19 @@ class conTcp():
 
     def ready2Start(self):
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
+        print("1008 전송")
         self.tcpSock.send("1008".encode())
 
+        print("정보 받기 시작")
         data = self.tcpSock.recv(1024)
         data = data.decode()
+        print(data)
+        print("디코딩 끝")
 
-        while data == "" or None: #데이터 도착까지 기다리기
-            pass
+        while data == "" or data == None or data == "7777": #데이터 도착까지 기다리기
+            data = self.tcpSock.recv(1024)
+            data = data.decode()
+            print(data) #다시받기
         
         if data == "nofile":
             print("파일 없음")
