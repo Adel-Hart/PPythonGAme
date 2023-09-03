@@ -15,6 +15,8 @@ with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
 PORT = 8080
 
+inEditor = False # 에디터를 하고있는지
+
 connected = False #서버 연결 여부
 
 joinedRoomName = None #현재 접속중인 방의 이름
@@ -181,6 +183,7 @@ class conTcp():
     '''
     def recvRoom(self): #받는 명령어 핸들러 스레드
         self.data = None
+        self.cmd = None
         while True:
 
             recvMsg = self.tcpSock.recv(1024).decode()
@@ -189,7 +192,7 @@ class conTcp():
                 self.tcpSock.send("7780".encode()) #응답하기
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
-                cmd = self.data.split(" ")[1]
+                self.cmd = recvMsg.replace("CMD ", "")
 
             
 
@@ -216,16 +219,14 @@ class conTcp():
         
         self.tcpSock.send("1005".encode()) #방 정보 요청
         
-        while self.data == None: #데이터 도착까지 기다리기
+        while self.cmd == None: #데이터 도착까지 기다리기
             pass
         
-        if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
-            if(self.data != "NaN"): #유효한 정보일시
-                
-                roomIf = self.data.strip("ROOMINFO")
-                roomIfList = roomIf.split("!")
-                self.data = None
-                return roomIfList
+        if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
+            roomIf = self.cmd.replace("ROOMINFO", "")
+            roomIfList = roomIf.split("!")
+            self.cmd = None
+            return roomIfList
             
 
             #형식 ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
@@ -234,13 +235,10 @@ class conTcp():
                 
                 #return True #성공 메세지 받을 시 <<어짜피 실행 안될텐데
             
-            else: #Nan = 무효일시
-                #del data
-                self.data = None
-                return False
-            
-        else:
-            return "NONE"
+        else: #무효일시
+            #del data
+            self.cmd = None
+            return False
         
     def getMapCodeList(self):
         self.tcpSock.send("1000".encode()) #맵코드 목록 요청
@@ -323,10 +321,11 @@ class Image: #화면에 표시할 기능없는 이미지
         screen.blit(self.image, (self.posX, self.posY))
 
 class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
-    def __init__(self, backColor, text : str, textColor, marginx:int ,posX :int, posY:int, width:int, height:int, function = None, parameter1 = None, parameter2 = None, parameter3 = None): 
+    def __init__(self, backColor, text : str, textColor, fontTextType ,posX :int, posY:int, width:int, height:int, function = None, parameter1 = None, parameter2 = None, parameter3 = None): 
         # backColor: 버튼의 색상
         # text, textColor: 버튼에 표시될 문자열, 그 색상
-        # marginx = text의 x방향 여백
+        # fontTextType = (폰트경로, 0:영어/1:한글) or 0:영어/1:한글;자동폰트설정
+        # 
         # posX,posY: 버튼의 왼쪽위 꼭짓점 좌표
         # width, height: 버튼 크기
         # function: 작동할 함수
@@ -337,7 +336,12 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
         self.posX = posX
         self.posY = posY
         self.width = width 
-        self.marginx = marginx
+        if type(fontTextType) == int: #한글/영어 유무만 주어졌다면
+            self.font = "fonts/Ramche.ttf"
+            self.textType = fontTextType
+        else:
+            self.font = fontTextType[0]
+            self.textType = fontTextType[1]
         self.height = height
         self.function = function
         self.parameter1 = parameter1
@@ -363,11 +367,25 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
                 pygame.draw.rect(screen, self.backColor, [self.posX, self.posY, self.width, self.height]) #기본 버튼 색상
             
         
-        if self.textColor != None: #텍스트 색이 None이 아니라면
-            font = pygame.font.SysFont("Consolas", 200) #폰트 설정
+        if self.textColor != None and len(self.text) > 0: #텍스트 색이 None이 아니라면
+            if self.textType == 0: #영어일시
+                font = pygame.font.Font(self.font, 200) #폰트 설정\
+                textlen = len(self.text)
+            elif self.textType == 1: #한글일시
+                font = pygame.font.Font(self.font, 200)
+                textlen = len(self.text) * 2 #글자 가로 크기를 2배
+            
+            
+
             img = font.render(self.text, True, self.textColor) #렌더
-            img = pygame.transform.scale(img, (self.width - self.marginx*2, self.height))
-            screen.blit(img, (self.posX+self.marginx,self.posY)) #텍스트 표시
+            
+            if self.width > self.height * textlen // 2: #가로가 세로의 두배 이상일시
+                marginy = 0.8
+                img = pygame.transform.scale(img, (self.height * textlen // 2  * marginy, self.height *marginy)) #세로기준
+                screen.blit(img, (self.posX+self.width//2-self.height * textlen  * marginy // 4,self.posY + self.height//2 - self.height * marginy // 2)) #텍스트 표시
+            else: #아닐시
+                img = pygame.transform.scale(img, (self.width, self.width // textlen * 2)) #가로기준
+                screen.blit(img, (self.posX,self.posY+self.height//2-self.width // textlen )) #텍스트 표시
     
     def checkFunction(self): #함수 실행
         if self.checkMouse() and self.function != None:
@@ -400,9 +418,9 @@ user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
 SCRSIZEY = user32.GetSystemMetrics(1) #" 세로
 
-size = [SCRSIZEX, SCRSIZEY] # set screen size
-
-screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
+size = (int(SCRSIZEX), int(SCRSIZEY)) # set screen size
+screen = pygame.display.set_mode(size)
+pygame.display.set_caption("RGB")
 
 WHITE = [255, 255, 255]
 GRAY = [127, 127, 127]
@@ -432,10 +450,10 @@ def lobbyButtons(): #처음 시작 장면
     global currentundo
     currentundo = quit
 
-    currentButtonList.append(Button( T1_OBJ,"SINGLE PLAYER", T1_BTNBG, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
-    currentButtonList.append(Button( T1_OBJ,"MULTI PLAYER", T1_BTNBG, SCRSIZEX // 21, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
-    #currentButtonList.append(Button( T1_BTNBG,"SETTINGS", WHITE, SCRSIZEX // 12, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, serverRoomList, 1))
-    currentButtonList.append(Button( T1_OBJ,"QUIT", T1_BTNBG, SCRSIZEX // 9, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
+    currentButtonList.append(Button( T1_OBJ,"싱글플레이", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
+    currentButtonList.append(Button( T1_OBJ,"멀티플레이", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
+    currentButtonList.append(Button( T1_OBJ,"설정", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
+    currentButtonList.append(Button( T1_OBJ,"종료", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
 
 def singleButtons(): #싱글플레이
@@ -452,9 +470,15 @@ def singleButtons(): #싱글플레이
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
-    currentButtonList.append(Button( T1_BTNBG,"STORY", WHITE, SCRSIZEX // 21, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
-    currentButtonList.append(Button( T1_BTNBG,"CUSTOM", WHITE, SCRSIZEX // 30,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, editor.runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"스토리", WHITE, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
+    currentButtonList.append(Button( T1_BTNBG,"커스텀", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
     return
+
+def runEditor():
+    global inEditor
+    inEditor = True
+    editor.runEditor()
+    inEditor = False
 
 def storyButtons(): #스토리모드 = 챕터선택창
     global currentImageList, currentButtonList
@@ -463,7 +487,7 @@ def storyButtons(): #스토리모드 = 챕터선택창
     global currentundo
     currentundo = singleButtons
 
-    currentButtonList.append(Button( T1_OBJ,"SELECT CHAPTER", T1_TEXT, SCRSIZEX // 20, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
+    currentButtonList.append(Button( T1_OBJ,"챕터 선택", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
@@ -485,7 +509,7 @@ def chapterButtons(chapter:int): #챕터 내부 = 레벨선택창
 
     levelCount, clearedList = getChapterInfo(chapter)
 
-    currentButtonList.append(Button( T1_OBJ,"SELECT LEVEL", T1_TEXT, SCRSIZEX // 17, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
+    currentButtonList.append(Button( T1_OBJ,"레벨 선택", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
@@ -497,20 +521,20 @@ def chapterButtons(chapter:int): #챕터 내부 = 레벨선택창
     for i in range(levelCount):
         if i <= (levelCount-1) // 2: #윗줄
             #currentImageList.append(Image( "stage1", margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength))
-            currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, margin // 2, margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength, openStoryMap, chapter, i+1))
+            currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength, openStoryMap, chapter, i+1))
             if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                currentButtonList.append(Button( None, "CLEARED!", RED, margin // 4, margin * (i * 8 + 1), SCRSIZEY // 2, boxLength, boxLength//4))
+                currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * (i * 8 + 1), SCRSIZEY // 2, boxLength, boxLength//4))
         else:
             #currentImageList.append(Image( "stage1", margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY // 2 + margin, boxLength, boxLength))
             if levelCount % 2 == 0:
-                currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, margin // 2, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
+                currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
                 if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                    currentButtonList.append(Button( None, "CLEARED!", RED, margin // 4, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
+                    currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
         
             else:
-                currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, margin // 2, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
+                currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
                 if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                    currentButtonList.append(Button( None, "CLEARED!", RED, margin // 4, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
+                    currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
 
 def getChapterInfo(chapter: int): #현재 챕터의 info.dat 파일 해석, 내용 반환
     with open(f"./maps/story/chapter{chapter}/info.dat", "r") as f: #챕터 정보 파일 열기
@@ -560,21 +584,21 @@ def getString(filter, lengthLimit = 12):
     screen.fill(T1_BG) #배경 띄우기
 
     #규칙 메세지 2줄로
-    nameRule1 = Button(None, "Name must be 12 characters or less.", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY //2, SCRSIZEY * 3 // 4, SCRSIZEY//20)
+    nameRule1 = Button(None, "이름은 최대 12글자입니다!", T1_TEXT, 1, 0, SCRSIZEY //2 + SCRSIZEY //20, SCRSIZEX, SCRSIZEY//20)
     
     if filter == re.compile('[a-zA-Z0-9]+'): #영문 or 숫자
-        nameRule2 = Button(None, "You can't use anything other than English and numbers", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+        nameRule2 = Button(None, "영어 대소문자 또는 숫자만 사용할 수 있습니다", T1_TEXT, 1, 0, SCRSIZEY//2 + SCRSIZEY//10 ,SCRSIZEX, SCRSIZEY//20)
     
     elif filter == re.compile('[a-zA-Z]+'): #영문일 경우
-        nameRule2 = Button(None, "You can't use anything other than English, a-z or A-Z", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+        nameRule2 = Button(None, "영어 대소문자만 사용할 수 있습니다", T1_TEXT, 1, 0, SCRSIZEY//2 + SCRSIZEY//10 ,SCRSIZEX, SCRSIZEY//20)
     
     nameRule1.displayButton() 
     nameRule2.displayButton()
 
-    behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * 45, 90) #이름 입력칸 뒤에 올 것(리셋을 위해)
+    behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * SCRSIZEX//24, SCRSIZEX//12) #이름 입력칸 뒤에 올 것(리셋을 위해)
 
     while not strDone: #먼저 이름을 입력 받은 후 서버와 통신한다.
-        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, len(string) * 45, 90)
+        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, SCRSIZEX//2, SCRSIZEX//12)
 
         #화면에 띄우기
         behindScreener.displayButton()
@@ -621,9 +645,9 @@ def multiButtons(): #멀티플레이, 시작 전 화면
         serverRoomList(tcpHandler, 1)
         return
 
-    nameError = Button(None, "Error on your Name, please check out your name", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+    nameError = Button(None, "이름에 문제가 있습니다. 다시 설정해 주세요", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
 
-    connecting = Button(None, "Nickname must be 12 characters or less.", T1_TEXT, 0, SCRSIZEX//2, SCRSIZEY //2, SCRSIZEY * 3 // 8, SCRSIZEY//20) #서버 연결 메세지 표시
+    connecting = Button(None, "서버 연결 중...", T1_TEXT, 0, SCRSIZEX//2, SCRSIZEY //2, SCRSIZEY * 3 // 8, SCRSIZEY//20) #서버 연결 메세지 표시
 
     done = False
 
@@ -719,7 +743,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
         for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
             roomName = currentPageRooms[i]
             if roomName != "*EMPTY*": #비어있을 경우 표시 X
-                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handfler.joinRoom, roomName))
+                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
         pass
     
         if page != 1: #1페이지가 아니라면
@@ -732,7 +756,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
         pass
 
     #방 추가 버튼
-    currentButtonList.append(Button( GRAY,"MAKE ROOM", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
+    currentButtonList.append(Button( GRAY,"방 만들기", BLACK,1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
 
 def serverMakeRoom(handler: classmethod):
 
@@ -769,7 +793,7 @@ def serverJoinedRoom(handler: classmethod):
     print(joinedRoomName, "들어옴")
 
     roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, SCRSIZEX // 20, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEX // 20) #방 제목
-    setMapCodeButton = Button( GRAY,"CHANGE MAP", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverBrowseMap, handler, handler.getMapCodeList())
+    setMapCodeButton = Button( GRAY,"맵 바꾸기", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverBrowseMap, handler, handler.getMapCodeList())
 
 
     fixedButtonList = [] #변하지 않는 버튼 리스트 ex) 방 제목, 나가기
@@ -883,7 +907,7 @@ def serverBrowseMap(handler ,mapCodeList:list, page:int = 1): #맵을 서버에�
         pass
 
     #안내 버튼
-    currentButtonList.append(Button( GRAY,"CHOOSE MAP!", BLACK, SCRSIZEX//5, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30))
+    currentButtonList.append(Button( GRAY,"맵을 고르세요!", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30))
 
     screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
 
@@ -967,9 +991,15 @@ def test():
 
 lobbyButtons()
 
+    
+
+
 while not done: # loop the game       
 
     clock.tick(60) #FPS는 60으로
+
+    if inEditor: #에디터 실행중일시
+        pass
 
     screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
     
