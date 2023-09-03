@@ -288,18 +288,21 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러    조심! self파라미터에는 힌트 (: 속성) 작성 금지!, vscode에서 함수 내 코드가 힌트를 못 불러온다,
             
             self.msg = ""
+            self.tempData = ""
 
             while True:
 
                 data = self.soc.recv(1024)
                 self.msg = data.decode()
-
+                
                 while self.msg == None: #데이터 도착까지 기다리기
                     pass
-                    
+
                 
 
-                if self.msg != "7780": 
+
+                    
+                if not self.msg == "7780": 
                     # print(f"{datetime.now()} :  {self.addr}")
                     
 
@@ -315,7 +318,19 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         self.msg = None
                         self.shutDown()
                         sys.exit() #현재 스레드 종료
-                        
+
+                        #테스트
+
+                    elif self.msg == "0000" or self.msg == "1111":
+                        print("제발...")
+                        self.tempData = self.msg
+
+
+
+
+
+
+
                     elif "2000" in self.msg: #에디터 통신일 때
                             self.inEditor = True
                             reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
@@ -490,12 +505,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     
                 else: #hearbeat 신호일시
                     self.heartStack = 0
-
-                    self.msg = None
                     pass
                 
 
-
+                print(self.msg)
                             
 
                                 
@@ -526,12 +539,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
             print(self.msg)
 
-            if self.msg == "0000": #클라이언트가 맵이 있대!!
+            if self.tempData == "0000": #클라이언트가 맵이 있대!!
                 print("클라가 맵이 있다는데")
                 return "ALREADY" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
 
 
-            elif self.msg == "1111": #클라이언트가 맵이 없다고 함! > 전송요청
+            elif self.tempData == "1111": #클라이언트가 맵이 없다고 함! > 전송요청
 
                 print("전송 시작")
                 with open(f"./Maps/{mapCode}.dat", 'r') as f:

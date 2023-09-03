@@ -191,10 +191,12 @@ class conTcp():
                 print("나 받는당")
                 recvMsg = self.tcpSock.recv(1024).decode()
 
+
                 if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                     self.tcpSock.send("7780".encode()) #응답하기
-                    
-                    
+
+                elif recvMsg.startswith("1008"):
+                    self.tempData = recvMsg
 
                 elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                     self.cmd = recvMsg.replace("CMD ", "")
@@ -261,19 +263,19 @@ class conTcp():
 
 
     def ready2Start(self):
+        self.tempData = None
+
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
         print("1008 전송")
         self.tcpSock.send("1008".encode())
 
         print("정보 받기 시작")
-        data = self.tcpSock.recv(1024)
-        data = data.decode()
+        data = self.tempData
         print(data)
         print("디코딩 끝")
 
         while data == "" or data == None or data == "7777": #데이터 도착까지 기다리기
-            data = self.tcpSock.recv(1024)
-            data = data.decode()
+            data = self.tempData
             print(data) #다시받기
         
         if data == "nofile":
@@ -282,6 +284,7 @@ class conTcp():
 
         elif data.startswith("1008"):
             mapCode = data[4:] #1008을 뺀 맵 코드를 저장
+            print(mapCode)
 
             if f"{mapCode}.dat" in os.listdir("./extensionMap"): #서버다운 맵들 중 맵이 존재하는지 확인했을 때 존재하면
                 self.tcpSock.send("0000".encode())
@@ -291,8 +294,10 @@ class conTcp():
 
 
             else: #존재 안 하면, 맵 다운 받아야 함
+                print("1111전송")
                 self.tcpSock.send("1111".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
-                res = self._downloadMap() #맵 다운 시작
+                print("111전송 함")
+                res = self._downloadMap(currentMapCode) #맵 다운 시작
 
                 if res == "FAIL": #실패하면
                     self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
@@ -921,6 +926,7 @@ def serverJoinedRoom(handler: classmethod):
 
     while joinedRoomName != None:
         global clock
+        global currentMapCode
         clock.tick(60)
 
         screen.fill(T1_BG)
@@ -936,6 +942,7 @@ def serverJoinedRoom(handler: classmethod):
 
         joinedRoomName = roominfo[0]
         playerList = strToList(roominfo[1])
+    
         currentMapCode = roominfo[2]
         playerReadyDict = strToDict(roominfo[3])
         isGameReady = strToBool(roominfo[4])
