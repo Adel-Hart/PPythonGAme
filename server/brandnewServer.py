@@ -54,7 +54,10 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
     def setMap(self, mapCode):
         if mapCode in os.listdir("./Maps"):
             self.mapCode = mapCode
-            #self.multiCastCmd(f"SETMAP{mapCode}")
+            
+            for p in self.whosReady.keys():
+                self.whosReady[p] = False #맵 바뀌면, 모두 준비가 풀리게
+
             return "0080"
         else:
             return "0000"
@@ -78,14 +81,14 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
             self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
             self.gameHandler.run()
 
+        elif
+
     def endGame(self):
         self.inGame = False
         for c in self.whos.values():
             c.inGamePlayer = False #각 핸들러의 inGamePlayer신호 끄기
             
         del self.gameHandler #gameHandler 인스턴스 삭제
-        
-
 
     def multiCastChat(self, msg, name): #방에 있는 모든 클라이언트에게 룸챗 메세지 전송
         for c in self.whos.values():
@@ -104,19 +107,15 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         target.sendMsg("CMD " + msg) 
 
-
     def garbageCollector(self):
         if len(self.whos.keys()) == 0: #방 인원이 0 명이면
             self.deleteRoom()
-
 
     def readyPlayer(self, name: str): #플레이어 준비 시키기
         self.whosReady[name] = True #어짜피 클라이언트에서 정보 요청시 준비 목록이 가기 때문에, 값만 바꾸고 바뀐값 전송 안해도 ok!
 
     def noreadyPlayer(self, name: str): #플레이어 준비 해제 시키기
         self.whosReady[name] = False
-
-
 
     def deleteRoom(self):
         roomList.remove(self) #방목록에서 삭제
@@ -136,22 +135,32 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
 
+        self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
+        self.gameHandler.run() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
+            
+
+
 
         for c in self.whos.values(): #핸들러들에게, mapSend실행
+            
             res = c.sendMapfile(self.mapCode) #sendMapfile은 파라미터에 맵코드가 들어간다
 
+
             if res == "FAIL": #맵 다운 중 실패한 경우(클라이언트 측에서)
+                self.gameHandler.clientAddr.pop(c.name)
+                self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #클라이언트의 방 나가기 실행
             elif res == "SOMETHING ERROR": #다운 중 뭔가 오류가 일어난 경우
                 self.castCmd("smterr", c)
+                self.gameHandler.clientAddr.pop(c.name)
+                self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #오류 메세지 전송하고, 방에서 내보내기
 
             elif res == "NOFILE": #서버에 맵 파일이 없는 경우
                 self.castCmd("nofile", c)
                 pass #이경우는, 그냥 다시 시도하면 되는 것이기에 다시 화면으로 돌아가깅
 
-            else: #다른 문제다 그러면 그냥 넘겨도 되기에, 0080전송, udp소켓 열기
-                
+            else: #다른 문제다 그러면 그냥 넘겨도 되기에, 0080전송
                 self.castCmd('0080', c)
 
 
@@ -621,8 +630,8 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
         self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
         print("udp game server listening")
 
-        self.standingBy() #플레이어 준비 받기
-
+        volatile_standingBy = threading.Thread(target=self.standingBy)
+        volatile_standingBy.start() #플레이어 준비 받기
     
     def recvMsg(self): #클라이언트로의 메세지를 분별 및 확인하여 전송
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
@@ -675,10 +684,12 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
         sys.exit(0) #self.done 이 켜지면 스레드 종료
 
 
-    def standingBy(self):
-        #가장 먼저 실행되고, 플레이어가 모두 준비 되면, 신호를 보내고 리시브와 센드 메세지의 스레드를 실행한다.
-        #처음 플레이어들에게서 준비가 되면, 초기화 메세지(기본 위치, 클라이언트 주소)를 받는다.
-
+    def standingBy(self): 
+        '''
+        !!스레드 1개사용, 게임 시작시 스레드 종료시킴!!
+        가장 먼저 실행되고, 플레이어가 모두 준비 되면, 신호를 보내고 리시브와 센드 메세지의 스레드를 실행한다.
+        처음 플레이어들에게서 준비가 되면, 초기화 메세지(기본 위치, 클라이언트 주소)를 받는다.
+        '''
 
         #준비 메세지 : S이름!기본좌표
         while True:
@@ -699,6 +710,10 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
             if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
                 self.room.inGame = True
                 self.startGame()
+                break
+                
+
+        sys.exit() #스레드 종료 시키기
 
     def startGame(self):
         
