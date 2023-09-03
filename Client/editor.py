@@ -379,7 +379,7 @@ def runEditor():
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
     mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", height = 2, command = uploadMap)
     editorInfo = tk.Button(window, text = "help", command = infoWindow)
-    mapTest = tk.Button(window, text = "맵 테스트", command = lambda: testplay.testPlay(testFileName))
+    mapTest = tk.Button(window, text = "맵 테스트\n(pygame 창으로\n 돌아가주세요)", command = lambda: testplay.testPlay(testFileName))
 
 
     colorButton = []
