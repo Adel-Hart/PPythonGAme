@@ -183,6 +183,7 @@ class conTcp():
     '''
     def recvRoom(self): #받는 명령어 핸들러 스레드
         self.data = None
+        self.cmd = None
         while True:
 
             recvMsg = self.tcpSock.recv(1024).decode()
@@ -191,7 +192,7 @@ class conTcp():
                 self.tcpSock.send("7780".encode()) #응답하기
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
-                cmd = self.data.split(" ")[1]
+                self.cmd = recvMsg.replace("CMD ", "")
 
             
 
@@ -218,16 +219,14 @@ class conTcp():
         
         self.tcpSock.send("1005".encode()) #방 정보 요청
         
-        while self.data == None: #데이터 도착까지 기다리기
+        while self.cmd == None: #데이터 도착까지 기다리기
             pass
         
-        if self.data.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
-            if(self.data != "NaN"): #유효한 정보일시
-                
-                roomIf = self.data.strip("ROOMINFO")
-                roomIfList = roomIf.split("!")
-                self.data = None
-                return roomIfList
+        if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
+            roomIf = self.cmd.replace("ROOMINFO", "")
+            roomIfList = roomIf.split("!")
+            self.cmd = None
+            return roomIfList
             
 
             #형식 ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
@@ -236,13 +235,10 @@ class conTcp():
                 
                 #return True #성공 메세지 받을 시 <<어짜피 실행 안될텐데
             
-            else: #Nan = 무효일시
-                #del data
-                self.data = None
-                return False
-            
-        else:
-            return "NONE"
+        else: #무효일시
+            #del data
+            self.cmd = None
+            return False
         
     def getMapCodeList(self):
         self.tcpSock.send("1000".encode()) #맵코드 목록 요청
@@ -747,7 +743,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
         for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
             roomName = currentPageRooms[i]
             if roomName != "*EMPTY*": #비어있을 경우 표시 X
-                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handfler.joinRoom, roomName))
+                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
         pass
     
         if page != 1: #1페이지가 아니라면
