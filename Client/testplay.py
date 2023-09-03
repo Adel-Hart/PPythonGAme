@@ -7,6 +7,6 @@ def testPlay(mapName): #현재 temp 폴더에 있는 특정 맵을 새로운 창
 
     clear = 0
     while clear == 0: #사망했을시 계속 다시실행
-        clear = main.runGame(f"./temp/{mapName}", "TestPlay")
+        clear = main.runGame(f"./maps/{mapName}", "TestPlay")
 
     return
