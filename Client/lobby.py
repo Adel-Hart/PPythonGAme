@@ -187,8 +187,8 @@ class conTcp():
         while True:
 
             if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
-                print(self.mapDownloading)
-                print("나 받는당")
+                # print(self.mapDownloading)
+                # print("나 받는당")
                 recvMsg = self.tcpSock.recv(1024).decode()
 
 
@@ -270,6 +270,8 @@ class conTcp():
         self.tcpSock.send("1008".encode())
         
         print("정보 받기 시작")
+        while self.tempData == None:
+            pass
         data = self.tempData
         print(data)
         print("디코딩 끝")
@@ -277,6 +279,8 @@ class conTcp():
         while data == "" or data == None or data == "7777": #데이터 도착까지 기다리기
             data = self.tempData
             print(data) #다시받기
+
+        self.tcpSock.send("1111".encode())
         
         if data == "nofile":
             print("파일 없음")
@@ -288,6 +292,7 @@ class conTcp():
             print(mapCode)
 
             if f"{mapCode}.dat" in os.listdir("./extensionMap"): #서버다운 맵들 중 맵이 존재하는지 확인했을 때 존재하면
+                print("0000보냄")
                 self.tcpSock.send("0000".encode())
                 #맵 존재한다고 시그널 보내기, udp연결 하기 
 
@@ -297,7 +302,8 @@ class conTcp():
             else: #존재 안 하면, 맵 다운 받아야 함
                 print("1111전송")
                 self.tcpSock.send("1111".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
-                print("111전송 함")
+                print("1111전송 함")
+                print(currentMapCode)
                 res = self._downloadMap(currentMapCode) #맵 다운 시작
 
                 if res == "FAIL": #실패하면

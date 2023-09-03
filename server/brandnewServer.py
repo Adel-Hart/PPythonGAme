@@ -75,6 +75,8 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
         self.inGame = True #방의 게임중 시그널 키기
+        print("a")
+        print(self.whos.values())
         for c in self.whos.values():
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
         self.mapDownloading = True #하트비트 잠깐 끄기
@@ -132,20 +134,21 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         
         '''
 
+        print("udp연결")
 
         self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
         self.gameHandler.run() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
             
-
-
+        print("udp연결 완료")
+        print(self.whos.values())
 
         for c in self.whos.values(): #핸들러들에게, mapSend실행
-            
+            print(c)
             print("핸들러 맵 보내기 시작")
             
             res = c.sendMapfile(self.mapCode) #sendMapfile은 파라미터에 맵코드가 들어간다
 
-            print("결과 나옴")
+            print("결과 나옴", res)
             if res == "FAIL": #맵 다운 중 실패한 경우(클라이언트 측에서)
                 self.gameHandler.clientAddr.pop(c.name)
                 self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
@@ -291,7 +294,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             self.tempData = ""
 
             while True:
-
                 data = self.soc.recv(1024)
                 self.msg = data.decode()
                 
@@ -299,8 +301,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     pass
 
                 
+                if self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
+                    print("b")
+                    self.msg = None
+                    self.roomHandler.startGame() #요청
+                    
+                    pass
 
-
+                elif self.msg == "0000" or self.msg == "1111":
+                    print("제발...")
+                    self.tempData = self.msg
                     
                 if not self.msg == "7780": 
                     # print(f"{datetime.now()} :  {self.addr}")
@@ -321,9 +331,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                         #테스트
 
-                    elif self.msg == "0000" or self.msg == "1111":
-                        print("제발...")
-                        self.tempData = self.msg
+                    
 
 
 
@@ -496,8 +504,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     
                             self.msg = None
 
-                        elif self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
-                            self.roomHandler.startGame() #요청
 
 
 
@@ -508,7 +514,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     pass
                 
 
-                print(self.msg)
+                #print(self.msg)
                             
 
                                 
@@ -528,16 +534,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
             
             
-            self.msg = None #메세지 초기화
+            self.msg = None
+            self.tempData = None #메세지 초기화
             print("맵 요청 시작")
             self.soc.send(f"1008{mapCode}".encode()) #맵 요청
-            
-
             print("맵 요청 보냄")
-            while self.msg == None: #데이터 도착까지 기다리기
-                pass
+            
+            data = self.soc.recv(1024)
+            self.tempData = data.decode()
 
-            print(self.msg)
+            print(self.tempData)
 
             if self.tempData == "0000": #클라이언트가 맵이 있대!!
                 print("클라가 맵이 있다는데")
@@ -578,7 +584,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     
                 
             else:
-                
+                return "NOMSG"
                 pass #아무 메세지도 아닌경우
             
             
