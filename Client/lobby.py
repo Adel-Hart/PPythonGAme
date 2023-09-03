@@ -262,8 +262,7 @@ class conTcp():
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
         self.tcpSock.send("1008".encode())
 
-        data = self.tcpSock.recv(1024)
-        data = data.decode()
+        
 
         while data == "" or None: #데이터 도착까지 기다리기
             pass
@@ -944,7 +943,7 @@ def serverJoinedRoom(handler: classmethod):
             if playerReadyDict[handler.nickName] == True: #준비상태라면
                 ReadyButton = Button( WHITE, "준비 해제", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36)
             else: #준비가 아니라면
-                ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36)
+                ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.ready2Start)
             ReadyButton.displayButton()
             
 
