@@ -262,7 +262,8 @@ class conTcp():
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
         self.tcpSock.send("1008".encode())
 
-        
+        data = self.tcpSock.recv(1024)
+        data = data.decode()
 
         while data == "" or None: #데이터 도착까지 기다리기
             pass
@@ -336,6 +337,9 @@ class conTcp():
                         stream = 0
                     else:
                         stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
+                        stream = stream.decode()
+
+
 
                 print("완료")
                 f.close() #파일 저장
