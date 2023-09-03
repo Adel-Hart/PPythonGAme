@@ -637,6 +637,14 @@ def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
             maincharacter.speedY = -1 * jumpPower
     
     #while문 탈출 : 게임 종료
+    if clear > 0: #사망한 경우가 아니라면
+        font = pygame.font.SysFont("Consolas", 200) #폰트 설정
+        img = font.render("CLEARED! PLEASE GO BACK TO EDITOR!", True, RED) #렌더
+        img = pygame.transform.scale(img, (SCRSIZEX//2, SCRSIZEX//20))
+        screen.blit(img, (0,0)) #텍스트 표시
+
+        pygame.display.update()
+
     return clear #클리어 여부를 반환 
 
 def gameClear(): #클리어=도착시

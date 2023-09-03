@@ -15,6 +15,8 @@ with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
 PORT = 8080
 
+inEditor = False # 에디터를 하고있는지
+
 connected = False #서버 연결 여부
 
 joinedRoomName = None #현재 접속중인 방의 이름
@@ -400,9 +402,9 @@ user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
 SCRSIZEY = user32.GetSystemMetrics(1) #" 세로
 
-size = [SCRSIZEX, SCRSIZEY] # set screen size
-
+size = (int(SCRSIZEX), int(SCRSIZEY)) # set screen size
 screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
+pygame.display.set_caption("RGB")
 
 WHITE = [255, 255, 255]
 GRAY = [127, 127, 127]
@@ -453,8 +455,14 @@ def singleButtons(): #싱글플레이
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
     currentButtonList.append(Button( T1_BTNBG,"STORY", WHITE, SCRSIZEX // 21, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
-    currentButtonList.append(Button( T1_BTNBG,"CUSTOM", WHITE, SCRSIZEX // 30,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, editor.runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"CUSTOM", WHITE, SCRSIZEX // 30,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
     return
+
+def runEditor():
+    global inEditor
+    inEditor = True
+    editor.runEditor()
+    inEditor = False
 
 def storyButtons(): #스토리모드 = 챕터선택창
     global currentImageList, currentButtonList
@@ -571,10 +579,10 @@ def getString(filter, lengthLimit = 12):
     nameRule1.displayButton() 
     nameRule2.displayButton()
 
-    behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * 45, 90) #이름 입력칸 뒤에 올 것(리셋을 위해)
+    behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * SCRSIZEX//30, SCRSIZEX//15) #이름 입력칸 뒤에 올 것(리셋을 위해)
 
     while not strDone: #먼저 이름을 입력 받은 후 서버와 통신한다.
-        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, len(string) * 45, 90)
+        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, len(string) * SCRSIZEX//30, SCRSIZEX//15)
 
         #화면에 띄우기
         behindScreener.displayButton()
@@ -967,9 +975,12 @@ def test():
 
 lobbyButtons()
 
+clock.tick(60) #FPS는 60으로
+
 while not done: # loop the game       
 
-    clock.tick(60) #FPS는 60으로
+    if inEditor: #에디터 실행중일시
+        pass
 
     screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
     
