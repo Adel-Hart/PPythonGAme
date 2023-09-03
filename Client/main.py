@@ -477,16 +477,22 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
  
 
 
-def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
+def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실행 함수
+
+    
+
 
     user32 = ctypes.windll.user32
     global SCRSIZEX, SCRSIZEY
     SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
-    SCRSIZEY = user32.GetSystemMetrics(1) #세로
+    SCRSIZEY = user32.GetSystemMetrics(1)  #세로
 
-    size = [SCRSIZEX, SCRSIZEY] # set screen size
+    size = (int(SCRSIZEX), int(SCRSIZEY)) # set screen size
     global screen
-    screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
+    screen = pygame.display.set_mode(size)
+
+    if gameMode == "TestPlay":
+        SCRSIZEY =  SCRSIZEY * 7//8 #텍스트 넣을 공간 확보
 
     global clear
     clear = False
@@ -573,6 +579,12 @@ def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
 
         for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
             object.display() # 움직이는 오브젝트 일괄 출력
+
+        if gameMode == "TestPlay": #테스트 중이고 사망한 경우가 아니라면
+            font = pygame.font.Font("fonts/Ramche.ttf", 200)
+            img = font.render("ESC를 눌러 종료", True, BLACK) #렌더
+            img = pygame.transform.scale(img, (SCRSIZEX//4, SCRSIZEX//40))
+            screen.blit(img, (0,SCRSIZEY)) #텍스트 표시
             
             
         pygame.display.update()
@@ -643,11 +655,11 @@ def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
             maincharacter.speedY = -1 * jumpPower
     
     #while문 탈출 : 게임 종료
-    if clear > 0: #사망한 경우가 아니라면
-        font = pygame.font.SysFont("Consolas", 200) #폰트 설정
-        img = font.render("CLEARED! PLEASE GO BACK TO EDITOR!", True, RED) #렌더
+    if clear > 0 and gameMode == "TestPlay": #테스트 중이고 사망한 경우가 아니라면
+        font = pygame.font.Font("fonts/Ramche.ttf", 200)
+        img = font.render("완료! 에디터로 돌아가주세요!", True, WHITE, BLACK) #렌더
         img = pygame.transform.scale(img, (SCRSIZEX//2, SCRSIZEX//20))
-        screen.blit(img, (0,0)) #텍스트 표시
+        screen.blit(img, (SCRSIZEX//4,SCRSIZEY//2 -SCRSIZEX//40)) #텍스트 표시
 
         pygame.display.update()
 
