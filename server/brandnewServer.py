@@ -48,7 +48,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.whosReady.pop(name, None) #준비 목록에서 이름 빼고, 오류 날시 오류대신 None반환
         #self.multiCastCmd(f"OUT{name}, {addr}")
 
-        self.garbageCollector()
+        self.garbageCollector() #방인원이 없을때를 대비해, 인원검사시 방을 없애는 함수 실행
 
 
     def setMap(self, mapCode):
@@ -60,13 +60,23 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
             return "0000"
 
 
-    
-    def startGame(self):
-        self.inGame = True
-        for c in self.whos.values():
-            c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
-        self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
-        self.gameHandler.run()
+
+
+
+
+    def startGame(self): #1008신호를 받았을시 처리하며, 룸 함수 mapsend를 포함한다
+        if not False in self.whosReady.values(): #준비 안된 자가 존재하지 않을 때만작동
+            
+
+            """
+            6:22 이제 여기 바꿔야 한다
+            """
+
+            self.inGame = True #방의 게임중 시그널 키기
+            for c in self.whos.values():
+                c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
+            self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
+            self.gameHandler.run()
 
     def endGame(self):
         self.inGame = False
@@ -85,7 +95,13 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.values():
             c.sendMsg("CMD " + msg)
 
-    def castCmd(self, msg: str, target: classmethod): #접속한 특정 ip에게 메세지 반환 target:핸들러자체
+    def castCmd(self, msg: str, target: classmethod): 
+        '''
+        castCmd는
+        접속한 특정 ip에게 메세지 반환 
+        target:핸들러자체
+        '''
+
         target.sendMsg("CMD " + msg) 
 
 
@@ -108,8 +124,35 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
 
+    def _sendMap2Client(self):
+        '''
+        준비가 다 될 때 게임 시작시, 가장 먼저 호출되는 클래스전용 함수
+        맵파일을 전송하고 관리하며, 오류가 나면 거의 다 방에서 나가게 하기에,
+        이 함수를 거치고 udp통신을 할때 인원수를 다시 보낸다.
+        
+        !!중요!! 여기서 udp통신을 연다.
+        
+        '''
 
 
+
+
+        for c in self.whos.values(): #핸들러들에게, mapSend실행
+            res = c.sendMapfile(self.mapCode) #sendMapfile은 파라미터에 맵코드가 들어간다
+
+            if res == "FAIL": #맵 다운 중 실패한 경우(클라이언트 측에서)
+                c.leaveRoom() #클라이언트의 방 나가기 실행
+            elif res == "SOMETHING ERROR": #다운 중 뭔가 오류가 일어난 경우
+                self.castCmd("smterr", c)
+                c.leaveRoom() #오류 메세지 전송하고, 방에서 내보내기
+
+            elif res == "NOFILE": #서버에 맵 파일이 없는 경우
+                self.castCmd("nofile", c)
+                pass #이경우는, 그냥 다시 시도하면 되는 것이기에 다시 화면으로 돌아가깅
+
+            else: #다른 문제다 그러면 그냥 넘겨도 되기에, 0080전송, udp소켓 열기
+                
+                self.castCmd('0080', c)
 
 
 
@@ -122,7 +165,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         self.name = "" #플레이어 닉네임
         self.inEditor = False #에디터화면 일때
         self.alive = True
-        self.aliveStack = 0 #최대 몇번까지 봐줄건가
+        self.howAlive = 3 #최대 몇번까지 봐줄건가
 
         self.run() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
         
@@ -146,7 +189,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
         self.heartStack = 0
-        while self.heartStack <= 3:
+        while self.heartStack <= self.howAlive:
             time.sleep(5) #5초간격으로, 스레드 안에서 진행이라 논 블락킹이다! ㅎㅎ
             self.sendMsg("7777") #7777이라는 hearbeat 신호 보내기 
             #응답 없으면 stack 1쌓임, 응답 7780 받으면 ok 
@@ -157,7 +200,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             #     heartStack += 1 #응답이 없으면 스택 1올리기 (총 3 초과시 사망!)
                 
 
-            if self.heartStack > 3:
+            if self.heartStack > self.howAlive:
                 break
 
         if self.inRoom: #방에 있을 때는
@@ -231,174 +274,208 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             while True:
 
                 data = self.soc.recv(1024)
-                
-                if not len(data) == 0: #data가 0이 아닐때만 응답
+                self.msg = data.decode()
+
+                while self.msg == None: #데이터 도착까지 기다리기
+                    pass
                     
-                    self.msg = data.decode()
+                
 
-                    if self.msg != "7780": 
-                        # print(f"{datetime.now()} :  {self.addr}")
+                if self.msg != "7780": 
+                    # print(f"{datetime.now()} :  {self.addr}")
+                    
+
+                    # print(self.msg)
+
+                    # if self.msg == "7777": #heartBeat 신호
+                    #     self.alive = True #요청보내면 살아있다 표시
+                    #     self.soc.send("0080".encode())
                         
 
-                        # print(self.msg)
-
-                        # if self.msg == "7777": #heartBeat 신호
-                        #     self.alive = True #요청보내면 살아있다 표시
-                        #     self.soc.send("0080".encode())
-                            
-
+                    
+                    if self.msg == "9999": #연결 종료 사안
+                        self.msg = None
+                        self.shutDown()
+                        sys.exit() #현재 스레드 종료
                         
-                        if self.msg == "9999": #연결 종료 사안
-                            self.shutDown()
-                            sys.exit() #현재 스레드 종료
-                            
-                        elif "2000" in self.msg: #에디터 통신일 때
+                    elif "2000" in self.msg: #에디터 통신일 때
 
-                                reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
-                                print("이게 맵 " + reqMap)
+                            reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
+                            print("이게 맵 " + reqMap)
+                            
+                            print(os.listdir("./Maps/"))
+                            if reqMap+".dat" in os.listdir("./Maps/"): #!로 구분된 문자열이 출력이라, 변환해야 함
                                 
-                                print(os.listdir("./Maps/"))
-                                if reqMap+".dat" in os.listdir("./Maps/"): #!로 구분된 문자열이 출력이라, 변환해야 함
-                                    
-                                        print("0000 전송")
-                                        self.sendMsg("0000") #이미 존재
+                                    print("0000 전송")
+                                    self.sendMsg("0000") #이미 존재
+                                    self.msg = None
 
-                                else:
-                                    print("0080전송")
-                                    self.sendMsg("0080") #전송시작.
-                                    
-                                    with open(f"./Maps/{reqMap}.dat", "w") as f: #파일 읽어서 저장 시작
-                                        print("파일 읽기")
-                                        try:
-                                            print("2")
-                                            stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
-                                            print(bool(stream))
-                                            end = True
-                                            while end: #EOF명령을 받으면, 쓰기 종료
-                                                f.write(stream) #stream 쓰기
-                                                print("받아오는중,,,")
-                                                if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
-                                                    end = False #종료
-                                                    stream = 0
-                                                else:
-                                                    stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
+                            else:
+                                print("0080전송")
+                                self.sendMsg("0080") #전송시작.
+                                
+                                with open(f"./Maps/{reqMap}.dat", "w") as f: #파일 읽어서 저장 시작
+                                    print("파일 읽기")
+                                    try:
+                                        print("2")
+                                        stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
+                                        print(bool(stream))
+                                        end = True
+                                        while end: #EOF명령을 받으면, 쓰기 종료
+                                            f.write(stream) #stream 쓰기
+                                            print("받아오는중,,,")
+                                            if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
+                                                end = False #종료
+                                                stream = 0
+                                            else:
+                                                stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
 
-                                            print("완료")
-                                            f.close() #파일 저장
-                                            self.sendMsg("0080") #성공 메세지 전송
-                                            print("완료 전송")
-                                            self.inEditor = False
-                                            print("소켓 닫기")
-                                            self.soc.close() #소켓 닫기
-                                            break
+                                        print("완료")
+                                        f.close() #파일 저장
+                                        self.sendMsg("0080") #성공 메세지 전송
+                                        print("완료 전송")
+                                        self.inEditor = False
+                                        print("소켓 닫기")
+                                        self.msg = None
+                                        self.soc.close() #소켓 닫기
+                                        break
 
-                                        except Exception:
-                                            self.sendMsg("0000") #오류 메세지 전송
-                                            print("오류 전송") 
-                                            self.inEditor = False
-                                            self.soc.close() #소켓 닫기
-                                            break
+                                    except Exception:
+                                        self.sendMsg("0000") #오류 메세지 전송
+                                        print("오류 전송") 
+                                        self.inEditor = False
+                                        self.msg = None
+                                        self.soc.close() #소켓 닫기
+                                        break
 
-                        if not self.inRoom: #방 목록 탐색기에 있을때.
-                            if self.msg == "0000":
-                                print("ok")
+                    if not self.inRoom: #방 목록 탐색기에 있을때.
+                        if self.msg == "0010":
+                            print("ok")
+                            self.msg = None
+                            self.sendMsg("0080") #OK sign
+                        elif "0001" in self.msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
+                            if not self.msg.replace("0001", "") in players:
+                                self.name = self.msg.replace("0001", "") #잘라내기 이름 설정
+                                players.append(self.name) #플레이어 목록에 이름추가
+
+                                self.msg = None
                                 self.sendMsg("0080") #OK sign
-                            elif "0001" in self.msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
-                                if not self.msg.replace("0001", "") in players:
-                                    self.name = self.msg.replace("0001", "") #잘라내기 이름 설정
-                                    players.append(self.name) #플레이어 목록에 이름추가
-                                    self.sendMsg("0080") #OK sign
 
-                                else:
-                                    self.sendMsg("0000")
-                            elif self.msg == "0002": #방 목록 수신
-                                result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
-                                self.sendMsg(result)
+                            else:
 
-                            elif "0003" in self.msg: #방 만들기 수신 형식은 0003방이름
-                                self.makeRoom(self.msg.split('3')[1])
-                                #0080 수신은, 방 join하면 방목록을 보내버려서, 그 전에 보내긱 위해, makeRoom 안에존재.
+                                self.msg = None
+                                self.sendMsg("0000")
+                        elif self.msg == "0002": #방 목록 수신
+                            result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
+                            
+                            self.msg = None
+                            self.sendMsg(result)
 
-                            elif "0004" in self.msg: #방 입장 수신 형식 0004방이름
+                        elif "0003" in self.msg: #방 만들기 수신 형식은 0003방이름
+                            self.makeRoom(self.msg.split('3')[1])
+                            #0080 수신은, 방 join하면 방목록을 보내버려서, 그 전에 보내긱 위해, makeRoom 안에존재.
 
-                                roomName = self.msg.replace("0004", "") #잘라내기 이름 설정
+                            self.msg = None
+                        elif "0004" in self.msg: #방 입장 수신 형식 0004방이름
 
-                                res = self.joinRoom(roomName)
-                                if not res:
-                                    self.sendMsg("0000")
+                            roomName = self.msg.replace("0004", "") #잘라내기 이름 설정
+
+                            res = self.joinRoom(roomName)
+                            if not res:
+                                self.sendMsg("0000")
+                            
+                            else:
                                 self.sendMsg("0080") #OK sign
-                            
+
+                            self.msg = None
+                                
 
 
 
 
 
 
-                        else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
-                            if self.msg == "0002": #방 목록 수신
-                                result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
-                                self.sendMsg(result)
-                            
-                            # 디버그
+                    else: #방 목록 탐색기가 아닐 때 (방 안 or 게임 중)
+                        if self.msg == "0002": #방 목록 수신
+                            result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
+                            self.sendMsg(result)
+                            self.msg = None
+                        
+                        # 디버그
 
 
 
 
 
 
-                            elif self.msg == "1000": #맵 목록 조회
-                                print("맵 view")
-                                self.sendMsg(checkMapList())
-                            elif "1001" in self.msg: #맵 설정 형식 >> 1001!MapCode >>0080 송신
-                                mapCode = self.msg.split("!")[1]
-                                self.roomHandler.setMap(mapCode)
+                        elif self.msg == "1000": #맵 목록 조회
+                            print("맵 view")
+                            self.sendMsg(checkMapList())
+                            self.msg = None
+                        elif "1001" in self.msg: #맵 설정 형식 >> 1001!MapCode >>0080 송신
+                            mapCode = self.msg.split("!")[1]
+                            self.roomHandler.setMap(mapCode)
+                            self.sendMsg("0080")
+                            self.msg = None
+#1002는 명령 중복으로 삭제됨
+
+                        elif self.msg == "1003": #방 나가기
+
+                            if len(self.roomHandler.whos.keys()) == 1: #1명일때
+                                self.roomHandler.deleteRoom() #삭제 요청
+                                del self.roomHandler #핸들러 참조 삭제
+                                self.inRoom = False
                                 self.sendMsg("0080")
+                                self.msg = None
 
-                            elif self.msg == "1002": #게임 시작
-                                self.roomHandler.startGame()
-                                self.inGamePlayer = True
-                            elif self.msg == "1003": #방 나가기
-
-                                if len(self.roomHandler.whos.keys()) == 1: #1명일때
-                                    self.roomHandler.deleteRoom() #삭제 요청
-                                    del self.roomHandler #핸들러 참조 삭제
+                            else:
+                                if self.leaveRoom():
                                     self.inRoom = False
                                     self.sendMsg("0080")
-
-                                else:
-                                    if self.leaveRoom():
-                                        self.inRoom = False
-                                        self.sendMsg("0080")
-                                    else:
-                                        self.sendMsg("0000")
-
-                
-
-                            elif self.msg == "1004": #방 파쇄 (플레이어가 1명 밖에 없을때만 가능)
-                                if len(self.roomHandler.whos.keys) == 1:
-                                    self.roomHandler.deleteRoom() #삭제 요청
-                                    del self.roomHandler #핸들러 참조 삭제
-                                    
-                                    self.inRoom = False
-                                    self.sendMsg("0080") #완료메세지
+                                    self.msg = None
                                 else:
                                     self.sendMsg("0000")
+                                    self.msg = None
+            
+
+                        elif self.msg == "1004": #방 파쇄 (플레이어가 1명 밖에 없을때만 가능)
+                            if len(self.roomHandler.whos.keys) == 1:
+                                self.roomHandler.deleteRoom() #삭제 요청
+                                del self.roomHandler #핸들러 참조 삭제
+                                
+                                self.inRoom = False
+                                self.sendMsg("0080") #완료메세지
+                            else:
+                                self.sendMsg("0000")
+
+                            self.msg = None
+
+                        elif self.msg == "1005": #방 정보 요청
+                            self.sendMsg(self.sendRoomInfo())
+
+                            self.msg = None
+                        elif self.msg == "1006": #준비 sign
+                            self.roomHandler.readyPlayer(self.name)
+
+                            self.msg = None
+                        elif self.msg == "1007": #준비 해제 sign
+                            self.roomHandler.noreadyPlayer(self.name)
+                    
+                            self.msg = None
 
 
-                            elif self.msg == "1005": #방 정보 요청
-                                self.sendMsg(self.sendRoomInfo())
 
-                            elif self.msg == "1006": #준비 sign
-                                self.roomHandler.readyPlayer(self.name)
-                            elif self.msg == "1007": #준비 해제 sign
-                                self.roomHandler.noreadyPlayer(self.name)
-                        
-                    else: #hearbeat 신호일시
-                        self.heartStack = 0
-                        pass
-                        
 
-  
+
+                    
+                else: #hearbeat 신호일시
+                    self.heartStack = 0
+
+                    self.msg = None
+                    pass
+                
+
+
                             
 
                                 
@@ -411,9 +488,64 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
 
-    def sendMap(self, mapCode:str):
-        self.soc.send("")
+    def sendMapfile(self, mapCode: str): #return이 문자열이라, 실행시 인스턴스처럼 실행시키고 조건문으로 결과비교 필요   맵 파일을 클라에게 전송
+        if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
+        
+        
+        
+            self.soc.send(f"1008{mapCode}".encode()) #맵 요청
+            
 
+
+            while self.msg == None: #데이터 도착까지 기다리기
+                pass
+
+
+            if self.msg == "0000": #클라이언트가 맵이 있대!!
+                return "ALREADY" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
+
+
+            elif self.msg == "1111": #클라이언트가 맵이 없다고 함! > 전송요청
+
+                print("전송 시작")
+                with open("./Maps/" + mapCode + ".dat", 'r') as f:
+                    print("맵 열기")
+                    try:
+                        
+                        mapData = f.read(1024) #파일에서 1024바이트 씩 읽기
+                        print("맵 읽음")
+                        while mapData: #data가 0 (다 읽을 때 까지), 이렇게 하는 이유는 1024바이트 씩 읽고, 없어질때를 더 효과적으로 표현 가능
+                            #만약 while이 없었으면 f.read(1024)를 for문으로 돌려야 했다.
+                            self.sock.send(mapData.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
+                            print(mapData)
+                            mapData = f.read(1024) #다시 1024만큼 읽어본다.
+                        self.soc.send("EOF".encode()) #전송 끝 메세지
+
+                        while True:
+                            if self.msg == "0080" or self.msg == "0000": #룸 핸들러의 메세지가 오기전까지 계속 대기해야 하기 때문에 (recv를 쓰지 않아서) while안에 쓴다
+                                break #이 메세지가 왔을때만, 아래 명령어 실행
+                            else:
+                                pass
+
+
+                        if self.msg == "0080": #성공메세지 수신시
+                            return "OK" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
+                        elif self.msg == "0000":
+                            return "FAIL" #이경우는, 이 함수를 실행한 곳에서, 플레이어 퇴출
+
+
+                    except Exception as ex:
+                        print(f"전송 중 오류 : {ex}")
+                        return "SOMETHING ERROR" #오류메세지와 true출력, 이 함수를 실행한 곳에서, 플레이어 퇴출
+    
+                
+            else:
+                pass #아무 메세지도 아닌경우
+            
+            
+        else: #서버에 그러한 파일이 없으면
+            self.soc.send("NOFILE".encode())
+            return "NOFILE" #이경우는, 플레이어들에게 맵 파일 없다고 전송
 
     def sendMsg(self, msg: str):
         self.soc.send(msg.encode())
