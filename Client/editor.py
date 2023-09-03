@@ -2,9 +2,11 @@ import tkinter as tk
 import pyautogui
 import os
 import ctypes
-from math import trunc
+from math import *
 import re
 import time
+import testplay
+
 
 import socket
 
@@ -120,20 +122,29 @@ def playerStatus(height,time,speed): #플레이어 정보 계산
     return f"{v},{g},{speed}"
 
 def save(fileName): #맵 파일 작성
+
+    global testFileName
+
     if valueCheck():
         try: # 오류 대비
             #temp 폴더는 save될때 마다 만들면 오류 나니까, 너가 먼저 만들고, 저장만 하게 하면 됨 - 김동훈 남김
-            f = open(f"{fileName}{mapName.get()}.dat","w") #맵이름 폴더 안에 dat 파일 생성
-            for y in range(mapY):
-                for x in range(mapX):
-                    f.write(str(mapArray[x][y]))
-                f.write("\n") 
-            f.write("!" + f"{playerX},{playerY}")
-            f.write("\n@" + f"{PWidth},{PHeight}")
-            f.write("\n#" + playerStatus(float(jumpHeight.get()), float(jumpTime.get()), float(playerSpeed.get())))
-            f.write("\n$" + background.get())
-            f.write("\n%" + f"{goalX},{goalY}")
-            f.close
+            with open(f"{fileName}{mapName.get()}.dat","w") as f: #맵이름 폴더 안에 dat 파일 생성
+                for y in range(mapY):
+                    for x in range(mapX):
+                        f.write(str(mapArray[x][y]))
+                    f.write("\n") 
+                f.write("!" + f"{playerX},{playerY}")
+                f.write("\n@" + f"{PWidth},{PHeight}")
+                f.write("\n#" + playerStatus(float(jumpHeight.get()), float(jumpTime.get()), float(playerSpeed.get())))
+                f.write("\n$" + background.get())
+                f.write("\n%" + f"{goalX},{goalY}")
+
+            testFileName = mapName.get() #테스트 플레이 시 가져올 파일 이름
+            
+
+            mapTest.grid(row=guiLayout.index(mapTest))
+            blank.grid_forget()
+
             return True
         except: # 오류 발생시 실패를 알린다
             print("저장 실패")
@@ -277,46 +288,52 @@ def uploadMap():
     else:
         mapUpload.config(text="필요한 내용을\n채워주세요") #버튼 이름 바꾸기
 
-def infoWindow():
+def infoWindow(): #도움말 창 생성
     
-    infoY = 1200
+    infoY = int(SCRSIZEY * 3/5) #창의 Y크기
+    infoX = infoY #창의 X크기 (우선 Y랑 같게 설정)
+    defaultFontSize = int(infoY/100) #글자 크기
+    texts = []
 
     #창 설정
     info = tk.Tk() #에디터 설명 팝업 생성
     info.title("Info") #창의 이름
-    info.geometry(f"1200x{infoY}")
+    info.geometry(f"{infoX}x{infoY}")
     info.resizable(False, False) #창 크기 조절 가능 여부
-    info.attributes("-fullscreen", False)
 
-    texts = []
-    fontSize = 16 #글자 크기
-    with open("./editorInfo.txt","r", encoding="UTF-8") as f: #한글 가능하게 UTF-8로 인코딩
+    labelPos = 0
+
+    with open("./editorInfo.txt","r", encoding="UTF-8") as f: #한글 가능하도록 UTF-8로 인코딩
 
         for text in f.readlines():
 
-            if "!" in text:
+            if "!" in text: #느낌표가 있는 줄은 폰트를 키우고 볼드체 적용
                 text = text.strip("!")
-                fontSize = 16
+                scale = 4/3 #폰트 배율
                 slant = "bold"
-            else:
+            else: #나머지 줄은 들여쓰기
                 text = "    " + text
-                fontSize = 12
+                scale = 1 #폰트 배율
                 slant = ""
-            texts.append(tk.Label(info, text = text, font = ("맑은 고딕", fontSize, slant))) 
+            fontSize = int(defaultFontSize*scale)
+            texts.append([(tk.Label(info, text = text, font = ("맑은 고딕", fontSize, slant))), labelPos])
+            labelPos += fontSize
+
 
     for i in range(len(texts)):
-        texts[i].place(x=0, y=infoY/len(texts)*i)
+        texts[i][0].place(x=0, y=infoY/labelPos*texts[i][1])
 
-
+    print(infoY, labelPos)
 
     info.mainloop()
     
 
 
+
 def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, playerSpeed,\
-          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload
+          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout
 
     # ------------------------ GUI 요소 생성 ------------------------#
 
@@ -343,6 +360,7 @@ def runEditor():
     mapNameLabel = tk.Label(window, text = "맵 이름 입력")
     speedLabel = tk.Label(window, text = "이동 속도 입력")
     backgroundLabel = tk.Label(window, text = "배경사진 이름 입력")
+    blank = tk.Label(window, text="") #공백
 
     #엔트리 생성
     XEntry = tk.Entry(window)
@@ -357,10 +375,12 @@ def runEditor():
 
     #버튼 생성
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
-    saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./maps/"))
+    saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./temp/")) #임시로 temp폴더에 저장
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
     mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", height = 2, command = uploadMap)
-    infoButton = tk.Button(window, text = "help", command = infoWindow)
+    editorInfo = tk.Button(window, text = "help", command = infoWindow)
+    mapTest = tk.Button(window, text = "맵 테스트", command = lambda: testplay.testPlay(testFileName))
+
 
     colorButton = []
     for i in range(9):
@@ -377,17 +397,19 @@ def runEditor():
 
     # ------------------------ GUI 배치 ------------------------#
 
-    guiLayout = [XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
+    guiLayout = [editorInfo,XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
                 playerHeigheLabel, playerHeight, playerWidthLabel, playerWidth, 
                 jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed,
                 backgroundLabel, background,
-                mapNameLabel, mapName, saveButton, closeButton, mapUpload, infoButton]
-    
+                mapNameLabel, mapName, saveButton, closeButton, mapUpload, mapTest, blank]
+   
 
-    buttonFrame.grid(row = len(guiLayout)+1)
+    buttonFrame.grid(row = len(guiLayout)+2)
 
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
+
+    mapTest.grid_forget()
 
     for i in range(9):
         colorButton[i].grid(row = i, column = 0)
