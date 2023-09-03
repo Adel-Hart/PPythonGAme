@@ -423,7 +423,7 @@ SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기
 SCRSIZEY = user32.GetSystemMetrics(1) #" 세로
 
 size = (int(SCRSIZEX), int(SCRSIZEY)) # set screen size
-screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
+screen = pygame.display.set_mode(size)
 pygame.display.set_caption("RGB")
 
 WHITE = [255, 255, 255]
@@ -995,12 +995,12 @@ def test():
 
 lobbyButtons()
 
-for i in pygame.font.get_fonts():
-    print(i)
     
-clock.tick(60) #FPS는 60으로
+
 
 while not done: # loop the game       
+
+    clock.tick(60) #FPS는 60으로
 
     if inEditor: #에디터 실행중일시
         pass

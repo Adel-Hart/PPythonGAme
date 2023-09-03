@@ -104,9 +104,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
 
-user32 = ctypes.windll.user32
-SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
-SCRSIZEY = user32.GetSystemMetrics(1) #세로
+
+
 
 class pos: # 좌표값 class, 오브젝트마다 pos가 필요해서, 클래스화
     def __init__(self, x, y):
@@ -115,8 +114,6 @@ class pos: # 좌표값 class, 오브젝트마다 pos가 필요해서, 클래스�
 
 
 
-size = [SCRSIZEX, SCRSIZEY] # set screen size
-screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
 
 
 
@@ -195,7 +192,7 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         global TileList, MAPSIZEX, MAPSIZEY, PPOS, GPOS, PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed, backgroundImage
         TileList, MAPSIZEX, MAPSIZEY, PPOS, GPOS ,PSIZEX, PSIZEY, jumpPower, gravity, moveSpeed, backgroundImage = mapload.readMap(mapName) # 맵의 정보 다 받아온다
         global MAPTILESIZE # 한 타일의 길이(픽셀 수)
-        MAPTILESIZE = SCRSIZEY / MAPSIZEY if SCRSIZEX/MAPSIZEX > SCRSIZEY/MAPSIZEY else SCRSIZEX / MAPSIZEX #맵의 한 타일이 차지할 픽셀
+        MAPTILESIZE = SCRSIZEY // MAPSIZEY if SCRSIZEX//MAPSIZEX > SCRSIZEY//MAPSIZEY else SCRSIZEX // MAPSIZEX #맵의 한 타일이 차지할 픽셀
         
         #만약 해상도가 X축이 길면 짧은 Y축을 기준으로, Y축이 길면 짧은 X축을 기준으로 정사각형의 크기를 지정 (픽셀수를 타일 수로 나눠서 한 타일 당 몇 픽셀인지)
 
@@ -378,7 +375,7 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
 
 def activateSwitch(pos:pos): #스위치라면 발동시킨다
     if TileList[pos.x][pos.y][0] == "switch": #그 좌표의 타일이 스위치라면
-        print("switch", pos.x, pos.y)
+        #print("switch", pos.x, pos.y)
         for i in range(3): #R, G, B 마다 한번씩
             if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
                 changeRGB(i) #RGB값중 하나 변경 
@@ -392,7 +389,7 @@ def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 �
 
     for x in range(xStart, xEnd+1): # x범위
         for y in range(yStart, yEnd+1): # y범위
-            print(x, y)
+            #print(x, y)
             activateSwitch(pos(x,y)) 
                 
     return
@@ -478,9 +475,18 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
     else:
         return False
  
-    
+
 
 def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
+
+    user32 = ctypes.windll.user32
+    global SCRSIZEX, SCRSIZEY
+    SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
+    SCRSIZEY = user32.GetSystemMetrics(1) #세로
+
+    size = [SCRSIZEX, SCRSIZEY] # set screen size
+    global screen
+    screen = pygame.display.set_mode(size) # set pygame screen to object "screen"
 
     global clear
     clear = False
@@ -543,12 +549,12 @@ def runGame(mapName, otherPlayers:list = None): # 게임 실행 함수
             temp.set_colorkey((255, 255, 255))
         switchImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
 
-
+    
 
     while not done: # loop the game
 
+        clock.tick(60) # FPS 적용
         
-        clock.tick(60) # ! must multiply fps to move speed (cause difference of speed) !
 
         #배경사진 출력
         
