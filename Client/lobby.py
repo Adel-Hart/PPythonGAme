@@ -1015,7 +1015,7 @@ def serverBrowseMap(handler ,mapCodeList:list, page:int = 1): #맵을 서버에�
         currentPageMaps = mapCodeList[page * 5 - 5:page * 5] #현재 페이지의 맵 목록 불러오기
 
         for i in range(len(currentPageMaps)): #현재 페이지의 맵 수만큼
-            mapCode = currentPageMaps[i] 
+            mapCode = currentPageMaps[i].replace(".dat","")
             currentButtonList.append(Button( GRAY,mapCode, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, chooseMap, mapCode))
         pass
     
