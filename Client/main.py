@@ -6,6 +6,11 @@ import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
 
+#아래는 서버용 (ONLY UDP)
+
+import socket
+
+
 '''
 파이썬 게임 개발
 ! 2023 07 22 start
@@ -20,6 +25,82 @@ RGBlist : 현재 화면 색 (이 화면색과 같은 타일들은 무시됨)
 0,0이 맨쪽 위다.
 
 '''
+
+with open("../server/serverip.txt","r") as f:
+    HOST = f.readline()
+PORT = 8080
+
+
+
+
+
+class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
+    def __init__(self, players: list, initPos: list, roomName: str, name: str): #players는 참여자들 닉네임 list, initPos는 플레이할 맵의 플레이어 기본위치
+        self.udpSock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) #기본 udp 소켓 설정
+        self.roomName = roomName
+        self.nickName = name
+        self.playerList = {}
+        for p in players:
+            self.playerList[p] = initPos #플레이어 좌표 초기 설정
+
+        self.rgb = [False, False, False]
+        self.done = False
+
+    
+
+
+
+
+    def _postMan(self, msg): #메세지를 전송하는 함수
+        self.udpSock.sendto(msg.encode(), (HOST, PORT))
+
+
+    def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
+        while not self.done: #게임 끝나는 신호 오기 전까지
+            #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
+            pass
+        self._postMan()
+
+
+
+
+
+    def udpRecvHandler(self):
+        while not self.done: #게임 끝나는 신호 오기 전까지
+            data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
+            
+            data = data.decode()
+            if data.startswith('P'): #위치 정보를 수신
+                data = data.replace("P", "") #P삭제
+                data = data.split("!") #구분자가 !라서 !를 기준으로 분리
+                pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
+                self.playerList[data[0]] = [pos[0], pos[1]] #위치정보를 멤버 변수에 저장
+
+            elif data.startswith('R'): #RGB변경 정보를 수신
+                data = data.replace("R", "") #P삭제
+                data = data.split(",")
+                self.rgb[0] = data[0]
+                self.rgb[1] = data[1]
+                self.rgb[2] = data[2] #rgb정보 저장
+        
+        
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
