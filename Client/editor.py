@@ -142,7 +142,7 @@ def save(fileName): #맵 파일 작성
             testFileName = mapName.get() #테스트 플레이 시 가져올 파일 이름
             
 
-            mapTest.grid(row=guiLayout.index(mapTest))
+            mapTest.grid(row=guiLayout.index(mapTest)) #저장 성공시 테스트 버튼 띄우기
             blank.grid_forget()
 
             return True
@@ -250,7 +250,7 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
     try:
         valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, background.get(), goalX] #검사할 값 목록
 
-        if all(valueList) and not check.search(mapName.get()): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
+        if all(valueList) and not check.search(mapName.get()) and mapName.get(): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
             return True
         else:
             return False
@@ -404,7 +404,7 @@ def runEditor():
                 mapNameLabel, mapName, saveButton, closeButton, mapUpload, mapTest, blank]
    
 
-    buttonFrame.grid(row = len(guiLayout)+2)
+    buttonFrame.grid(row = len(guiLayout)+1)
 
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
