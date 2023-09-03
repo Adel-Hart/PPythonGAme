@@ -262,7 +262,8 @@ class conTcp():
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
         self.tcpSock.send("1008".encode())
 
-        
+        data = self.tcpSock.recv(1024)
+        data = data.decode()
 
         while data == "" or None: #데이터 도착까지 기다리기
             pass
