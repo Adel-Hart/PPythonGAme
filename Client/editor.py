@@ -140,11 +140,11 @@ def save(fileName): #맵 파일 작성
                 f.write("\n%" + f"{goalX},{goalY}")
                 f.write("\n*") #파일 업로드를 위해 끝 메세지 저장
 
-            testFileName = mapName.get() #테스트 플레이 시 가져올 파일 이름
-            
 
-            mapTest.grid(row=guiLayout.index(mapTest)) #저장 성공시 테스트 버튼 띄우기
-            blank.grid_forget()
+            if fileName == "./maps/":
+                testFileName = mapName.get() #테스트 플레이 시 가져올 파일 이름
+                mapTest.grid(row=guiLayout.index(mapTest)) #저장 성공시 테스트 버튼 띄우기
+                blank.grid_forget()
 
             return True
         except: # 오류 발생시 실패를 알린다
@@ -379,7 +379,7 @@ def runEditor():
 
     #버튼 생성
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
-    saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./temp/")) #임시로 temp폴더에 저장
+    saveButton = tk.Button(window, text = "맵 저장", command = lambda: save("./maps/"))
     closeButton = tk.Button(window, text = "에디터 종료", command = close)
     mapUpload = tk.Button(window, text = "맵업로드(서버 연결)", height = 2, command = uploadMap)
     editorInfo = tk.Button(window, text = "help", command = infoWindow)
