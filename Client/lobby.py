@@ -119,9 +119,6 @@ class conTcp():
             return True #성공 메세지 받을 시
         
         
-        elif(self.data == "0000"):
-            return False
-        
         else:
             self.data = None
             return False
@@ -152,7 +149,8 @@ class conTcp():
             print("나가기 완료")
             global joinedRoomName
             joinedRoomName = None
-            self.data = None 
+            self.data = None
+            serverRoomList(self, 1) #방 목록 다시 불러오기
             return True #성공 메세지 받을 시
         else:
             print("나가기 실패")
@@ -247,7 +245,7 @@ class conTcp():
             pass
         
         mapCodes = self.data.split("!") #맵 코드로 된 리스트 생성
-        self.data = None #데이터 삭제
+        self.data = None #데이터 삭제name
 
         return mapCodes #맵코드 목록 반환
 
@@ -598,6 +596,7 @@ def getString(filter, lengthLimit = 12):
     behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * SCRSIZEX//24, SCRSIZEX//12) #이름 입력칸 뒤에 올 것(리셋을 위해)
 
     while not strDone: #먼저 이름을 입력 받은 후 서버와 통신한다.
+        clock.tick(60)
         nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, SCRSIZEX//2, SCRSIZEX//12)
 
         #화면에 띄우기
@@ -734,17 +733,25 @@ def serverRoomList(handler: classmethod, page:int = 1):
 
     pageCount = (roomCount - 1) // 5 + 1
 
-    if roomCount == 0: #방이 없네
+    print(roomCount)
+
+    if roomList[0] == "*EMPTY*": #방이 없네
         pass
 
     else: #방이 있다
         currentPageRooms = roomList[page * 5 - 5:page * 5] #현재 페이지의 방 목록 불러오기
 
         for i in range(len(currentPageRooms)): #현재 페이지의 방 수만큼
-            roomName = currentPageRooms[i]
-            if roomName != "*EMPTY*": #비어있을 경우 표시 X
-                currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
-        pass
+
+            
+            roomName = currentPageRooms[i].split(",")[0]
+            playerCount = int(currentPageRooms[i].split(",")[1])
+
+            showText = f"{roomName}|{playerCount}/4"
+
+            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
+
+            
     
         if page != 1: #1페이지가 아니라면
                 #왼쪽으로 버튼 추가
@@ -756,7 +763,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
         pass
 
     #방 추가 버튼
-    currentButtonList.append(Button( GRAY,"방 만들기", BLACK,1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
+    currentButtonList.append(Button( GRAY,"방 만들기", BLACK,1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20, serverMakeRoom, handler))
 
 def serverMakeRoom(handler: classmethod):
 
@@ -792,18 +799,23 @@ def serverJoinedRoom(handler: classmethod):
 
     print(joinedRoomName, "들어옴")
 
-    roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, SCRSIZEX // 20, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEX // 20) #방 제목
-    setMapCodeButton = Button( GRAY,"맵 바꾸기", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverBrowseMap, handler, handler.getMapCodeList())
+
+    roomTitleButton1 = Button( GRAY,"방:", BLACK, 0, 0, SCRSIZEY // 10, SCRSIZEX // 20, SCRSIZEY // 10) #방 제목
+    roomTitleButton2 = Button( GRAY,joinedRoomName, BLACK, 0, SCRSIZEX // 20, SCRSIZEY // 10, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEY // 10) #방 제목
+    setMapCodeButton = Button( GRAY,"맵 바꾸기", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20, serverBrowseMap, handler, handler.getMapCodeList())
 
 
     fixedButtonList = [] #변하지 않는 버튼 리스트 ex) 방 제목, 나가기
-    fixedButtonList.append(roomTitleButton)
+    fixedButtonList.append(roomTitleButton1)
+    fixedButtonList.append(roomTitleButton2)
     fixedButtonList.append(setMapCodeButton)
     fixedImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
     fixedButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom)) #undo 버튼
 
     while joinedRoomName != None:
-        
+        global clock
+        clock.tick(60)
+
         screen.fill(T1_BG)
 
         if choosedMultiMap != False: #맵을 골랐을 시!!
@@ -820,19 +832,28 @@ def serverJoinedRoom(handler: classmethod):
         currentMapCode = roominfo[2]
         playerReadyDict = strToDict(roominfo[3])
         isGameReady = strToBool(roominfo[4])
+
+        ReadyButton = None
         
         playerButtonList = []
 
         for i, player in enumerate(playerList):
-            showingText = str(i) + player + " " +str(playerReadyDict[player]) #플레이어 이름과 준비상태로 텍스트 만들기
-            playerButtonList.append(Button( WHITE, showingText, RED, 0, 0, SCRSIZEX // 20 * (i+2), SCRSIZEX // 40 * len(showingText), SCRSIZEX // 20))
+            showingText = f"{i+1}. {player} " +("Ready" if playerReadyDict[player] else "") #플레이어 이름과 준비상태로 텍스트 만들기
+            playerButtonList.append(Button( WHITE, showingText, RED, 0, 0, SCRSIZEY // 5 + SCRSIZEY // 10 * (i+1), SCRSIZEY // 40 * len(showingText), SCRSIZEY // 20))
 
         if currentMapCode == "": #현재 맵코드가 없을시
             mapCodeText = "mapcode:*EMPTY*" #맵이 없음
         else: #맵코드가 있을시
             mapCodeText = f"mapcode:{currentMapCode}"
+            if playerReadyDict[handler.nickName] == True: #준비상태라면
+                ReadyButton = Button( WHITE, "준비 해제", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36)
+            else: #준비가 아니라면
+                ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36)
+            ReadyButton.displayButton()
+            
 
-        mapCodeButton = Button( None, mapCodeText, BLUE, 0, SCRSIZEX // 2 - (SCRSIZEX * len(mapCodeText) // 50) // 2, SCRSIZEX // 30, SCRSIZEX * len(mapCodeText) // 50, SCRSIZEX // 30)
+
+        mapCodeButton = Button( None, mapCodeText, WHITE, 0, SCRSIZEX // 2 - (SCRSIZEX * len(mapCodeText) // 50) // 2, SCRSIZEY // 20, SCRSIZEX * len(mapCodeText) // 50, SCRSIZEX // 30)
 
         for button in fixedButtonList: #버튼들 모두 출력
             button.displayButton()
@@ -845,7 +866,7 @@ def serverJoinedRoom(handler: classmethod):
 
         mapCodeButton.displayButton()
 
-        
+            
 
         pygame.display.update()
 
@@ -858,6 +879,8 @@ def serverJoinedRoom(handler: classmethod):
                     for button in fixedButtonList: #마우스와 겹치는 버튼을 작동시킨다
                         if button.checkFunction():
                             break
+                    if ReadyButton != None:
+                        ReadyButton.checkFunction()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
                     handler.leaveRoom()
@@ -907,7 +930,7 @@ def serverBrowseMap(handler ,mapCodeList:list, page:int = 1): #맵을 서버에�
         pass
 
     #안내 버튼
-    currentButtonList.append(Button( GRAY,"맵을 고르세요!", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30))
+    currentButtonList.append(Button( GRAY,"맵을 고르세요!", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20))
 
     screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
 
