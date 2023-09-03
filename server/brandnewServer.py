@@ -68,20 +68,15 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
     def startGame(self): #1008신호를 받았을시 처리하며, 룸 함수 mapsend를 포함한다
-        if not False in self.whosReady.values(): #준비 안된 자가 존재하지 않을 때만작동
-            
+        #인원이 안되는건 클라이언트에서 감지한다
 
-            """
-            6:22 이제 여기 바꿔야 한다
-            """
 
-            self.inGame = True #방의 게임중 시그널 키기
-            for c in self.whos.values():
-                c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
-            self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
-            self.gameHandler.run()
+        self.inGame = True #방의 게임중 시그널 키기
+        for c in self.whos.values():
+            c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
+        self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
+        self.gameHandler.run()
 
-        elif
 
     def endGame(self):
         self.inGame = False
@@ -469,6 +464,8 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     
                             self.msg = None
 
+                        elif self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
+                            self.roomHandler._sendMap2Client() #요청
 
 
 
