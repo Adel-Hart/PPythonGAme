@@ -71,11 +71,12 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         #인원이 안되는건 클라이언트에서 감지한다
 
 
+
         self.inGame = True #방의 게임중 시그널 키기
         for c in self.whos.values():
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
-        self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
-        self.gameHandler.run()
+        self._sendMap2Client()
+
 
 
     def endGame(self):
@@ -321,12 +322,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                         print("2")
                                         stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
                                         print(bool(stream))
-                                        end = True
-                                        while end: #EOF명령을 받으면, 쓰기 종료
+                                        end = False
+                                        while not end: #EOF명령을 받으면, 쓰기 종료
                                             f.write(stream) #stream 쓰기
                                             print("받아오는중,,,")
                                             if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
-                                                end = False #종료
+                                                end = True #종료
                                                 stream = 0
                                             else:
                                                 stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
@@ -465,7 +466,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.msg = None
 
                         elif self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
-                            self.roomHandler._sendMap2Client() #요청
+                            self.roomHandler.startGame() #요청
 
 
 
@@ -522,7 +523,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.sock.send(mapData.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
                             print(mapData)
                             mapData = f.read(1024) #다시 1024만큼 읽어본다.
-                        self.soc.send("EOF".encode()) #전송 끝 메세지
 
                         while True:
                             if self.msg == "0080" or self.msg == "0000": #룸 핸들러의 메세지가 오기전까지 계속 대기해야 하기 때문에 (recv를 쓰지 않아서) while안에 쓴다

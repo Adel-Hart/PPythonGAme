@@ -6,10 +6,10 @@ import re
 
 
 #요 아래는 서버용
+import os
 import socket
 import threading
 import selectors
-import time
 
 with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
@@ -33,6 +33,8 @@ class conTcp():
     def __init__(self):
         self.players = []
         self.data = None
+        self.mapDownloading = False #맵 다운중에는 recv스레드 꺼놔야 해서
+
 
     def run(self): #연결 실행함수
 
@@ -184,23 +186,26 @@ class conTcp():
         self.cmd = None
         while True:
 
-            recvMsg = self.tcpSock.recv(1024).decode()
+            if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
+                recvMsg = self.tcpSock.recv(1024).decode()
 
-            if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
-                self.tcpSock.send("7780".encode()) #응답하기
+                if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
+                    self.tcpSock.send("7780".encode()) #응답하기
 
-            elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
-                self.cmd = recvMsg.replace("CMD ", "")
+                elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
+                    self.cmd = recvMsg.replace("CMD ", "")
 
+                
+
+
+                else:
+                    self.data = recvMsg
+                    if type(self.data) == str:
+                        if not self.data.startswith("ROOMINFO"):
+                            print(self.data)
             
-
-
             else:
-                self.data = recvMsg
-                if type(self.data) == str:
-                    if not self.data.startswith("ROOMINFO"):
-                        print(self.data)
-
+                self.data = None #서버가 맵 정보를 받는 중이기 때문에 거의 모든 작업 보류
         
             
 
@@ -248,8 +253,101 @@ class conTcp():
         self.data = None #데이터 삭제name
 
         return mapCodes #맵코드 목록 반환
+    
 
 
+
+
+    def ready2Start(self):
+        self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
+        self.tcpSock.send("1008".encode())
+
+        data = self.tcpSock.recv(1024)
+        data = data.decode()
+
+        while data == "" or None: #데이터 도착까지 기다리기
+            pass
+        
+        if data == "nofile":
+            print("파일 없음")
+            #여기서 버튼을 수정 밍러마러ㅣㄴ멍;ㅣ
+
+        elif data.startswith("1008"):
+            mapCode = data[4:] #1008을 뺀 맵 코드를 저장
+
+            if f"{mapCode}.dat" in os.listdir("./extensionMap"): #서버다운 맵들 중 맵이 존재하는지 확인했을 때 존재하면
+                self.tcpSock.send("0000".encode())
+                #맵 존재한다고 시그널 보내기, udp연결 하기 
+
+                #udp연결하는 함수 실행
+
+
+            else: #존재 안 하면, 맵 다운 받아야 함
+                self.tcpSock.send("1111".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
+                res = self._downloadMap() #맵 다운 시작
+
+                if res == "FAIL": #실패하면
+                    self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
+                    
+                    global joinedRoomName
+                    joinedRoomName = None #방나가기
+                    return "FAIL" #시작 실패보내기 >> 방에서 나가져야 함
+                
+                elif res == "OK":
+                    self.tcpSock.send("0080".encode()) #클라이언트 실패 시그널 전송
+                else:
+                    pass #이러는 경우는 없다 사실상
+
+                
+                data = self.tcpSock.recv(1024) #다시데이터 받기
+                while data == "" or None: #데이터 도착까지 기다리기
+                    data = self.tcpSock.recv(1024) #다시데이터 다시받기
+
+                self.mapDownloading = False #recv스레드 블락 풀기
+
+                if data == "smterr": #서버측에서 무언가 오류가 난 경우
+                    global joinedRoomName
+                    joinedRoomName = None #방 나가기
+                    return "SERVERFAIL" #서버 실패 보내기 >> 방ㅇ서 나가져야 함
+                
+                elif data == "0080": #성공한 경우
+
+                    return
+                    #대충 udp연결 시작하는 내용
+
+                
+
+
+
+
+    def _downloadMap(self, mapCode):
+        '''
+        맵을 다운로드 받는 내부 함수, ready2Start함수에서만 실행됨
+        성공 > OK, 실패 > FAIL
+        '''
+
+        with open(f"./extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
+            print("파일 쓰기")
+            try:
+                stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
+                end = False
+                while not end: #EOF명령(*)을 받으면, 쓰기 종료
+                    f.write(stream) #stream 쓰기
+                    print("받아오는중,,,")
+                    if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
+                        end = True #종료
+                        stream = 0
+                    else:
+                        stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
+
+                print("완료")
+                f.close() #파일 저장
+
+                return "OK"
+                
+
+            except Exception:
+                return "FAIL"
 
 
 
