@@ -52,7 +52,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
     def setMap(self, mapCode):
-        if mapCode in os.listdir("./Maps"):
+        if f"{mapCode}.dat" in os.listdir("./Maps"):
             self.mapCode = mapCode
             
             for p in self.whosReady.keys():
@@ -139,9 +139,10 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         for c in self.whos.values(): #핸들러들에게, mapSend실행
             
+            print("핸들러 맵 보내기 시작")
             res = c.sendMapfile(self.mapCode) #sendMapfile은 파라미터에 맵코드가 들어간다
 
-
+            print("결과 나옴")
             if res == "FAIL": #맵 다운 중 실패한 경우(클라이언트 측에서)
                 self.gameHandler.clientAddr.pop(c.name)
                 self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
@@ -496,14 +497,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
     def sendMapfile(self, mapCode: str): #return이 문자열이라, 실행시 인스턴스처럼 실행시키고 조건문으로 결과비교 필요   맵 파일을 클라에게 전송
+        print(mapCode)
+        print(os.listdir("./Maps/"))
         if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
         
         
-        
+            print("맵 요청 시작")
             self.soc.send(f"1008{mapCode}".encode()) #맵 요청
             
 
-
+            print("맵 요청 보냄")
             while self.msg == None: #데이터 도착까지 기다리기
                 pass
 
@@ -515,7 +518,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             elif self.msg == "1111": #클라이언트가 맵이 없다고 함! > 전송요청
 
                 print("전송 시작")
-                with open("./Maps/" + mapCode + ".dat", 'r') as f:
+                with open(f"./Maps/{mapCode}.dat", 'r') as f:
                     print("맵 열기")
                     try:
                         
@@ -550,6 +553,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             
             
         else: #서버에 그러한 파일이 없으면
+            print("파일이...없다!")
             self.soc.send("NOFILE".encode())
             return "NOFILE" #이경우는, 플레이어들에게 맵 파일 없다고 전송
 
@@ -583,7 +587,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     
 def checkMapList():
-    result = '!'.join(os.listdir("./Maps")) #Maps 디렉토리의 맵 파일 이름들을 가져와 문자열로 만들기
+    result = '!'.join([x[:-4] for x in os.listdir("./Maps/")]) #Maps 디렉토리의 맵 파일 이름들을 가져와 문자열로 만들기, 뒤에 .dat은 빼준다
     return result
 
 def evaler(cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때문에 함수로 만듬, 주로 room+방이름으로 된 방 객체를 호출하기 위함.
