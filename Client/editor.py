@@ -138,6 +138,7 @@ def save(fileName): #맵 파일 작성
                 f.write("\n#" + playerStatus(float(jumpHeight.get()), float(jumpTime.get()), float(playerSpeed.get())))
                 f.write("\n$" + background.get())
                 f.write("\n%" + f"{goalX},{goalY}")
+                f.write("\n*") #파일 업로드를 위해 끝 메세지 저장
 
             testFileName = mapName.get() #테스트 플레이 시 가져올 파일 이름
             
@@ -287,6 +288,7 @@ def uploadMap():
 
     else:
         mapUpload.config(text="필요한 내용을\n채워주세요") #버튼 이름 바꾸기
+        s.sock.close()
 
 def infoWindow(): #도움말 창 생성
     
@@ -457,7 +459,6 @@ class tcpSock():
                             self.sock.send(data.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
                             print(data)
                             data = f.read(1024) #다시 1024만큼 읽어본다.
-                        self.sock.send("EOF".encode())
                         ret = self.sock.recv(1024).decode()  #서버의 메세지를 기다린다.
                         if ret == "0080": #성공
                             return "COMPLETE"

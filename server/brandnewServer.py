@@ -182,12 +182,14 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         heatBeatThread.start()
         recvThread = threading.Thread(target=self.recvMsg) #받기 시작
         recvThread.start()
+        
 
 
     def shutDown(self): #종료
         
         self.soc.close()
-        players.remove(self.name)
+        if not self.inEditor:
+            players.remove(self.name)
         print("shutdown the thread")
         del self
 
@@ -215,6 +217,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         elif self.inGamePlayer: #게임 중 (UDP 통신 중일 시에는)
             self.roomHandler.gameHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
             del self.roomHandler
+            
 
         self.shutDown() #연결 종료
         sys.exit() #현재 스레드 종료     
@@ -301,7 +304,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         sys.exit() #현재 스레드 종료
                         
                     elif "2000" in self.msg: #에디터 통신일 때
-
+                            self.inEditor = True
                             reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
                             print("이게 맵 " + reqMap)
                             
@@ -326,26 +329,25 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                         while not end: #EOF명령을 받으면, 쓰기 종료
                                             f.write(stream) #stream 쓰기
                                             print("받아오는중,,,")
+                                            print(stream)
                                             if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
                                                 end = True #종료
                                                 stream = 0
                                             else:
                                                 stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
-
+                                                stream = stream.decode()
                                         print("완료")
                                         f.close() #파일 저장
                                         self.sendMsg("0080") #성공 메세지 전송
                                         print("완료 전송")
-                                        self.inEditor = False
                                         print("소켓 닫기")
                                         self.msg = None
                                         self.soc.close() #소켓 닫기
                                         break
 
-                                    except Exception:
+                                    except Exception as e:
                                         self.sendMsg("0000") #오류 메세지 전송
-                                        print("오류 전송") 
-                                        self.inEditor = False
+                                        print(e)
                                         self.msg = None
                                         self.soc.close() #소켓 닫기
                                         break
@@ -359,6 +361,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             if not self.msg.replace("0001", "") in players:
                                 self.name = self.msg.replace("0001", "") #잘라내기 이름 설정
                                 players.append(self.name) #플레이어 목록에 이름추가
+
 
                                 self.msg = None
                                 self.sendMsg("0080") #OK sign
