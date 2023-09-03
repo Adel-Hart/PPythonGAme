@@ -325,10 +325,11 @@ class Image: #화면에 표시할 기능없는 이미지
         screen.blit(self.image, (self.posX, self.posY))
 
 class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
-    def __init__(self, backColor, text : str, textColor, textType:int ,posX :int, posY:int, width:int, height:int, function = None, parameter1 = None, parameter2 = None, parameter3 = None): 
+    def __init__(self, backColor, text : str, textColor, fontTextType ,posX :int, posY:int, width:int, height:int, function = None, parameter1 = None, parameter2 = None, parameter3 = None): 
         # backColor: 버튼의 색상
         # text, textColor: 버튼에 표시될 문자열, 그 색상
-        # textType = 0:영어, 1:한글
+        # fontTextType = (폰트경로, 0:영어/1:한글) or 0:영어/1:한글;자동폰트설정
+        # 
         # posX,posY: 버튼의 왼쪽위 꼭짓점 좌표
         # width, height: 버튼 크기
         # function: 작동할 함수
@@ -339,7 +340,12 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
         self.posX = posX
         self.posY = posY
         self.width = width 
-        self.textType = textType
+        if type(fontTextType) == int: #한글/영어 유무만 주어졌다면
+            self.font = "fonts/Ramche.ttf"
+            self.textType = fontTextType
+        else:
+            self.font = fontTextType[0]
+            self.textType = fontTextType[1]
         self.height = height
         self.function = function
         self.parameter1 = parameter1
@@ -365,19 +371,22 @@ class Button: #로비에서 클릭이벤트가 있을때 검사할 버튼 객체
                 pygame.draw.rect(screen, self.backColor, [self.posX, self.posY, self.width, self.height]) #기본 버튼 색상
             
         
-        if self.textColor != None: #텍스트 색이 None이 아니라면
+        if self.textColor != None and len(self.text) > 0: #텍스트 색이 None이 아니라면
             if self.textType == 0: #영어일시
-                font = pygame.font.SysFont("Consolas", 200) #폰트 설정\
+                font = pygame.font.Font(self.font, 200) #폰트 설정\
                 textlen = len(self.text)
             elif self.textType == 1: #한글일시
-                font = pygame.font.SysFont("malgungothic", 200, True, False)
+                font = pygame.font.Font(self.font, 200)
                 textlen = len(self.text) * 2 #글자 가로 크기를 2배
+            
+            
 
             img = font.render(self.text, True, self.textColor) #렌더
             
             if self.width > self.height * textlen // 2: #가로가 세로의 두배 이상일시
-                img = pygame.transform.scale(img, (self.height * textlen // 2, self.height)) #세로기준
-                screen.blit(img, (self.posX+self.width//2-self.height * textlen // 4,self.posY)) #텍스트 표시
+                marginy = 0.8
+                img = pygame.transform.scale(img, (self.height * textlen // 2  * marginy, self.height *marginy)) #세로기준
+                screen.blit(img, (self.posX+self.width//2-self.height * textlen  * marginy // 4,self.posY + self.height//2 - self.height * marginy // 2)) #텍스트 표시
             else: #아닐시
                 img = pygame.transform.scale(img, (self.width, self.width // textlen * 2)) #가로기준
                 screen.blit(img, (self.posX,self.posY+self.height//2-self.width // textlen )) #텍스트 표시
@@ -445,10 +454,10 @@ def lobbyButtons(): #처음 시작 장면
     global currentundo
     currentundo = quit
 
-    currentButtonList.append(Button( T1_OBJ,"SINGLE PLAYER", T1_BTNBG, 0, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
-    currentButtonList.append(Button( T1_OBJ,"MULTI PLAYERS", T1_BTNBG, 0, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
+    currentButtonList.append(Button( T1_OBJ,"싱글플레이", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
+    currentButtonList.append(Button( T1_OBJ,"멀티플레이", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
     currentButtonList.append(Button( T1_OBJ,"설정", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
-    currentButtonList.append(Button( T1_OBJ,"QUIT", T1_BTNBG, 0, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
+    currentButtonList.append(Button( T1_OBJ,"종료", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
 
 def singleButtons(): #싱글플레이
@@ -465,8 +474,8 @@ def singleButtons(): #싱글플레이
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
-    currentButtonList.append(Button( T1_BTNBG,"STORY", WHITE, 0, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
-    currentButtonList.append(Button( T1_BTNBG,"CUSTOM", WHITE, 0,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"스토리", WHITE, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
+    currentButtonList.append(Button( T1_BTNBG,"커스텀", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
     return
 
 def runEditor():
@@ -482,7 +491,7 @@ def storyButtons(): #스토리모드 = 챕터선택창
     global currentundo
     currentundo = singleButtons
 
-    currentButtonList.append(Button( T1_OBJ,"SELECT CHAPTER", T1_TEXT, 0, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
+    currentButtonList.append(Button( T1_OBJ,"챕터 선택", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
@@ -504,7 +513,7 @@ def chapterButtons(chapter:int): #챕터 내부 = 레벨선택창
 
     levelCount, clearedList = getChapterInfo(chapter)
 
-    currentButtonList.append(Button( T1_OBJ,"SELECT LEVEL", T1_TEXT, 0, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
+    currentButtonList.append(Button( T1_OBJ,"레벨 선택", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
@@ -518,18 +527,18 @@ def chapterButtons(chapter:int): #챕터 내부 = 레벨선택창
             #currentImageList.append(Image( "stage1", margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength))
             currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength, openStoryMap, chapter, i+1))
             if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                currentButtonList.append(Button( None, "CLEARED!", RED, 0, margin * (i * 8 + 1), SCRSIZEY // 2, boxLength, boxLength//4))
+                currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * (i * 8 + 1), SCRSIZEY // 2, boxLength, boxLength//4))
         else:
             #currentImageList.append(Image( "stage1", margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY // 2 + margin, boxLength, boxLength))
             if levelCount % 2 == 0:
                 currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
                 if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                    currentButtonList.append(Button( None, "CLEARED!", RED, 0, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
+                    currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
         
             else:
                 currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
                 if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                    currentButtonList.append(Button( None, "CLEARED!", RED, 0, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
+                    currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
 
 def getChapterInfo(chapter: int): #현재 챕터의 info.dat 파일 해석, 내용 반환
     with open(f"./maps/story/chapter{chapter}/info.dat", "r") as f: #챕터 정보 파일 열기
@@ -579,21 +588,21 @@ def getString(filter, lengthLimit = 12):
     screen.fill(T1_BG) #배경 띄우기
 
     #규칙 메세지 2줄로
-    nameRule1 = Button(None, "Name must be 12 characters or less.", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY //2, SCRSIZEY * 3 // 4, SCRSIZEY//20)
+    nameRule1 = Button(None, "이름은 최대 12글자입니다!", T1_TEXT, 1, 0, SCRSIZEY //2 + SCRSIZEY //20, SCRSIZEX, SCRSIZEY//20)
     
     if filter == re.compile('[a-zA-Z0-9]+'): #영문 or 숫자
-        nameRule2 = Button(None, "You can't use anything other than English and numbers", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+        nameRule2 = Button(None, "영어 대소문자 또는 숫자만 사용할 수 있습니다", T1_TEXT, 1, 0, SCRSIZEY//2 + SCRSIZEY//10 ,SCRSIZEX, SCRSIZEY//20)
     
     elif filter == re.compile('[a-zA-Z]+'): #영문일 경우
-        nameRule2 = Button(None, "You can't use anything other than English, a-z or A-Z", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+        nameRule2 = Button(None, "영어 대소문자만 사용할 수 있습니다", T1_TEXT, 1, 0, SCRSIZEY//2 + SCRSIZEY//10 ,SCRSIZEX, SCRSIZEY//20)
     
     nameRule1.displayButton() 
     nameRule2.displayButton()
 
-    behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * SCRSIZEX//30, SCRSIZEX//15) #이름 입력칸 뒤에 올 것(리셋을 위해)
+    behindScreener = Button(WHITE, "None", None, 0, SCRSIZEX//4, SCRSIZEY//4, 12 * SCRSIZEX//24, SCRSIZEX//12) #이름 입력칸 뒤에 올 것(리셋을 위해)
 
     while not strDone: #먼저 이름을 입력 받은 후 서버와 통신한다.
-        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, len(string) * SCRSIZEX//30, SCRSIZEX//15)
+        nameScreener = Button(None, string, BLACK, 0, SCRSIZEX//4, SCRSIZEY//4, SCRSIZEX//2, SCRSIZEX//12)
 
         #화면에 띄우기
         behindScreener.displayButton()
@@ -640,9 +649,9 @@ def multiButtons(): #멀티플레이, 시작 전 화면
         serverRoomList(tcpHandler, 1)
         return
 
-    nameError = Button(None, "Error on your Name, please check out your name", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
+    nameError = Button(None, "이름에 문제가 있습니다. 다시 설정해 주세요", T1_TEXT, 0, SCRSIZEX//4, SCRSIZEY//2 + SCRSIZEY//20 ,SCRSIZEY, SCRSIZEY//20)
 
-    connecting = Button(None, "Nickname must be 12 characters or less.", T1_TEXT, 0, SCRSIZEX//2, SCRSIZEY //2, SCRSIZEY * 3 // 8, SCRSIZEY//20) #서버 연결 메세지 표시
+    connecting = Button(None, "서버 연결 중...", T1_TEXT, 0, SCRSIZEX//2, SCRSIZEY //2, SCRSIZEY * 3 // 8, SCRSIZEY//20) #서버 연결 메세지 표시
 
     done = False
 
@@ -751,7 +760,7 @@ def serverRoomList(handler: classmethod, page:int = 1):
         pass
 
     #방 추가 버튼
-    currentButtonList.append(Button( GRAY,"MAKE ROOM", BLACK, 0, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
+    currentButtonList.append(Button( GRAY,"방 만들기", BLACK,1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverMakeRoom, handler))
 
 def serverMakeRoom(handler: classmethod):
 
@@ -788,7 +797,7 @@ def serverJoinedRoom(handler: classmethod):
     print(joinedRoomName, "들어옴")
 
     roomTitleButton = Button( GRAY,joinedRoomName, BLACK, 0, 0, SCRSIZEX // 20, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEX // 20) #방 제목
-    setMapCodeButton = Button( GRAY,"CHANGE MAP", BLACK, 0, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverBrowseMap, handler, handler.getMapCodeList())
+    setMapCodeButton = Button( GRAY,"맵 바꾸기", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30, serverBrowseMap, handler, handler.getMapCodeList())
 
 
     fixedButtonList = [] #변하지 않는 버튼 리스트 ex) 방 제목, 나가기
@@ -902,7 +911,7 @@ def serverBrowseMap(handler ,mapCodeList:list, page:int = 1): #맵을 서버에�
         pass
 
     #안내 버튼
-    currentButtonList.append(Button( GRAY,"CHOOSE MAP!", BLACK, 0, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30))
+    currentButtonList.append(Button( GRAY,"맵을 고르세요!", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEX // 30))
 
     screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
 
