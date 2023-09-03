@@ -289,7 +289,6 @@ class conTcp():
                 if res == "FAIL": #실패하면
                     self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
                     
-                    global joinedRoomName
                     joinedRoomName = None #방나가기
                     return "FAIL" #시작 실패보내기 >> 방에서 나가져야 함
                 
@@ -306,7 +305,6 @@ class conTcp():
                 self.mapDownloading = False #recv스레드 블락 풀기
 
                 if data == "smterr": #서버측에서 무언가 오류가 난 경우
-                    global joinedRoomName
                     joinedRoomName = None #방 나가기
                     return "SERVERFAIL" #서버 실패 보내기 >> 방ㅇ서 나가져야 함
                 
