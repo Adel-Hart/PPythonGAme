@@ -290,7 +290,7 @@ def uploadMap():
         mapUpload.config(text="필요한 내용을\n채워주세요") #버튼 이름 바꾸기
         s.sock.close()
 
-    os.remove(f"./temp/{mapName.get()}") #맵 파일 삭제
+    os.remove(f"./temp/{mapName.get()}.dat") #맵 파일 삭제
 
 def infoWindow(): #도움말 창 생성
     
