@@ -35,10 +35,11 @@ PORT = 8080
 
 
 class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
-    def __init__(self, players: list, initPos: list, roomName: str, name: str): #players는 참여자들 닉네임 list, initPos는 플레이할 맵의 플레이어 기본위치
+    def __init__(self, players: list, initPos: list, roomName: str, name: str, mapCode: str): #players는 참여자들 닉네임 list, initPos는 플레이할 맵의 플레이어 기본위치
         self.udpSock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) #기본 udp 소켓 설정
         self.roomName = roomName
         self.nickName = name
+        self.mapCode = mapCode
         self.playerList = {}
         for p in players:
             self.playerList[p] = initPos #플레이어 좌표 초기 설정
@@ -46,7 +47,11 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         self.rgb = [False, False, False]
         self.done = False
 
-    
+
+
+    def runGameScreen(self):
+        print("멀티 게임 시작")
+        runGame(f"extensionMap/{self.mapCode}.dat", self.playerList.keys())
 
 
 
