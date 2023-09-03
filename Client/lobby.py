@@ -187,6 +187,7 @@ class conTcp():
         while True:
 
             if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
+                print(self.mapDownloading)
                 print("나 받는당")
                 recvMsg = self.tcpSock.recv(1024).decode()
 
@@ -202,7 +203,7 @@ class conTcp():
                     self.data = recvMsg
                     if type(self.data) == str:
                         if not self.data.startswith("ROOMINFO"):
-                            print(self.mapDownloading)
+                            
                             print(self.data)
             
             else:
