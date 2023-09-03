@@ -337,6 +337,9 @@ class conTcp():
                         stream = 0
                     else:
                         stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
+                        stream = stream.decode()
+
+
 
                 print("완료")
                 f.close() #파일 저장
