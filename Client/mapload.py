@@ -68,6 +68,8 @@ def readMap(MapName): #dat 파일을 읽고 맵 array와 플레이어의 좌표�
             Pos = line.split(",") #, 기준으로 문자열 나누기
             Gpos = pos(float(Pos[0]), float(Pos[1])) #도착지점 좌표
             pass 
+        elif "*" in line:
+            pass
         else:
             Map.append(map(lambda x : ColorDict[x],list(line))) #새로운 가로줄 추가
     #print(Map)

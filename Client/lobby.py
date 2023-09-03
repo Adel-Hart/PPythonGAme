@@ -268,7 +268,7 @@ class conTcp():
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
         print("1008 전송")
         self.tcpSock.send("1008".encode())
-
+        
         print("정보 받기 시작")
         data = self.tempData
         print(data)
@@ -283,6 +283,7 @@ class conTcp():
             #여기서 버튼을 수정 밍러마러ㅣㄴ멍;ㅣ
 
         elif data.startswith("1008"):
+            print("여기"+data)
             mapCode = data[4:] #1008을 뺀 맵 코드를 저장
             print(mapCode)
 
