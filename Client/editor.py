@@ -6,6 +6,7 @@ from math import *
 import re
 import time
 import testplay
+import pygetwindow
 
 
 import socket
@@ -142,7 +143,7 @@ def save(fileName): #맵 파일 작성
                 f.write("\n*") #파일 업로드를 위해 끝 메세지 저장
 
 
-            if fileName == "./maps/": #맵 폴더에 저장된 경우 테스트 버튼을 띄운다
+            if fileName == "./maps/": #maps 폴더에 저장된 경우 테스트 버튼을 띄운다
                 testFileName = mapName.get() #테스트 플레이 시 가져올 파일 이름
                 mapTest.grid(row=guiLayout.index(mapTest)) #저장 성공시 테스트 버튼 띄우기
                 blank.grid_forget()
@@ -350,6 +351,8 @@ def runEditor():
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, playerSpeed,\
           playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout, info
 
+    win = pyautogui.getWindowsWithTitle("mapTest")
+
     # ------------------------ GUI 요소 생성 ------------------------#
 
 
@@ -427,7 +430,7 @@ def runEditor():
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
 
-    mapTest.grid_forget()
+    mapTest.grid_forget() #버튼 감추기
 
     for i in range(9):
         colorButton[i].grid(row = i, column = 0)

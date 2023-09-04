@@ -504,7 +504,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
 
     global done 
     done = False
-    pygame.display.set_caption(str(mapName)) # set window's name a mapName
+    pygame.display.set_caption("mapTest") # set window's name a mapName
 
     global wantToMoveX
     wantToMoveX = 0 # 플레이어가 누르고 있는 X방향(-1, 1)
