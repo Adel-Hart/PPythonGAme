@@ -263,6 +263,7 @@ class conTcp():
 
 
     def ready2Start(self):
+        global joinedRoomName
         self.tempData = None
 
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
@@ -297,6 +298,7 @@ class conTcp():
                 #맵 존재한다고 시그널 보내기, udp연결 하기 
 
                 #udp연결하는 함수 실행
+                print("여기부터udp")
 
 
             else: #존재 안 하면, 맵 다운 받아야 함
@@ -305,7 +307,7 @@ class conTcp():
                 print("1111전송 함")
                 print(currentMapCode)
                 res = self._downloadMap(currentMapCode) #맵 다운 시작
-
+                print(res)
                 if res == "FAIL": #실패하면
                     self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
                     
@@ -313,25 +315,34 @@ class conTcp():
                     return "FAIL" #시작 실패보내기 >> 방에서 나가져야 함
                 
                 elif res == "OK":
-                    self.tcpSock.send("0080".encode()) #클라이언트 실패 시그널 전송
+                    self.tcpSock.send("0080".encode()) #클라이언트 성공 시그널 전송
                 else:
+                    self.tcpSock.send("0000".encode()) #그래도 일단 실패 시그널
                     pass #이러는 경우는 없다 사실상
 
-                
-                data = self.tcpSock.recv(1024) #다시데이터 받기
-                while data == "" or None: #데이터 도착까지 기다리기
-                    data = self.tcpSock.recv(1024) #다시데이터 다시받기
-
                 self.mapDownloading = False #recv스레드 블락 풀기
+                self.cmd = None
+                while self.cmd == None: #기다리기
+                    pass
+                
+                print(self.cmd, "CMD")
+                
 
-                if data == "smterr": #서버측에서 무언가 오류가 난 경우
+
+                if self.cmd == "smterr": #서버측에서 무언가 오류가 난 경우
                     joinedRoomName = None #방 나가기
+                    self.cmd = None
                     return "SERVERFAIL" #서버 실패 보내기 >> 방ㅇ서 나가져야 함
                 
-                elif data == "0080": #성공한 경우
-
-                    return
+                elif self.cmd == "0080": #성공한 경우
+                    print("성공")
+                    
                     #대충 udp연결 시작하는 내용
+                    print("여기부터udp")
+                    return
+                    
+                
+                
 
                 
 
@@ -347,7 +358,9 @@ class conTcp():
         with open(f"./extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
             print("파일 쓰기")
             try:
-                stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
+                stream = self.tcpSock.recv(1024).decode() #먼저 1024를 읽는다.
+                print("받음")
+                print(stream)
                 end = False
                 while not end: #EOF명령(*)을 받으면, 쓰기 종료
                     f.write(stream) #stream 쓰기
@@ -356,7 +369,7 @@ class conTcp():
                         end = True #종료
                         stream = 0
                     else:
-                        stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
+                        stream = self.tcpSock.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
                         stream = stream.decode()
 
 
