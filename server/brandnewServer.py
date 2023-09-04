@@ -76,8 +76,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         self.inGame = True #방의 게임중 시그널 키기
         print("a")
-        print(self.whos.values())
-        for c in self.whos.values():
+        for c in self.whos.copy().values():
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
         self.mapDownloading = True #하트비트 잠깐 끄기
         self._sendMap2Client()
@@ -86,17 +85,17 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
     def endGame(self):
         self.inGame = False
-        for c in self.whos.values():
+        for c in self.whos.copy().values():
             c.inGamePlayer = False #각 핸들러의 inGamePlayer신호 끄기
             
         del self.gameHandler #gameHandler 인스턴스 삭제
 
     def multiCastChat(self, msg, name): #방에 있는 모든 클라이언트에게 룸챗 메세지 전송
-        for c in self.whos.values():
+        for c in self.whos.copy().values():
             c.sendMsg(f"roomChat!{name}:{msg}") #!로 구분, 닉네임 : 내용
 
     def multiCastCmd(self, msg): #방에 있는 모든 클라이언트에게 커맨드 메세지 전송
-        for c in self.whos.values():
+        for c in self.whos.copy().values():
             c.sendMsg("CMD " + msg)
 
     def castCmd(self, msg: str, target: classmethod): 
@@ -142,7 +141,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         print("udp연결 완료")
         print(self.whos.values())
 
-        for c in self.whos.values(): #핸들러들에게, mapSend실행
+        for c in self.whos.copy().values(): #핸들러들에게, mapSend실행
             print(c)
             print("핸들러 맵 보내기 시작")
             
@@ -153,22 +152,22 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
                 self.gameHandler.clientAddr.pop(c.name)
                 self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #클라이언트의 방 나가기 실행
-                self.mapDownloading = False #하트비트 잠깐 끄기
+                self.mapDownloading = False #하트비트 켜기
             elif res == "SOMETHING ERROR": #다운 중 뭔가 오류가 일어난 경우
                 self.castCmd("smterr", c)
                 self.gameHandler.clientAddr.pop(c.name)
                 self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #오류 메세지 전송하고, 방에서 내보내기
-                self.mapDownloading = False #하트비트 잠깐 끄기
+                self.mapDownloading = False #하트비트 켜기
 
             elif res == "NOFILE": #서버에 맵 파일이 없는 경우
                 self.castCmd("nofile", c)
-                self.mapDownloading = False #하트비트 잠깐 끄기
+                self.mapDownloading = False #하트비트 켜기
                 pass #이경우는, 그냥 다시 시도하면 되는 것이기에 다시 화면으로 돌아가깅
 
             else: #다른 문제다 그러면 그냥 넘겨도 되기에, 0080전송
                 self.castCmd('0080', c)
-                self.mapDownloading = False #하트비트 잠깐 끄기
+                self.mapDownloading = False #하트비트 켜기
             
 
 
@@ -207,16 +206,19 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     
     def heartBeat(self): #클라이언트의 접속 끊어짐을 확인하면, 데이터를 지우고 소켓을 닫는다
-        if self.inRoom:
-            if self.roomHandler.mapDownloading == True:
-                print("NO heart")
+        
                 
         self.heartStack = 0
         while self.heartStack <= self.howAlive:
             time.sleep(10) #10초간격으로, 스레드 안에서 진행이라 논 블락킹이다! ㅎㅎ
             try:
-                #self.sendMsg("7777") #7777이라는 hearbeat 신호 보내기 
-                self.heartStack += 1
+                if self.inRoom:
+                    if self.roomHandler.mapDownloading == True:
+                        pass
+                else:
+                    self.heartStack += 1
+                    self.sendMsg("7777") #7777이라는 heartbeat 신호 보내기 
+                    
             except: #오류 발생시 그냥 보내버리기
                 break
 
@@ -304,14 +306,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                 if self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
                     print("b")
                     self.msg = None
-                    self.roomHandler.startGame() #요청
+                    self.roomHandler.startGame() #요청, 이 함수가 끝나기 전까지 recvMsg 함수는 사용 불가
+                    print("startGame 끝")
                     
                     pass
-
-                elif self.msg == "0000" or self.msg == "1111":
-                    print("제발...")
-                    self.tempData = self.msg
-                    
+                # elif self.msg == "0000" or self.msg == "1111":
+                #     print("제발...")
+                #     self.tempData = self.msg
                 if not self.msg == "7780": 
                     # print(f"{datetime.now()} :  {self.addr}")
                     
@@ -561,20 +562,23 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         print("맵 읽음")
                         while mapData: #data가 0 (다 읽을 때 까지), 이렇게 하는 이유는 1024바이트 씩 읽고, 없어질때를 더 효과적으로 표현 가능
                             #만약 while이 없었으면 f.read(1024)를 for문으로 돌려야 했다.
-                            self.sock.send(mapData.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
+                            self.soc.send(mapData.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
                             print(mapData)
                             mapData = f.read(1024) #다시 1024만큼 읽어본다.
 
                         while True:
-                            if self.msg == "0080" or self.msg == "0000": #룸 핸들러의 메세지가 오기전까지 계속 대기해야 하기 때문에 (recv를 쓰지 않아서) while안에 쓴다
+                            data = self.soc.recv(1024).decode()
+                            if data == "0080" or data == "0000": #룸 핸들러의 메세지가 오기전까지 계속 대기해야 하기 때문에 (recv를 쓰지 않아서) while안에 쓴다
                                 break #이 메세지가 왔을때만, 아래 명령어 실행
                             else:
                                 pass
 
-
-                        if self.msg == "0080": #성공메세지 수신시
+                        print("받음", data)
+                        if data == "0080": #성공메세지 수신시
+                            print("OK")
                             return "OK" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
-                        elif self.msg == "0000":
+                        elif data == "0000":
+                            print("FAIL")
                             return "FAIL" #이경우는, 이 함수를 실행한 곳에서, 플레이어 퇴출
 
 
