@@ -280,8 +280,6 @@ class conTcp():
         while data == "" or data == None or data == "7777": #데이터 도착까지 기다리기
             data = self.tempData
             print(data) #다시받기
-
-        self.tcpSock.send("1111".encode())
         
         if data == "nofile":
             print("파일 없음")
@@ -296,7 +294,7 @@ class conTcp():
                 print("0000보냄")
                 self.tcpSock.send("0000".encode())
                 #맵 존재한다고 시그널 보내기, udp연결 하기 
-
+            
                 #udp연결하는 함수 실행
                 print("여기부터udp")
 
