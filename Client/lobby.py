@@ -205,7 +205,11 @@ class conTcp():
 
                 elif recvMsg.startswith("ROOMINFO"):
                     self.data = recvMsg
-                        
+
+                elif recvMsg.startswith("^"): #맵인 경우에
+                    #대충 맵 내용 변수에 저장하는 내용
+                    #아마 self.stream
+
                 else:
                     self.data = recvMsg
                     
@@ -314,6 +318,7 @@ class conTcp():
                 print("1111전송 함")
                 print(currentMapCode)
                 res = self._downloadMap(currentMapCode) #맵 다운 시작
+                self.mapDownloading = False #recv스레드 블락 풀기 (맵 다운 끝나면 바로)
                 print(res)
                 if res == "FAIL": #실패하면
                     self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
@@ -327,7 +332,7 @@ class conTcp():
                     self.tcpSock.send("0000".encode()) #그래도 일단 실패 시그널
                     pass #이러는 경우는 없다 사실상
 
-                self.mapDownloading = False #recv스레드 블락 풀기
+                
                 self.cmd = ""
                 while self.cmd == "": #기다리기
                     pass
