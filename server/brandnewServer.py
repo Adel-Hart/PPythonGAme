@@ -77,7 +77,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         print("a")
         for c in self.whos.copy().values():
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
-        self.mapDownloading = True #하트비트 잠깐 끄기
+        # self.mapDownloading = True #하트비트 잠깐 끄기
         self._sendMap2Client()
 
 
@@ -198,8 +198,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def shutDown(self): #종료
         
         self.soc.close()
+        
         if not self.inEditor:
             players.remove(self.name)
+            
+            
         print("shutdown the thread")
         del self
 
@@ -211,12 +214,9 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         while self.heartStack <= self.howAlive:
             time.sleep(10) #10초간격으로, 스레드 안에서 진행이라 논 블락킹이다! ㅎㅎ
             try:
-                if self.inRoom:
-                    if self.roomHandler.mapDownloading == True:
-                        pass
-                else:
-                    self.heartStack += 1
-                    self.sendMsg("7777") #7777이라는 heartbeat 신호 보내기 
+                print("")
+                self.heartStack += 1
+                self.sendMsg("7777") #7777이라는 heartbeat 신호 보내기 
                     
             except: #오류 발생시 그냥 보내버리기
                 break
@@ -234,6 +234,9 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         elif self.inGamePlayer: #게임 중 (UDP 통신 중일 시에는)
             self.roomHandler.gameHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
             del self.roomHandler
+
+        else:
+            print("아무것도 아닌... 하트비트 내용")
             
 
         self.shutDown() #연결 종료
@@ -274,6 +277,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
     def leaveRoom(self):
         print("leaving room..")
         self.inRoom = False
+        self.inGamePlayer = False #방 상태 전부 해제
         self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
         del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
             #룸 핸들러의 참조가 모두 사라지면, 파이썬의 garbage collector가 자동으로 룸 핸들러를 삭제시킴
@@ -511,6 +515,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                     
                 else: #hearbeat 신호일시
+                    print("heartISBumping")
                     self.heartStack = 0
                     pass
                 
@@ -535,7 +540,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
             
             
-            self.msg = ""
             self.tempData = "" #메세지 초기화
             print("맵 요청 시작")
             self.soc.send(f"1008{mapCode}".encode()) #맵 요청
@@ -557,14 +561,20 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                 with open(f"./Maps/{mapCode}.dat", 'r') as f:
                     print("맵 열기")
                     try:
-                        
-                        mapData = f.read(1024) #파일에서 1024바이트 씩 읽기
+                        mapData = f.read(1023) #파일에서 1023바이트 씩 읽기, 나머지 1바이트는 맵 파일임을 알리기 위해 추가할 문자(^)다!
                         print("맵 읽음")
                         while mapData: #data가 0 (다 읽을 때 까지), 이렇게 하는 이유는 1024바이트 씩 읽고, 없어질때를 더 효과적으로 표현 가능
                             #만약 while이 없었으면 f.read(1024)를 for문으로 돌려야 했다.
-                            self.soc.send(mapData.encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기
+                            print(len(f"^{mapData}"))
+                            self.soc.send(f"^{mapData}".encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기를 봔환
+                            #이러면 보낼때마다 ^맵파일 내용으로 보내, 클라이언트 측에서는 이를 구분하여 저장함
                             print(mapData)
-                            mapData = f.read(1024) #다시 1024만큼 읽어본다.
+                            mapData = f.read(1023) #다시 1024만큼 읽어본다.
+                            while self.msg == "mapOk": #mapOk사인을 받기 전까지 대기, 받아야 다음걸 전송한다
+                                pass
+                            print("mapOkk받았서")
+                            self.msg == "" #받으면, 메세지 초기화
+
 
                         while True:
                             data = self.soc.recv(1024).decode()
@@ -787,6 +797,8 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
 
 
     def connDown(self, targetC): #플레이어 연결이 예상치 못하게 끊켰을 때 목록에서 지우는 것
+        self.udpSock.close()
+        print("소켓 닫음")
         self.clientAddr.pop(targetC)
         self.clientPos.pop(targetC)
 

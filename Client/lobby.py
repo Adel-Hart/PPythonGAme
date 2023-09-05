@@ -34,6 +34,8 @@ class conTcp():
         self.players = []
         self.data = ""
         self.mapDownloading = False #맵 다운중에는 recv스레드 꺼놔야 해서
+        self.mapStream = "" #하나의 리시브로 작동하기때문에, 맵 전송 내용이 담길 변수다.
+
 
 
     def run(self): #연결 실행함수
@@ -188,35 +190,50 @@ class conTcp():
         self.cmd = ""
         while True:
 
-            if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
+            # if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
                 # print(self.mapDownloading)
                 # print("나 받는당")
-                recvMsg = self.tcpSock.recv(1024).decode()
+            recvMsg = self.tcpSock.recv(1024).decode()
 
 
-                if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
-                    self.tcpSock.send("7780".encode()) #응답하기
+            print(recvMsg)
 
-                elif recvMsg.startswith("1008"):
-                    self.tempData = recvMsg
+            if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
+                self.tcpSock.send("7780".encode()) #응답하기
+                
+            elif recvMsg.startswith("1008"):
+                self.tempData = recvMsg
 
-                elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
-                    self.cmd = recvMsg.replace("CMD ", "")
+            elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
+                self.cmd = recvMsg.replace("CMD ", "")
 
-                elif recvMsg.startswith("ROOMINFO"):
-                    self.data = recvMsg
+            elif recvMsg.startswith("ROOMINFO"):
+                self.data = recvMsg
 
-                elif recvMsg.startswith("^"): #맵인 경우에
-                    #대충 맵 내용 변수에 저장하는 내용
-                    #아마 self.stream
-
-                else:
-                    self.data = recvMsg
+            elif recvMsg.startswith("^"): #맵인 경우에
+                #대충 맵 내용 변수에 저장하는 내용
+                #아마 self.stream
+                
+                if recvMsg != self.mapStream: #새로운 것을 수신 했을때,
+                    if self.mapStream == "": #새로운 것을 받을 준비가 된거면,
+                        self.mapStream = recvMsg #읽은 값을 저장한다.
                     
-            
+                    else: #아직 맵파일 쓰고 있는데, 요청이 들어왔던거면,
+                        while not self.mapStream:
+                            pass #맵파일 다쓰고, 요청을 받을 때까지 대기, 파일쓰는게 많이 느린게 아니라, heartbeat에 걸리지 X
+                        self.mapStream = recvMsg
+                
+
+
+
+
             else:
-                #self.data = "" #서버가 맵 정보를 받는 중이기 때문에 거의 모든 작업 보류
-                pass
+                self.data = recvMsg
+                
+            
+            # else:
+            #     #self.data = "" #서버가 맵 정보를 받는 중이기 때문에 거의 모든 작업 보류
+            #     pass
             
 
 
@@ -286,11 +303,11 @@ class conTcp():
         print("정보 받기 시작")
         while self.tempData == "":
             pass
-        data = self.tempData
+        data = self.tempData  # << tempData는 recv스레드에서 처리했다고!
         print(data)
         print("디코딩 끝")
 
-        while data == "" or data == None or data == "7777": #데이터 도착까지 기다리기
+        while data == "" or data == None: #데이터 도착까지 기다리기
             data = self.tempData
             print(data) #다시받기
         
@@ -381,24 +398,38 @@ class conTcp():
         '''
         맵을 다운로드 받는 내부 함수, ready2Start함수에서만 실행됨
         성공 > OK, 실패 > FAIL
+
+
+        한번에 여러번 보내면, 데이터가 중첩되어 사라질 수 있어서, 데이터를 수신시 그 다음 송신 요청하는 코드를 보내야 한다.
         '''
 
         with open(f"./maps/extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
             print("파일 쓰기")
             try:
-                stream = self.tcpSock.recv(1024).decode() #먼저 1024를 읽는다.
+                while not self.mapStream:
+                    pass #mapStream의 값이 없으면 >> 읽어오지 못하면 계속 대기
+
+
                 print("받음")
-                print(stream)
-                end = False
-                while not end: #EOF명령(*)을 받으면, 쓰기 종료
-                    f.write(stream) #stream 쓰기
+                print(self.mapStream)
+                while True: #EOF명령(*)을 받으면, 쓰기 종료
+                    while not self.mapStream:
+                        pass #공백이면, 대기
+
+
+
+
+                    print(self.mapStream)
+                    f.write(self.mapStream[1:]) #stream 쓰기 (앞문자인 ^을 빼고)
+                    print(self.mapStream[1:])
                     print("받아오는중,,,")
-                    if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
-                        end = True #종료
-                        stream = 0
+                    print(f"끝 문자 : {self.mapStream[-1]}")
+                    if self.mapStream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
+                        self.mapStream = "" #초기화
+                        break #종료
                     else:
-                        stream = self.tcpSock.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
-                        stream = stream.decode()
+                        self.mapStream = "" #다시 받기전, 원래 버퍼를 초기화
+                        self.tcpSock.send("mapOk".encode()) #수신 사인을 보내고 다시 읽는다.
 
 
 
@@ -408,8 +439,8 @@ class conTcp():
                 return "OK"
                 
 
-            except Exception:
-                return "FAIL"
+            except Exception as e:
+                return f"FAIL, {e}"
 
 
 
