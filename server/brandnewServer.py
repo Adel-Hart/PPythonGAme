@@ -11,7 +11,6 @@ with open("./serverip.txt","r") as f:
     HOST = f.readline()
 
 PORT = 8080
-UDPPORT = 9090
 
 sele = selectors.DefaultSelector() #셀렉터 생성
 
@@ -299,13 +298,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                 data = self.soc.recv(1024)
                 self.msg = data.decode()
                 
-                while self.msg == None: #데이터 도착까지 기다리기
-                    pass
-
+                while self.msg == "": #데이터 도착까지 기다리기
+                    data = self.soc.recv(1024)
+                    self.msg = data.decode()
                 
                 if self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
                     print("b")
-                    self.msg = None
+                    self.msg = ""
                     self.roomHandler.startGame() #요청, 이 함수가 끝나기 전까지 recvMsg 함수는 사용 불가
                     print("startGame 끝")
                     
@@ -326,7 +325,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                     
                     if self.msg == "9999": #연결 종료 사안
-                        self.msg = None
+                        self.msg = ""
                         self.shutDown()
                         sys.exit() #현재 스레드 종료
 
@@ -350,7 +349,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 
                                     print("0000 전송")
                                     self.sendMsg("0000") #이미 존재
-                                    self.msg = None
+                                    self.msg = ""
 
                             else:
                                 print("0080전송")
@@ -378,46 +377,47 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                         self.sendMsg("0080") #성공 메세지 전송
                                         print("완료 전송")
                                         print("소켓 닫기")
-                                        self.msg = None
+                                        self.msg = ""
                                         self.soc.close() #소켓 닫기
                                         break
 
                                     except Exception as e:
                                         self.sendMsg("0000") #오류 메세지 전송
                                         print(e)
-                                        self.msg = None
+                                        self.msg = ""
                                         self.soc.close() #소켓 닫기
                                         break
 
                     if not self.inRoom: #방 목록 탐색기에 있을때.
                         if self.msg == "0010":
                             print("ok")
-                            self.msg = None
+                            self.msg = ""
                             self.sendMsg("0080") #OK sign
                         elif "0001" in self.msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
+                            print("0001수신, 이름")
                             if not self.msg.replace("0001", "") in players:
                                 self.name = self.msg.replace("0001", "") #잘라내기 이름 설정
                                 players.append(self.name) #플레이어 목록에 이름추가
 
 
-                                self.msg = None
+                                self.msg = ""
                                 self.sendMsg("0080") #OK sign
 
                             else:
 
-                                self.msg = None
+                                self.msg = ""
                                 self.sendMsg("0000")
                         elif self.msg == "0002": #방 목록 수신
                             result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
                             
-                            self.msg = None
+                            self.msg = ""
                             self.sendMsg(result)
 
                         elif "0003" in self.msg: #방 만들기 수신 형식은 0003방이름
                             self.makeRoom(self.msg.split('3')[1])
                             #0080 수신은, 방 join하면 방목록을 보내버려서, 그 전에 보내긱 위해, makeRoom 안에존재.
 
-                            self.msg = None
+                            self.msg = ""
                         elif "0004" in self.msg: #방 입장 수신 형식 0004방이름
 
                             roomName = self.msg.replace("0004", "") #잘라내기 이름 설정
@@ -429,7 +429,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             else:
                                 self.sendMsg("0080") #OK sign
 
-                            self.msg = None
+                            self.msg = ""
                                 
 
 
@@ -441,7 +441,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         if self.msg == "0002": #방 목록 수신
                             result = self.checkRoom() #함수값이 룸 리스트, 형식은 !로 구분함  ex)roomna!jai123!kurukuru!bang
                             self.sendMsg(result)
-                            self.msg = None
+                            self.msg = ""
                         
                         # 디버그
 
@@ -453,12 +453,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         elif self.msg == "1000": #맵 목록 조회
                             print("맵 view")
                             self.sendMsg(checkMapList())
-                            self.msg = None
+                            self.msg = ""
                         elif "1001" in self.msg: #맵 설정 형식 >> 1001!MapCode >>0080 송신
                             mapCode = self.msg.split("!")[1]
                             self.roomHandler.setMap(mapCode)
                             self.sendMsg("0080")
-                            self.msg = None
+                            self.msg = ""
 #1002는 명령 중복으로 삭제됨
 
                         elif self.msg == "1003": #방 나가기
@@ -468,16 +468,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                                 del self.roomHandler #핸들러 참조 삭제
                                 self.inRoom = False
                                 self.sendMsg("0080")
-                                self.msg = None
+                                self.msg = ""
 
                             else:
                                 if self.leaveRoom():
                                     self.inRoom = False
                                     self.sendMsg("0080")
-                                    self.msg = None
+                                    self.msg = ""
                                 else:
                                     self.sendMsg("0000")
-                                    self.msg = None
+                                    self.msg = ""
             
 
                         elif self.msg == "1004": #방 파쇄 (플레이어가 1명 밖에 없을때만 가능)
@@ -490,20 +490,20 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             else:
                                 self.sendMsg("0000")
 
-                            self.msg = None
+                            self.msg = ""
 
                         elif self.msg == "1005": #방 정보 요청
                             self.sendMsg(self.sendRoomInfo())
 
-                            self.msg = None
+                            self.msg = ""
                         elif self.msg == "1006": #준비 sign
                             self.roomHandler.readyPlayer(self.name)
 
-                            self.msg = None
+                            self.msg = ""
                         elif self.msg == "1007": #준비 해제 sign
                             self.roomHandler.noreadyPlayer(self.name)
                     
-                            self.msg = None
+                            self.msg = ""
 
 
 
@@ -535,8 +535,8 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
             
             
-            self.msg = None
-            self.tempData = None #메세지 초기화
+            self.msg = ""
+            self.tempData = "" #메세지 초기화
             print("맵 요청 시작")
             self.soc.send(f"1008{mapCode}".encode()) #맵 요청
             print("맵 요청 보냄")
@@ -608,7 +608,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         '''
         클라이언트 측에서, 1초 간격으로 방 정보를 요청함
         
-        형식 : ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
+        형식 : ROOMINFO방이름!플레이어목록(리스트 형식 str)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
         '''
 
 
@@ -668,11 +668,52 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
     def run(self):
 
         self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udpSock.bind((HOST, UDPPORT)) #클래스 인스턴트를 만들면 udp소켓 열기
+        self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
         print("udp game server listening")
 
         volatile_standingBy = threading.Thread(target=self.standingBy)
         volatile_standingBy.start() #플레이어 준비 받기
+
+
+    def standingBy(self): 
+        '''
+        !!스레드 1개사용, 게임 시작시 스레드 종료시킴!!
+        가장 먼저 실행되고, 플레이어가 모두 준비 되면, 신호를 보내고 리시브와 센드 메세지의 스레드를 실행한다.
+        처음 플레이어들에게서 준비가 되면, 초기화 메세지(기본 위치, 클라이언트 주소)를 받는다.
+        '''
+
+        #준비 메세지 : S이름!기본좌표
+        while True:
+            msg, fromAddr = self.udpSock.recvfrom(1024)
+            msg = msg.decode()
+            
+            while msg == None or msg == "": #공백이거나 없는 값(읽지 못 하면) 다시 불러온다
+                msg, fromAddr = self.udpSock.recvfrom(1024)
+                msg = msg.decode()
+
+
+
+            if msg.startwith("S"):
+                msg = msg.replace("S", "").split("!") #!기준으로 나누기
+                self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
+                self.clientPos[msg[0]] = msg[1]
+                self.readyStack += 1 #준비 인원 +!
+
+                self.udpSock.sendto("0080".encode(), fromAddr)
+
+            else:
+                self.udpSock.sendto("0000".encode(), fromAddr)
+
+            if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
+                self.room.inGame = True
+                self.startGame()
+                break
+                
+
+        sys.exit() #스레드 종료 시키기
+
+
+
     
     def recvMsg(self): #클라이언트로의 메세지를 분별 및 확인하여 전송
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
@@ -725,37 +766,7 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
         sys.exit(0) #self.done 이 켜지면 스레드 종료
 
 
-    def standingBy(self): 
-        '''
-        !!스레드 1개사용, 게임 시작시 스레드 종료시킴!!
-        가장 먼저 실행되고, 플레이어가 모두 준비 되면, 신호를 보내고 리시브와 센드 메세지의 스레드를 실행한다.
-        처음 플레이어들에게서 준비가 되면, 초기화 메세지(기본 위치, 클라이언트 주소)를 받는다.
-        '''
-
-        #준비 메세지 : S이름!기본좌표
-        while True:
-            msg, fromAddr = self.udpSock.recvfrom(1024)
-            msg = msg.decode()
-            
-            if msg.startwith("S"):
-                msg = msg.replace("S", "").split("!") #!기준으로 나누기
-                self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
-                self.clientPos[msg[0]] = msg[1]
-                self.readyStack += 1 #준비 인원 +!
-
-                self.udpSock.sendto("0080".encode(), fromAddr)
-
-            else:
-                self.udpSock.sendto("0000".encode(), fromAddr)
-
-            if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
-                self.room.inGame = True
-                self.startGame()
-                break
-                
-
-        sys.exit() #스레드 종료 시키기
-
+    
     def startGame(self):
         
         udpRecv = threading.Thread(target=self.recvMsg)

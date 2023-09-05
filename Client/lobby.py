@@ -32,7 +32,7 @@ def darkColor(color): #색을 더 어둡게
 class conTcp():
     def __init__(self):
         self.players = []
-        self.data = None
+        self.data = ""
         self.mapDownloading = False #맵 다운중에는 recv스레드 꺼놔야 해서
 
 
@@ -60,30 +60,32 @@ class conTcp():
 
         self.tcpSock.send(f"0001{nickName}".encode())
 
-        while self.data == None:
+        while self.data == "":
             pass #기다리기
 
 
         print("이름 설정 중")
+        print(self.data)
         if(self.data == "0080"):
-            self.data = None 
+            print(self.data)
+            self.data = "" 
             self.nickName = nickName
             return True #성공 메세지 받을 시
         else:
-            self.data = None 
+            self.data = "" 
             return False
     
     def checkRoomList(self):
         self.tcpSock.send("0002".encode()) #룸 리스트 받기 형식 > ROOMLIST방이름!방이름!
-        while self.data == None:
+        while self.data == "":
             pass #기다리기
 
         if self.data == "NULL":
-            self.data = None 
+            self.data = "" 
             return ["*EMPTY*"]
         else:
             temp = self.data
-            self.data = None 
+            self.data = "" 
             return temp.split("!")
 
 
@@ -91,14 +93,14 @@ class conTcp():
         self.tcpSock.send(f"0003{roomCode}".encode()) #방 생성 요청
 
 
-        while self.data == None:
+        while self.data == "":
             pass #기다리기
         if(self.data == "0080"):
-            self.data = None 
+            self.data = "" 
             return True #성공 메세지 받을 시 >> 클라이언트 측 핸들러에서, 룸 용 함수 실행 필요
         
         else:
-            self.data = None 
+            self.data = "" 
             return False
             
         
@@ -107,7 +109,7 @@ class conTcp():
         print(roomCode)
         self.tcpSock.send(f"0004{roomCode}".encode()) #방 입장 요청
 
-        while self.data == None:
+        while self.data == "":
             pass #기다리기:
 
         
@@ -117,46 +119,46 @@ class conTcp():
             joinedRoomName = roomCode
             print(roomCode, self.data)
 
-            self.data = None
+            self.data = ""
             return True #성공 메세지 받을 시
         
         
         else:
-            self.data = None
+            self.data = ""
             return False
     
     def setMap(self, mapCode):
         self.tcpSock.send(f"1001!{mapCode}".encode()) #맵 설정 요청
 
-        while self.data == None:
+        while self.data == "":
             pass #기다리기
         
         if(self.data == "0080"):
             print(f"맵코드설정:{mapCode}")
-            self.data = None 
+            self.data = "" 
             return True #성공 메세지 받을 시
         else:
             print("맵코드 실패?")
-            self.data = None
+            self.data = ""
             return False
 
     def leaveRoom(self):
 
         self.tcpSock.send("1003".encode()) #방 나가기 요청
         
-        while self.data == None:
+        while self.data == "":
             pass #기다리기
 
         if(self.data == "0080"):
             print("나가기 완료")
             global joinedRoomName
             joinedRoomName = None
-            self.data = None
+            self.data = ""
             serverRoomList(self, 1) #방 목록 다시 불러오기
             return True #성공 메세지 받을 시
         else:
             print("나가기 실패")
-            self.data = None
+            self.data = ""
             return False
 
 
@@ -182,8 +184,8 @@ class conTcp():
     
     '''
     def recvRoom(self): #받는 명령어 핸들러 스레드
-        self.data = None
-        self.cmd = None
+        self.data = ""
+        self.cmd = ""
         while True:
 
             if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
@@ -201,15 +203,15 @@ class conTcp():
                 elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                     self.cmd = recvMsg.replace("CMD ", "")
 
+                elif recvMsg.startswith("ROOMINFO"):
+                    self.data = recvMsg
+                        
                 else:
                     self.data = recvMsg
-                    if type(self.data) == str:
-                        if not self.data.startswith("ROOMINFO"):
-                            
-                            print(self.data)
+                    
             
             else:
-                #self.data = None #서버가 맵 정보를 받는 중이기 때문에 거의 모든 작업 보류
+                #self.data = "" #서버가 맵 정보를 받는 중이기 때문에 거의 모든 작업 보류
                 pass
             
 
@@ -223,16 +225,23 @@ class conTcp():
     
     
     def getRoomInfo(self):
-        
+        '''
+        방정보를 불러옴
+        0 : 방이름
+        1 : 플레이어 리스트 형식의 str
+        2 : 맵 코드 (없으면 None)
+        3 : 플레이어 준비 현황 {플레이어 : True}
+        4 : 게임 시작 여부 - True or False
+        '''
         self.tcpSock.send("1005".encode()) #방 정보 요청
         
-        while self.cmd == None: #데이터 도착까지 기다리기
+        while self.cmd == "": #데이터 도착까지 기다리기
             pass
         
         if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
             roomIf = self.cmd.replace("ROOMINFO", "")
             roomIfList = roomIf.split("!")
-            self.cmd = None
+            self.cmd = ""
             return roomIfList
             
 
@@ -244,17 +253,17 @@ class conTcp():
             
         else: #무효일시
             #del data
-            self.cmd = None
+            self.cmd = ""
             return False
         
     def getMapCodeList(self):
         self.tcpSock.send("1000".encode()) #맵코드 목록 요청
 
-        while self.data == None: #데이터 도착까지 기다리기
+        while self.data == "": #데이터 도착까지 기다리기
             pass
         
         mapCodes = self.data.split("!") #맵 코드로 된 리스트 생성
-        self.data = None #데이터 삭제name
+        self.data = "" #데이터 삭제name
 
         return mapCodes #맵코드 목록 반환
     
@@ -264,14 +273,14 @@ class conTcp():
 
     def ready2Start(self):
         global joinedRoomName
-        self.tempData = None
+        self.tempData = ""
 
         self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
         print("1008 전송")
         self.tcpSock.send("1008".encode())
         
         print("정보 받기 시작")
-        while self.tempData == None:
+        while self.tempData == "":
             pass
         data = self.tempData
         print(data)
@@ -290,7 +299,7 @@ class conTcp():
             mapCode = data[4:] #1008을 뺀 맵 코드를 저장
             print(mapCode)
 
-            if f"{mapCode}.dat" in os.listdir("./extensionMap"): #서버다운 맵들 중 맵이 존재하는지 확인했을 때 존재하면
+            if f"{mapCode}.dat" in os.listdir("./maps/extensionMap"): #서버다운 맵들 중 맵이 존재하는지 확인했을 때 존재하면
                 print("0000보냄")
                 self.tcpSock.send("0000".encode())
                 #맵 존재한다고 시그널 보내기, udp연결 하기 
@@ -319,8 +328,8 @@ class conTcp():
                     pass #이러는 경우는 없다 사실상
 
                 self.mapDownloading = False #recv스레드 블락 풀기
-                self.cmd = None
-                while self.cmd == None: #기다리기
+                self.cmd = ""
+                while self.cmd == "": #기다리기
                     pass
                 
                 print(self.cmd, "CMD")
@@ -329,7 +338,7 @@ class conTcp():
 
                 if self.cmd == "smterr": #서버측에서 무언가 오류가 난 경우
                     joinedRoomName = None #방 나가기
-                    self.cmd = None
+                    self.cmd = ""
                     return "SERVERFAIL" #서버 실패 보내기 >> 방ㅇ서 나가져야 함
                 
                 elif self.cmd == "0080": #성공한 경우
@@ -337,6 +346,20 @@ class conTcp():
                     
                     #대충 udp연결 시작하는 내용
                     print("여기부터udp")
+
+
+                    roomName = self.getRoomInfo()[0]
+                    mapCode = self.getRoomInfo()[2]
+                    print("서버 데이터")
+
+                    
+
+                    #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
+                    self.udpPlay = main.conUdp(self.players, roomName, self.nickName, mapCode) #main에 udp시작 시키기
+                    self.udpPlay.standingBy() #준비 시작
+                    
+
+
                     return
                     
                 
@@ -344,6 +367,8 @@ class conTcp():
 
                 
 
+
+    
 
 
 
@@ -353,7 +378,7 @@ class conTcp():
         성공 > OK, 실패 > FAIL
         '''
 
-        with open(f"./extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
+        with open(f"./maps/extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
             print("파일 쓰기")
             try:
                 stream = self.tcpSock.recv(1024).decode() #먼저 1024를 읽는다.
@@ -397,6 +422,17 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     
 
+    def standingBy(self):
+        '''
+        서버에게, udp대기 메세지를 전송한다. 무조건 거쳐야 함
+        udp의 데이터 손실 가능성으로, 시간초를 재서 오지 않거나 0000이면 다시 보낸다.
+        
+        '''
+
+
+        
+
+        self.udpSock.sendto("")
 
 
 

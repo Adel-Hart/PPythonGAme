@@ -9,7 +9,7 @@ import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 #아래는 서버용 (ONLY UDP)
 
 import socket
-
+import time
 
 '''
 파이썬 게임 개발
@@ -35,17 +35,67 @@ PORT = 8080
 
 
 class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
-    def __init__(self, players: list, initPos: list, roomName: str, name: str, mapCode: str): #players는 참여자들 닉네임 list, initPos는 플레이할 맵의 플레이어 기본위치
+    def __init__(self, players: list, roomName: str, name: str, mapCode: str): #players는 참여자들 닉네임 list, initPos는 플레이할 맵의 플레이어 기본위치
         self.udpSock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) #기본 udp 소켓 설정
+        self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, 3000) #받기 3초 시간초과(패킷 실패시)
         self.roomName = roomName
         self.nickName = name
         self.mapCode = mapCode
+        self.players = players
         self.playerList = {}
-        for p in players:
-            self.playerList[p] = initPos #플레이어 좌표 초기 설정
 
         self.rgb = [False, False, False]
         self.done = False
+
+
+    def standingBy(self):
+        '''
+        서버에게, udp대기 메세지를 전송한다. 무조건 거쳐야 함
+        udp의 데이터 손실 가능성으로, 시간초를 재서 오지 않거나 0000이면 다시 보낸다.
+
+        보내는 데이터 "S이름!플레이어 시작 주소"
+        '''
+        
+
+
+        setDat = mapload.readMap(f"maps/extensionMap/{self.mapCode}.dat") #파일 먼저 읽기,
+        
+        temPosX = setDat[3][0] #setDat, 즉 결과값(튜플) 3번째가 위치의 튜플이니, x가 필요해 0번째 가져온다
+        temPosY = setDat[3][1] 
+
+
+        for p in self.players:
+            print("플레이어 초기 좌표 저장")
+            self.playerList[p] = [temPosX, temPosY] #플레이어 좌표 초기 설정
+
+
+        while True:
+
+
+
+            self.udpSock.sendto(f"S{self.nickName}!{temPosX},{temPosY}".encode(), (HOST, PORT))
+            #udp서버에 접속 설정 메세지전송, 시간 검사해, 2초이내로 제대로 된 답을 못 얻으면, 다시 보낸다
+
+            self.udpSock.settimeout(3)
+
+            try:
+                print("udp 받기 시작")
+                msg = self.udpSock.recvfrom(1024).decode() #udp통신 값 받기
+
+
+                if not msg:
+                    print("메세지를 받았다")
+                    break #""(공백)이나 None출력이 아닐때, 즉 값이 존재 할때 받는걸 중지
+
+            except socket.timeout: #타임 아웃 > 못 받았을 시
+                print("못 받아서 타임 아웃")
+                pass #다시 보내기
+
+
+        #이 아래는, 서버에 잘 보낸 경우
+        print(msg)
+
+
 
 
 
