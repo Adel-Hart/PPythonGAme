@@ -6,6 +6,7 @@ from math import *
 import re
 import time
 import testplay
+import pygetwindow
 
 
 import socket
@@ -27,6 +28,7 @@ brushCheck = True
 colorList = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") #색 목록
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
+infoCheck = True
 
 user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0)-mapOrigin-50 #화면의 해상도 (픽셀수) 구하기 가로, 왼쪽 여유공간 600, 오른쪽 여유공간 50
@@ -141,7 +143,7 @@ def save(fileName): #맵 파일 작성
                 f.write("\n*") #파일 업로드를 위해 끝 메세지 저장
 
 
-            if fileName == "./maps/":
+            if fileName == "./maps/": #maps 폴더에 저장된 경우 테스트 버튼을 띄운다
                 testFileName = mapName.get() #테스트 플레이 시 가져올 파일 이름
                 mapTest.grid(row=guiLayout.index(mapTest)) #저장 성공시 테스트 버튼 띄우기
                 blank.grid_forget()
@@ -292,44 +294,54 @@ def uploadMap():
 
     os.remove(f"./temp/{mapName.get()}.dat") #맵 파일 삭제
 
+def infoLim():
+    global infoCheck
+    infoCheck = True
+    info.destroy() #도움말 창 삭제 
+
 def infoWindow(): #도움말 창 생성
-    
-    infoY = int(SCRSIZEY * 3/5) #창의 Y크기
-    infoX = infoY #창의 X크기 (우선 Y랑 같게 설정)
-    defaultFontSize = int(infoY/100) #글자 크기
-    texts = []
 
-    #창 설정
-    info = tk.Tk() #에디터 설명 팝업 생성
-    info.title("Info") #창의 이름
-    info.geometry(f"{infoX}x{infoY}")
-    info.resizable(False, False) #창 크기 조절 가능 여부
+    global infoCheck, info
 
-    labelPos = 0
+    if infoCheck: #도움말 창이 띄워져 있지 않다면
 
-    with open("./editorInfo.txt","r", encoding="UTF-8") as f: #한글 가능하도록 UTF-8로 인코딩
+        infoCheck = False
 
-        for text in f.readlines():
+        infoY = int(SCRSIZEY * 3/5) #창의 Y크기
+        infoX = infoY #창의 X크기 (우선 Y랑 같게 설정)
+        defaultFontSize = int(infoY/100) #글자 크기
+        texts = []
 
-            if "!" in text: #느낌표가 있는 줄은 폰트를 키우고 볼드체 적용
-                text = text.strip("!")
-                scale = 4/3 #폰트 배율
-                slant = "bold"
-            else: #나머지 줄은 들여쓰기
-                text = "    " + text
-                scale = 1 #폰트 배율
-                slant = ""
-            fontSize = int(defaultFontSize*scale)
-            texts.append([(tk.Label(info, text = text, font = ("맑은 고딕", fontSize, slant))), labelPos])
-            labelPos += fontSize
+        #창 설정
+        info = tk.Tk() #에디터 설명 팝업 생성
+        info.protocol("WM_DELETE_WINDOW", infoLim) #X버튼, AltF4 감지
+        info.title("Info") #창의 이름
+        info.geometry(f"{infoX}x{infoY}")
+        info.resizable(False, False) #창 크기 조절 가능 여부
+
+        labelPos = 0
+
+        with open("./editorInfo.txt","r", encoding="UTF-8") as f: #한글 가능하도록 UTF-8로 인코딩
+
+            for text in f.readlines():
+
+                if "!" in text: #느낌표가 있는 줄은 폰트를 키우고 볼드체 적용
+                    text = text.strip("!")
+                    scale = 4/3 #폰트 배율
+                    slant = "bold"
+                else: #나머지 줄은 들여쓰기
+                    text = "    " + text
+                    scale = 1 #폰트 배율
+                    slant = ""
+                fontSize = int(defaultFontSize*scale)
+                texts.append([(tk.Label(info, text = text, font = ("맑은 고딕", fontSize, slant))), labelPos])
+                labelPos += fontSize
 
 
-    for i in range(len(texts)):
-        texts[i][0].place(x=0, y=infoY/labelPos*texts[i][1])
+        for i in range(len(texts)):
+            texts[i][0].place(x=0, y=infoY/labelPos*texts[i][1])
 
-    print(infoY, labelPos)
-
-    info.mainloop()
+        info.mainloop()
     
 
 
@@ -337,9 +349,12 @@ def infoWindow(): #도움말 창 생성
 def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, playerSpeed,\
-          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout
+          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout, info
+
+    win = pyautogui.getWindowsWithTitle("mapTest")
 
     # ------------------------ GUI 요소 생성 ------------------------#
+
 
     #창 설정
     window = tk.Tk()
@@ -349,6 +364,8 @@ def runEditor():
 
     window.bind("<Button-3>", player) #우클릭 감지
     window.bind("<Button-2>", goal) #휠클릭 감지
+
+    info = None
 
     #프레임 생성
     buttonFrame = tk.Frame(width = mapOrigin)
@@ -413,7 +430,7 @@ def runEditor():
     for i in range(len(guiLayout)):
         guiLayout[i].grid(row=i)
 
-    mapTest.grid_forget()
+    mapTest.grid_forget() #버튼 감추기
 
     for i in range(9):
         colorButton[i].grid(row = i, column = 0)
