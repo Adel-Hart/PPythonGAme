@@ -483,7 +483,12 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
 
 
 def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실행 함수
-
+    """
+    gameMode
+    None : 싱글 플레이
+    TestPlay : 에디터에서 열 때
+    MultiPlay : 멀티 플레이, otherPlayers는 다른 플레이어들의 이름 리스트
+    """
     
 
 
@@ -492,13 +497,12 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
     SCRSIZEY = user32.GetSystemMetrics(1)  #세로
 
+
     size = (int(SCRSIZEX), int(SCRSIZEY)) # set screen size
     global screen
     screen = pygame.display.set_mode(size)
 
-    if gameMode == "TestPlay":
-        SCRSIZEY =  SCRSIZEY * 7//8 #텍스트 넣을 공간 확보
-
+    
     global clear
     clear = False
 
@@ -524,12 +528,17 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
 
-    
+    if gameMode == "TestPlay":
+        SCRSIZEY =  SCRSIZEY * 7//8 #텍스트 넣을 공간 확보
 
-    if otherPlayers != None: #다른 플레이어가 있다면
-        playerImageList = []
-        playerImageList.append(showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png")) 
-    
+
+    if gameMode == "MultiPlay" and otherPlayers != None: #다른 플레이어가 있다면
+        playerImageDict = {}
+        for otherPlayerName in otherPlayers:
+            
+            playerImageDict[otherPlayerName] = showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png") 
+            #딕셔너리에 추가, 형식은 {"플레이어1이름" : Image객체, "플레이어2이름" : Image객체 ...}
+        
     screen.fill(WHITE) # 화면 리셋
     
     #배경 이미지 설정
@@ -578,6 +587,10 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         gravityObjects() #중력 적용
     
         moveObjects() # 움직이는 오브젝트 일괄 이동
+
+        for otherPlayerName in otherPlayers: #멀티에서 모든 다른 플레이어들에 대해
+            
+            playerImageDict[otherPlayerName].display() #이미지 출력
 
         for image in sImages: # 모든 이미지 불러오기 
             image.display() # 이미지 일괄 출력
