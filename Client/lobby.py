@@ -11,9 +11,21 @@ import socket
 import threading
 import selectors
 
+import logging
+
+
 with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
 PORT = 8080
+
+logger = logging.getLogger(name='MyLog')
+
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler('debug.log', encoding='utf-8')
+logger.addHandler(file_handler)
+
+
+
 
 inEditor = False # 에디터를 하고있는지
 
@@ -196,7 +208,7 @@ class conTcp():
             recvMsg = self.tcpSock.recv(1024).decode()
 
 
-            print(recvMsg)
+            
 
             if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                 self.tcpSock.send("7780".encode()) #응답하기
@@ -211,18 +223,24 @@ class conTcp():
                 self.data = recvMsg
 
             elif recvMsg.startswith("^"): #맵인 경우에
+                logger.debug(self.mapStream)
                 #대충 맵 내용 변수에 저장하는 내용
                 #아마 self.stream
                 
                 if recvMsg != self.mapStream: #새로운 것을 수신 했을때,
                     if self.mapStream == "": #새로운 것을 받을 준비가 된거면,
                         self.mapStream = recvMsg #읽은 값을 저장한다.
+                        logger.debug("새로운 값을 저장")
                     
                     else: #아직 맵파일 쓰고 있는데, 요청이 들어왔던거면,
-                        while not self.mapStream:
+                        while not self.mapStream == "":
+                            logger.debug(f"not yet :{self.mapStream}")
                             pass #맵파일 다쓰고, 요청을 받을 때까지 대기, 파일쓰는게 많이 느린게 아니라, heartbeat에 걸리지 X
                         self.mapStream = recvMsg
-                
+                        logger.debug("새로운 값을 저장")
+
+                else:
+                    logger.debug("새로운 것을 수신하지 않음")
 
 
 
@@ -256,7 +274,7 @@ class conTcp():
         '''
         self.tcpSock.send("1005".encode()) #방 정보 요청
         
-        while self.cmd == "": #데이터 도착까지 기다리기
+        while not self.cmd.startswith("ROOMINFO"): #데이터 도착까지 기다리기
             pass
         
         if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
@@ -275,7 +293,7 @@ class conTcp():
         else: #무효일시
             #del data
             self.cmd = ""
-            return False
+            return "False"
         
     def getMapCodeList(self):
         self.tcpSock.send("1000".encode()) #맵코드 목록 요청
@@ -370,14 +388,21 @@ class conTcp():
                     print("여기부터udp")
 
 
-                    roomName = self.getRoomInfo()[0]
-                    mapCode = self.getRoomInfo()[2]
-                    print("서버 데이터")
+                    tempRoomInfo = self.getRoomInfo()
+                    if tempRoomInfo == "False":
+                        print("방정보 가져오기 실패하뮤 ㅜㅜ")
+
+
+                    roomName = tempRoomInfo[0]
+                    mapCode = tempRoomInfo[2]
+                    print("서버 데이터받음")
 
                     
 
                     #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
-                    self.udpPlay = main.conUdp(self.players, roomName, self.nickName, mapCode) #main에 udp시작 시키기
+                    main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
+                    self.udpPlay = main.udpHandler #인스턴스 연결
+                    
                     self.udpPlay.standingBy() #준비 시작
                     
 
@@ -410,26 +435,24 @@ class conTcp():
                     pass #mapStream의 값이 없으면 >> 읽어오지 못하면 계속 대기
 
 
-                print("받음")
-                print(self.mapStream)
                 while True: #EOF명령(*)을 받으면, 쓰기 종료
-                    while not self.mapStream:
+                    while self.mapStream == "":
                         pass #공백이면, 대기
 
 
-
-
-                    print(self.mapStream)
+                    
+                    logger.debug(f"stream을 읽어와, 쓴다 {self.mapStream}")
                     f.write(self.mapStream[1:]) #stream 쓰기 (앞문자인 ^을 빼고)
-                    print(self.mapStream[1:])
-                    print("받아오는중,,,")
-                    print(f"끝 문자 : {self.mapStream[-1]}")
+                    
                     if self.mapStream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
                         self.mapStream = "" #초기화
                         break #종료
                     else:
                         self.mapStream = "" #다시 받기전, 원래 버퍼를 초기화
-                        self.tcpSock.send("mapOk".encode()) #수신 사인을 보내고 다시 읽는다.
+                        
+                        self.tcpSock.send("mapOk".encode())
+                        logger.debug("스탠디 바이, mapOk전송")
+                        
 
 
 

@@ -78,7 +78,9 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.copy().values():
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
         # self.mapDownloading = True #하트비트 잠깐 끄기
-        self._sendMap2Client()
+        
+        volatile_sendMap = threading.Thread(target=self._sendMap2Client)
+        volatile_sendMap.start() #맵 전송 스레드 시작 (recv스레드와 병목되어서)
 
 
 
@@ -124,6 +126,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
     def _sendMap2Client(self):
         '''
+        recv스레드와 병목이 되기 때문에, 스레드로 실행된다.
         준비가 다 될 때 게임 시작시, 가장 먼저 호출되는 클래스전용 함수
         맵파일을 전송하고 관리하며, 오류가 나면 거의 다 방에서 나가게 하기에,
         이 함수를 거치고 udp통신을 할때 인원수를 다시 보낸다.
@@ -134,11 +137,12 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         print("udp연결")
 
+        self.gameHandler = threading.Thread(target=udpGame, args=(self.whosReady, self))
+
         self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
         self.gameHandler.run() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
             
         print("udp연결 완료")
-        print(self.whos.values())
 
         for c in self.whos.copy().values(): #핸들러들에게, mapSend실행
             print(c)
@@ -165,9 +169,12 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
                 pass #이경우는, 그냥 다시 시도하면 되는 것이기에 다시 화면으로 돌아가깅
 
             else: #다른 문제다 그러면 그냥 넘겨도 되기에, 0080전송
+                
                 self.castCmd('0080', c)
+                print("끝나사 udp 통신 시작하라는 0080 전송 하기")
                 self.mapDownloading = False #하트비트 켜기
             
+        sys.exit() #스레드 종료
 
 
 
@@ -181,6 +188,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         self.inEditor = False #에디터화면 일때
         self.alive = True
         self.howAlive = 3 #최대 몇번까지 봐줄건가
+        self.msg = ""
 
         self.run() #시작 함수는 모든 변수 설정 후 마지막에 호출!!
         
@@ -295,24 +303,29 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러    조심! self파라미터에는 힌트 (: 속성) 작성 금지!, vscode에서 함수 내 코드가 힌트를 못 불러온다,
             
-            self.msg = ""
-            self.tempData = ""
+            
 
             while True:
-                data = self.soc.recv(1024)
-                self.msg = data.decode()
-                
-                while self.msg == "": #데이터 도착까지 기다리기
-                    data = self.soc.recv(1024)
-                    self.msg = data.decode()
-                
-                if self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
-                    print("b")
-                    self.msg = ""
-                    self.roomHandler.startGame() #요청, 이 함수가 끝나기 전까지 recvMsg 함수는 사용 불가
-                    print("startGame 끝")
-                    
+                data = self.soc.recv(1024).decode()
+
+
+                while data == "" and len(data) == 0: #데이터 도착까지 기다리기
+                    data = self.soc.recv(1024).decode()
                     pass
+
+                self.msg = data
+
+                print(self.msg)
+
+
+                
+                
+
+
+                
+
+
+                
                 # elif self.msg == "0000" or self.msg == "1111":
                 #     print("제발...")
                 #     self.tempData = self.msg
@@ -344,53 +357,53 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
                     elif "2000" in self.msg: #에디터 통신일 때
-                            self.inEditor = True
-                            reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
-                            print("이게 맵 " + reqMap)
+                        self.inEditor = True
+                        reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
+                        print("이게 맵 " + reqMap)
+                        
+                        print(os.listdir("./Maps/"))
+                        if reqMap+".dat" in os.listdir("./Maps/"): #!로 구분된 문자열이 출력이라, 변환해야 함
                             
-                            print(os.listdir("./Maps/"))
-                            if reqMap+".dat" in os.listdir("./Maps/"): #!로 구분된 문자열이 출력이라, 변환해야 함
-                                
-                                    print("0000 전송")
-                                    self.sendMsg("0000") #이미 존재
+                                print("0000 전송")
+                                self.sendMsg("0000") #이미 존재
+                                self.msg = ""
+
+                        else:
+                            print("0080전송")
+                            self.sendMsg("0080") #전송시작.
+                            
+                            with open(f"./Maps/{reqMap}.dat", "w") as f: #파일 읽어서 저장 시작
+                                print("파일 읽기")
+                                try:
+                                    print("2")
+                                    stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
+                                    print(bool(stream))
+                                    end = False
+                                    while not end: #EOF명령을 받으면, 쓰기 종료
+                                        f.write(stream) #stream 쓰기
+                                        print("받아오는중,,,")
+                                        print(stream)
+                                        if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
+                                            end = True #종료
+                                            stream = 0
+                                        else:
+                                            stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
+                                            stream = stream.decode()
+                                    print("완료")
+                                    f.close() #파일 저장
+                                    self.sendMsg("0080") #성공 메세지 전송
+                                    print("완료 전송")
+                                    print("소켓 닫기")
                                     self.msg = ""
+                                    self.soc.close() #소켓 닫기
+                                    break
 
-                            else:
-                                print("0080전송")
-                                self.sendMsg("0080") #전송시작.
-                                
-                                with open(f"./Maps/{reqMap}.dat", "w") as f: #파일 읽어서 저장 시작
-                                    print("파일 읽기")
-                                    try:
-                                        print("2")
-                                        stream = self.soc.recv(1024).decode() #먼저 1024를 읽는다.
-                                        print(bool(stream))
-                                        end = False
-                                        while not end: #EOF명령을 받으면, 쓰기 종료
-                                            f.write(stream) #stream 쓰기
-                                            print("받아오는중,,,")
-                                            print(stream)
-                                            if stream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
-                                                end = True #종료
-                                                stream = 0
-                                            else:
-                                                stream = self.soc.recv(1024) #다시 1024만큼 읽는다. 이런 순서로 하면, 코드가 단축화 된다.
-                                                stream = stream.decode()
-                                        print("완료")
-                                        f.close() #파일 저장
-                                        self.sendMsg("0080") #성공 메세지 전송
-                                        print("완료 전송")
-                                        print("소켓 닫기")
-                                        self.msg = ""
-                                        self.soc.close() #소켓 닫기
-                                        break
-
-                                    except Exception as e:
-                                        self.sendMsg("0000") #오류 메세지 전송
-                                        print(e)
-                                        self.msg = ""
-                                        self.soc.close() #소켓 닫기
-                                        break
+                                except Exception as e:
+                                    self.sendMsg("0000") #오류 메세지 전송
+                                    print(e)
+                                    self.msg = ""
+                                    self.soc.close() #소켓 닫기
+                                    break
 
                     if not self.inRoom: #방 목록 탐색기에 있을때.
                         if self.msg == "0010":
@@ -510,8 +523,21 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.msg = ""
 
 
+                        elif self.msg == "1008": #게임시작준비 요청 (맵 다운 > udp연결)
+                            print("b")
+                            self.msg = ""
 
 
+                            self.roomHandler.startGame() #요청, 이 함수가 끝나기 전까지 recvMsg 함수는 사용 불가
+
+                            #이놈을, 1008 이내에서 실행해버리면, 끝나ㅣ 전까지 recv가 다시 한번 호출이 안됨.
+                            print("startGame 끝")
+                            
+                            pass
+
+
+
+                        print(self.msg)
 
                     
                 else: #hearbeat 신호일시
@@ -520,7 +546,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     pass
                 
 
-                #print(self.msg)
+                print("recv 진행중")
                             
 
                                 
@@ -534,8 +560,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
     def sendMapfile(self, mapCode: str): #return이 문자열이라, 실행시 인스턴스처럼 실행시키고 조건문으로 결과비교 필요   맵 파일을 클라에게 전송
-        print(mapCode)
-        print(os.listdir("./Maps/"))
         
         if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
             
@@ -545,23 +569,29 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             self.soc.send(f"1008{mapCode}".encode()) #맵 요청
             print("맵 요청 보냄")
             
-            data = self.soc.recv(1024)
-            self.tempData = data.decode()
+            while not self.msg == "1111" and not self.msg == "0000":
+                pass
 
-            print(self.tempData)
 
-            if self.tempData == "0000": #클라이언트가 맵이 있대!!
+
+
+            # data = self.soc.recv(1024)
+            # self.tempData = data.decode()
+
+            # print(self.tempData)
+
+            if self.msg == "0000": #클라이언트가 맵이 있대!!
                 print("클라가 맵이 있다는데")
                 return "ALREADY" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
 
 
-            elif self.tempData == "1111": #클라이언트가 맵이 없다고 함! > 전송요청
+            elif self.msg == "1111": #클라이언트가 맵이 없다고 함! > 전송요청
 
                 print("전송 시작")
                 with open(f"./Maps/{mapCode}.dat", 'r') as f:
                     print("맵 열기")
                     try:
-                        mapData = f.read(1023) #파일에서 1023바이트 씩 읽기, 나머지 1바이트는 맵 파일임을 알리기 위해 추가할 문자(^)다!
+                        mapData = f.read(1023) #파일에서 1000바이트 씩 읽기, 나머지 1바이트는 맵 파일임을 알리기 위해 추가할 문자(^)다!
                         print("맵 읽음")
                         while mapData: #data가 0 (다 읽을 때 까지), 이렇게 하는 이유는 1024바이트 씩 읽고, 없어질때를 더 효과적으로 표현 가능
                             #만약 while이 없었으면 f.read(1024)를 for문으로 돌려야 했다.
@@ -569,27 +599,23 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.soc.send(f"^{mapData}".encode()) #1024 크기의 데이터를 보낸다, 참고 - 소켓의 send함수는 리턴이 보낸 데이터의 크기를 봔환
                             #이러면 보낼때마다 ^맵파일 내용으로 보내, 클라이언트 측에서는 이를 구분하여 저장함
                             print(mapData)
-                            mapData = f.read(1023) #다시 1024만큼 읽어본다.
-                            while self.msg == "mapOk": #mapOk사인을 받기 전까지 대기, 받아야 다음걸 전송한다
+                            
+                            while not "mapOk" in self.msg: #mapOk사인을 받기 전까지 대기, 받아야 다음걸 전송한다, 격주 > mapOK가 중복되는 경우가 존재 따라서, 포함으로 감지한다.
+                                #print(len(self.msg))
                                 pass
+                            mapData = f.read(1023) #다시 1024만큼 읽어본다.
                             print("mapOkk받았서")
                             self.msg == "" #받으면, 메세지 초기화
+                            
 
-
-                        while True:
-                            data = self.soc.recv(1024).decode()
-                            if data == "0080" or data == "0000": #룸 핸들러의 메세지가 오기전까지 계속 대기해야 하기 때문에 (recv를 쓰지 않아서) while안에 쓴다
-                                break #이 메세지가 왔을때만, 아래 명령어 실행
-                            else:
-                                pass
-
-                        print("받음", data)
-                        if data == "0080": #성공메세지 수신시
-                            print("OK")
-                            return "OK" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
-                        elif data == "0000":
-                            print("FAIL")
-                            return "FAIL" #이경우는, 이 함수를 실행한 곳에서, 플레이어 퇴출
+                        while True: #클라이언트에서 성공 혹은 실패 메세지가 올때까지, 대기
+                            print("받음", self.msg)
+                            if self.msg == "0080": #성공메세지 수신시
+                                print("OK")
+                                return "OK" #이 경우는 , 무시한다 (바로 udp로 통신을 받기 때문에)
+                            elif self.msg == "0000":
+                                print("FAIL")
+                                return "FAIL" #이경우는, 이 함수를 실행한 곳에서, 플레이어 퇴출
 
 
                     except Exception as ex:
@@ -651,10 +677,20 @@ def evaler(cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때�
         return False
 
 
-class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
+class udpGame(threading.Thread):
+    '''
+    인 게임에서 정보를 주고 받을 udp소켓
+    클래스 자체가 스레드화 됨.
+    '''
+    
 
 
-    def __init__(self, clientsName: list, room: Room): #clientsName : 참여자들 닉네임 '리스트', room : 방 핸들러
+    def __init__(self, clientsName: list, room: Room, threadName: str): #clientsName : 참여자들 닉네임 '리스트', room : 방 핸들러, threadName : 스레드 이름
+
+        super().__init__ # 상위 클래스 초기화(상위 클래스의 메소드를 가져온다)
+
+        self.name = threadName #스레드의 이름을 지정한다, (self.name >> 상위 클래스인 threadingThread의 메서드)
+
 
         self.room = room #udp가 실행된 room 방 객체를 가져온다.
         self.clientPos = {} #플레이어들의 위치 값
@@ -669,13 +705,13 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
         for c in clientsName:
             self.clientPos[c] = "0, 0" #클라이언트  이름: "x, y" 위치정보를 저장
             self.clientAddr[c] = ("", 0000) #주소값 초기화
-
-        
-
         
         
 
     def run(self):
+        '''
+        thread클래스에 의해 자동으로 실행되는 것
+        '''
 
         self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
@@ -703,7 +739,7 @@ class udpGame(): #인 게임에서 정보를 주고 받을 udp소켓
 
 
 
-            if msg.startwith("S"):
+            if msg.startswith("S"):
                 msg = msg.replace("S", "").split("!") #!기준으로 나누기
                 self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
                 self.clientPos[msg[0]] = msg[1]

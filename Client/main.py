@@ -7,7 +7,7 @@ import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
 #아래는 서버용 (ONLY UDP)
-
+import threading
 import socket
 import time
 
@@ -32,6 +32,27 @@ PORT = 8080
 
 
 
+SERVERCONNECT = False #핸들러 만들어짐 판단 여부
+
+
+def multiGamePlay(players: list, roomName: str, name: str, mapCode: str):
+    '''
+    udpHandler는 트리거 (이 함수)를 통해, main에서 생성되어 정보를 교환 해 쓰이고, lobby(관리)에서 관리된다(삭제, 시작 등등)
+    
+    bool 변수를 통해, udpHandler가 존재하는지 알 수 있게 해야 함
+    '''
+    global udpHandler
+    SERVERCONNECT = True
+    udpHandler = conUdp(players, roomName, name, mapCode)
+
+    
+def strToList(string:str):
+    string = string.replace(" ", "") #공백 제거
+    string = string.replace("[", "")
+    string = string.replace("]", "") #대괄호 제거
+    string = string.replace("'", "")
+    string = string.replace('"', "") #따옴표 제거
+    return string.split(",")
 
 
 class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
@@ -42,7 +63,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         self.nickName = name
         self.mapCode = mapCode
         self.players = players
-        self.playerList = {}
+        self.playerList = {} #이름 : 위치 클래스
 
         self.rgb = [False, False, False]
         self.done = False
@@ -58,22 +79,23 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         
 
 
-        setDat = mapload.readMap(f"maps/extensionMap/{self.mapCode}.dat") #파일 먼저 읽기,
+        setDat = mapload.readMap(f"maps/extensionMap/{self.mapCode}") #파일 먼저 읽기,
         
-        temPosX = setDat[3][0] #setDat, 즉 결과값(튜플) 3번째가 위치의 튜플이니, x가 필요해 0번째 가져온다
-        temPosY = setDat[3][1] 
+        print(type(setDat[3]))
+
+        temPos = setDat[3] #setDat, 즉 결과값(튜플) 3번째가 위치값이 저장된 위치 클래스이니, 그걸 저장한다
 
 
         for p in self.players:
             print("플레이어 초기 좌표 저장")
-            self.playerList[p] = [temPosX, temPosY] #플레이어 좌표 초기 설정
+            self.playerList[p] = temPos #플레이어 좌표 초기 설정
 
 
         while True:
 
 
 
-            self.udpSock.sendto(f"S{self.nickName}!{temPosX},{temPosY}".encode(), (HOST, PORT))
+            self.udpSock.sendto(f"S{self.nickName}!{temPos.x},{temPos.y}".encode(), (HOST, PORT))
             #udp서버에 접속 설정 메세지전송, 시간 검사해, 2초이내로 제대로 된 답을 못 얻으면, 다시 보낸다
 
             self.udpSock.settimeout(3)
@@ -83,7 +105,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 msg = self.udpSock.recvfrom(1024).decode() #udp통신 값 받기
 
 
-                if not msg:
+                if msg == "0080":
                     print("메세지를 받았다")
                     break #""(공백)이나 None출력이 아닐때, 즉 값이 존재 할때 받는걸 중지
 
@@ -92,7 +114,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 pass #다시 보내기
 
 
-        #이 아래는, 서버에 잘 보낸 경우
+        #이 아래는, 서버에 잘 보내고, 서버에서도 저장이 잘 된 경우
         print(msg)
 
 
@@ -101,6 +123,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     def runGameScreen(self):
         print("멀티 게임 시작")
+        
+        udpReciver = threading
         runGame(f"extensionMap/{self.mapCode}.dat", self.playerList.keys())
 
 
