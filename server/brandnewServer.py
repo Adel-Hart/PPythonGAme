@@ -137,10 +137,11 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         print("udp연결")
 
-        self.gameHandler = threading.Thread(target=udpGame, args=(self.whosReady, self))
+        globals()["udp-" + self.roomName] = udpGame(self.whosReady, self, f"udp-{self.roomName}")
 
-        self.gameHandler = udpGame(self.whosReady, self) #준비 된 참여자 닉네임 리스트와 방 핸들러를 넣어준다.
-        self.gameHandler.run() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
+        self.udpHandler = globals()["udp-" + self.roomName]
+
+        globals()["udp-" + self.roomName].start() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
             
         print("udp연결 완료")
 
@@ -687,7 +688,7 @@ class udpGame(threading.Thread):
 
     def __init__(self, clientsName: list, room: Room, threadName: str): #clientsName : 참여자들 닉네임 '리스트', room : 방 핸들러, threadName : 스레드 이름
 
-        super().__init__ # 상위 클래스 초기화(상위 클래스의 메소드를 가져온다)
+        super().__init__() # 상위 클래스 초기화(상위 클래스의 메소드를 가져온다)
 
         self.name = threadName #스레드의 이름을 지정한다, (self.name >> 상위 클래스인 threadingThread의 메서드)
 
@@ -699,19 +700,20 @@ class udpGame(threading.Thread):
         self.change = self.rgb #rgb의 변화량 감지 리스트
         self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
         self.done = False #스레드의 while문을 종료시킬 원격 함수
-
-
-
         for c in clientsName:
             self.clientPos[c] = "0, 0" #클라이언트  이름: "x, y" 위치정보를 저장
             self.clientAddr[c] = ("", 0000) #주소값 초기화
         
+
+
+       
         
 
     def run(self):
         '''
         thread클래스에 의해 자동으로 실행되는 것
         '''
+
 
         self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
