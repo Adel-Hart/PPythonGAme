@@ -75,7 +75,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         self.inGame = True #방의 게임중 시그널 키기
         print("a")
-        for c in self.whos.copy().values():
+        for c in self.whos.values():
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
         # self.mapDownloading = True #하트비트 잠깐 끄기
         
@@ -89,7 +89,8 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.copy().values():
             c.inGamePlayer = False #각 핸들러의 inGamePlayer신호 끄기
             
-        del self.gameHandler #gameHandler 인스턴스 삭제
+        globals()["udp-" + self.roomName].endGame() #소켓 닫기
+        del globals()["udp-" + self.roomName] #gameHandler 인스턴스 삭제
 
     def multiCastChat(self, msg, name): #방에 있는 모든 클라이언트에게 룸챗 메세지 전송
         for c in self.whos.copy().values():
@@ -153,14 +154,14 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
             print("결과 나옴", res)
             if res == "FAIL": #맵 다운 중 실패한 경우(클라이언트 측에서)
-                self.gameHandler.clientAddr.pop(c.name)
-                self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
+                globals()["udp-" + self.roomName].clientAddr.pop(c.name)
+                globals()["udp-" + self.roomName].clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #클라이언트의 방 나가기 실행
                 self.mapDownloading = False #하트비트 켜기
             elif res == "SOMETHING ERROR": #다운 중 뭔가 오류가 일어난 경우
                 self.castCmd("smterr", c)
-                self.gameHandler.clientAddr.pop(c.name)
-                self.gameHandler.clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
+                globals()["udp-" + self.roomName].clientAddr.pop(c.name)
+                globals()["udp-" + self.roomName].clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
                 c.leaveRoom() #오류 메세지 전송하고, 방에서 내보내기
                 self.mapDownloading = False #하트비트 켜기
 
@@ -716,6 +717,7 @@ class udpGame(threading.Thread):
 
 
         self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #소켓 재사용 키기
         self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
         print("udp game server listening")
 
@@ -785,8 +787,8 @@ class udpGame(threading.Thread):
                     self.room.multiCastCmd("GAMEOUT") #TCP모듈에 게임 끝 선언
                     self.endGame()
     
-            self.endGame()
-            sys.exit(0) #self.done 이 켜지면 스레드 종료
+        self.endGame()
+        sys.exit(0) #self.done 이 켜지면 스레드 종료
 
     def sendMsg(self): #스레드 1개 사용
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.       
@@ -808,7 +810,7 @@ class udpGame(threading.Thread):
                         self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}", self.clientAddr[t])
                         #사람 한명당 4명의 위치 정보가 필요하니 2중for문
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
-                    self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[t]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+                    self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
         
         self.endGame()
         sys.exit(0) #self.done 이 켜지면 스레드 종료
@@ -820,8 +822,8 @@ class udpGame(threading.Thread):
         udpRecv = threading.Thread(target=self.recvMsg)
         udpSend = threading.Thread(target=self.sendMsg) #스레드 세팅
 
-        for c in self.clientAddr.keys():
-            self.udpSock.sendto("5555".encode(), self.clientAddr[c]) #시작 시그널 보내기
+        self.room.multiCastCmd("5555") #플레이어들에게 tcp로 CMD 5555를 보낸다
+            
 
         udpRecv.start()
         udpSend.start() #스레드 시작

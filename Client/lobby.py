@@ -222,6 +222,10 @@ class conTcp():
             elif recvMsg.startswith("ROOMINFO"):
                 self.data = recvMsg
 
+            elif recvMsg == "CMD 5555":
+                self.udpPlay.startGame = True #게임 시작시키기
+
+
             elif recvMsg.startswith("^"): #맵인 경우에
                 logger.debug(self.mapStream)
                 #대충 맵 내용 변수에 저장하는 내용
@@ -345,6 +349,29 @@ class conTcp():
             
                 #udp연결하는 함수 실행
                 print("여기부터udp")
+                
+                tempRoomInfo = self.getRoomInfo()
+                if tempRoomInfo == "False":
+                    print("방정보 가져오기 실패하뮤 ㅜㅜ")
+
+
+                roomName = tempRoomInfo[0]
+                mapCode = tempRoomInfo[2]
+                print("서버 데이터받음")
+
+                
+
+                #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
+                main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
+                self.udpPlay = main.udpHandler #인스턴스 연결
+                
+                self.udpPlay.standingBy() #준비 시작
+                
+
+
+                return
+
+
 
 
             else: #존재 안 하면, 맵 다운 받아야 함
@@ -465,69 +492,7 @@ class conTcp():
             except Exception as e:
                 return f"FAIL, {e}"
 
-
-
-class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
-    def __init__(self, players: list, initPos: list, roomName: str, name: str): #players는 참여자들 닉네임 list, initPos는 플레이할 맵의 플레이어 기본위치
-        self.udpSock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) #기본 udp 소켓 설정
-        self.roomName = roomName
-        self.nickName = name
-        self.playerList = {}
-        for p in players:
-            self.playerList[p] = initPos #플레이어 좌표 초기 설정
-
-        self.rgb = [False, False, False]
-        self.done = False
-
-    
-
-    def standingBy(self):
-        '''
-        서버에게, udp대기 메세지를 전송한다. 무조건 거쳐야 함
-        udp의 데이터 손실 가능성으로, 시간초를 재서 오지 않거나 0000이면 다시 보낸다.
-        
-        '''
-
-
-        
-
-        self.udpSock.sendto("")
-
-
-
-    def _postMan(self, msg): #메세지를 전송하는 함수
-        self.udpSock.sendto(msg.encode(), (HOST, PORT))
-
-
-    def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
-        while not self.done: #게임 끝나는 신호 오기 전까지
-            #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
-            pass
-        self._postMan()
-
-
-
-
-
-    def udpRecvHandler(self):
-        while not self.done: #게임 끝나는 신호 오기 전까지
-            data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
-            
-            data = data.decode()
-            if data.startswith('P'): #위치 정보를 수신
-                data = data.replace("P", "") #P삭제
-                data = data.split("!") #구분자가 !라서 !를 기준으로 분리
-                pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
-                self.playerList[data[0]] = [pos[0], pos[1]] #위치정보를 멤버 변수에 저장
-
-            elif data.startswith('R'): #RGB변경 정보를 수신
-                data = data.replace("R", "") #P삭제
-                data = data.split(",")
-                self.rgb[0] = data[0]
-                self.rgb[1] = data[1]
-                self.rgb[2] = data[2] #rgb정보 저장
-        
-        
+  
     
 
 

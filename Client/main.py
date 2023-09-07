@@ -65,6 +65,9 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         self.players = players
         self.playerList = {} #이름 : 위치 클래스
 
+        self.startGame = False #tcp로 5555를 받으면 활성화 되며, 이게 활성화 되면 스레드 2개(받기 보내기)를 시작함
+
+
         self.rgb = [False, False, False]
         self.done = False
 
@@ -102,7 +105,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
             try:
                 print("udp 받기 시작")
-                msg = self.udpSock.recvfrom(1024).decode() #udp통신 값 받기
+                msg, addr = self.udpSock.recvfrom(1024)#udp통신 값 받기
+                msg = msg.decode()
 
 
                 if msg == "0080":
@@ -118,14 +122,25 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         print(msg)
 
 
+        while not self.startGame: #0080 수신하고, 다른 플레이어 기다리기 (다른 플레이어들이 모두 준비되면, 5555를 tcp로 받고 startGame이 True가 됨)
+            pass
+
+        self.runGameScreen() #게임 실행
+
 
 
 
     def runGameScreen(self):
         print("멀티 게임 시작")
         
-        udpReciver = threading
-        runGame(f"extensionMap/{self.mapCode}.dat", self.playerList.keys())
+        udpReciver = threading.Thread(target=self.udpRecvHandler)
+        udpSender = threading.Thread(target=self.udpSendHandler) #송수신 스레드 설정
+
+        udpReciver.start()
+        udpSender.start()
+
+        otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
+        runGame(f"extensionMap/{self.mapCode}.dat", otherPlayer)
 
 
 
@@ -138,7 +153,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         while not self.done: #게임 끝나는 신호 오기 전까지
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
             pass
-        self._postMan()
+        self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}") #자신의 좌표 전송
 
 
 
@@ -153,7 +168,10 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
-                self.playerList[data[0]] = [pos[0], pos[1]] #위치정보를 멤버 변수에 저장
+                globals()["p-"+data[0]].coordX = pos[0] #위치정보를 멤버 변수에 저장
+                globals()["p-"+data[0]].coordY = pos[1]
+
+
 
             elif data.startswith('R'): #RGB변경 정보를 수신
                 data = data.replace("R", "") #P삭제
@@ -277,6 +295,9 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
 
         global mObjects, sImages #표시할 오브젝트, 이미지들 리스트
         mObjects, sImages = [], [] #초기화
+
+
+        
 
         global maincharacter
 
@@ -603,6 +624,21 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     if otherPlayers != None: #다른 플레이어가 있다면
         playerImageList = []
         playerImageList.append(showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png")) 
+
+        for p in otherPlayers:
+
+
+
+
+            globals()["p-"+p] == MovingObject(PPOS.x, PPOS.y, 0, 0, PSIZEX, PSIZEY, pygame.image.load("./images/Player.png")) #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
+            mObjects.append(globals()["p-"+p]) #플레이어 목록에 추가
+
+
+            #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
+
+
+
+
     
     screen.fill(WHITE) # 화면 리셋
     
