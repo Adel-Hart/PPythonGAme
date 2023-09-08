@@ -33,6 +33,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.startPos = []
         self.mapDownloading = False
         self.whosReady = {} #닉네임 : 준비 여부
+        self.udpOpen = False #현재, udp통신은 닫혀있음을 나타냄
 
 
     
@@ -93,8 +94,8 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.copy().values():
             c.inGamePlayer = False #각 핸들러의 inGamePlayer신호 끄기
             
-        globals()["udp-" + self.roomName].endGame() #소켓 닫기
-        del globals()["udp-" + self.roomName] #gameHandler 인스턴스 삭제
+        self.udpHandler.endGame()
+        del self.udpHandler
 
     def multiCastChat(self, msg, name): #방에 있는 모든 클라이언트에게 룸챗 메세지 전송
         for c in self.whos.copy().values():
@@ -130,6 +131,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
     def _sendMap2Client(self):
+        self.errBool = False #이 함수가 실행될 때 마다 생기는 것, 방에서 이 요청은 하나 뿐이기 때문에 중첩 걱정 없다
         '''
         recv스레드와 병목이 되기 때문에, 스레드로 실행된다.
         준비가 다 될 때 게임 시작시, 가장 먼저 호출되는 클래스전용 함수
@@ -158,6 +160,38 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
             res = c.sendMapfile(self.mapCode) #sendMapfile은 파라미터에 맵코드가 들어간다
 
             print("결과 나옴", res)
+
+            if res == "OK": #성공인 경우
+                pass #클라이언트는, 다른 플레이어가 for문을 돌때 까지 대기한다
+            else: #실패인 경우
+                self.errBool = True
+                break #포문 중단
+
+
+
+        if not self.errBool: #성공인 경우
+            #UDP연결 열기
+            #TCP로 UDP연껼 씨짞 뽀냬끼
+            self.udpOpen = True #udp소켓열림, udp핸들러가 존재함을 알려준다
+            self.udpHandler = udpGame(self.whos.keys(), self, f"UDP-{self.roomName}") #객체 선언, 자동으로 열어진다(스레드라서)
+            self.multiCastCmd("UdpOPEN") #udp열림 보내기 (클라이언트 대기 해제)
+            
+            sys.exit() #스레드 종료
+
+
+
+
+        else:
+            self.multiCastCmd("ERR2GET") #ERR메세지 전송 클라이언트는 받으면 방에서 나간다.
+            time.sleep(2) #다 나가는 것 대기
+            self.deleteRoom() #방 지우기
+        
+
+            sys.exit() #스레드 종료
+
+
+            '''
+
             if res == "FAIL": #맵 다운 중 실패한 경우(클라이언트 측에서)
                 globals()["udp-" + self.roomName].clientAddr.pop(c.name)
                 globals()["udp-" + self.roomName].clientPos.pop(c.name) #udp소켓 목록에서 플레이어 제거
@@ -183,7 +217,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
             
         sys.exit() #스레드 종료
 
-
+        '''
 
 class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리!, TCP
     def __init__(self, soc, addr):
@@ -585,35 +619,40 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
             with open(f"./Maps/{mapCode}.dat", 'r') as f:
                 try:
+                    self.mapSign = "no" #기본값 no (클라이언트가 맵을 잘 받으면 mapOk로 바뀜)
+
                     data = f.read(1023) #1023바이트 읽기
                     while data: #data가 없어질 때 까지
                         self.soc.send(f"^{data}") #1023 크기의 맵 파일앞에 ^붙여서 전송
                         print(len(data) + '전송함')
-
-                        while not "mapOk" in self.msg: #mapOk사인이 올때까지 대기
-                            if "ERR2GET" in self.msg: #클라이언트 오류가 존재할때는
-
-                                pass
+ 
+                        time.sleep(2) #2초 정도 받는 것 기다림
+                        if self.mapSign == "no":
+                            return "FAIL" #실패 반환
                         self.msg = "" #메세지 초기화
+                        self.mapSign = "no"
+                        print("맵 데이터 다시 전송")
                         data = f.read(1023) #그 다음 데이터 읽기
 
+                    return "OK" #성공 반환
+                
+                    #클라이언트는, 나머지 for문으로 다른 사람이 이 행위를 성공할때 까지 대기 + 화면에 다른 플레이어 준비중을 띄움
+                    #for문 바깥에, braodcast를 사용해, 클라이언트가 특정 메세지를 감지하면 대기가 풀리는 형식
 
-                except :
-                    pass
 
-
-
-
-            
+                except Exception as ex: #서버가 읽는 것에 오류가 날시에
+                    print(ex)
+                    return "FAIL"
+                
         
         elif self.msg == "ALREADYMAP": #이미 맵이 존재할 시        
-            pass
+            return "ALREADY" #맵 존재 시그널 반환
         
         
         
+        '''
         
-        
-        
+        전 버전
         
         
         
@@ -688,7 +727,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         else: #서버에 그러한 파일이 없으면
             print("파일이...없다!")
             self.soc.send("NOFILE".encode())
-            return "NOFILE" #이경우는, 플레이어들에게 맵 파일 없다고 전송
+            return "NOFILE" #이경우는, 플레이어들에게 맵 파일 없다고 전송ㅂ
+
+
+            '''
 
     def sendMsg(self, msg: str):
         self.soc.send(msg.encode())
@@ -733,6 +775,16 @@ def evaler(cmd: str): #eval 함수 실행기, 그 자체로 취약점이기 때�
             return False
     except:
         return False
+
+
+
+
+
+
+
+
+
+
 
 
 class udpGame(threading.Thread):
