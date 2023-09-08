@@ -480,8 +480,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.msg = ""
                         elif "1001" in self.msg: #맵 설정 형식 >> 1001!MapCode >>0080 송신
                             mapCode = self.msg.split("!")[1]
-                            self.roomHandler.setMap(mapCode)
-                            self.sendMsg("0080")
+                            self.sendMsg(self.roomHandler.setMap(mapCode)) #setMap 성공 여부에 따라 메세지 보내주기
                             self.msg = ""
 #1002는 명령 중복으로 삭제됨
 

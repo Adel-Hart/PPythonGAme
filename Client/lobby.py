@@ -154,7 +154,7 @@ class conTcp():
             self.data = "" 
             return True #성공 메세지 받을 시
         else:
-            print("맵코드 실패?")
+            print("맵코드 실패?", self.data)
             self.data = ""
             return False
 
@@ -212,8 +212,9 @@ class conTcp():
 
             
 
-            if recvMsg == "7777" and joinedRoomName == "": #서버가 보낸 heartBeat신호일 시
-                self.tcpSock.send("7780".encode()) #응답하기
+            if recvMsg == "7777":
+                if joinedRoomName == "": #서버가 보낸 heartBeat신호일 시
+                    self.tcpSock.send("7780".encode()) #응답하기
                 
             elif recvMsg.startswith("1008"):
                 self.tempData = recvMsg
