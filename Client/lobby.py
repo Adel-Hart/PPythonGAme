@@ -48,7 +48,6 @@ class conTcp():
     def __init__(self):
         self.players = []
         self.data = ""
-        self.mapDownloading = False #맵 다운중에는 recv스레드 꺼놔야 해서
         self.mapStream = "" #하나의 리시브로 작동하기때문에, 맵 전송 내용이 담길 변수다.
 
 
@@ -169,7 +168,7 @@ class conTcp():
         if(self.data == "0080"):
             print("나가기 완료")
             global joinedRoomName
-            joinedRoomName = None
+            joinedRoomName = ""
             self.data = ""
             serverRoomList(self, 1) #방 목록 다시 불러오기
             return True #성공 메세지 받을 시
@@ -217,8 +216,7 @@ class conTcp():
                 self.tcpSock.send("7780".encode()) #응답하기
                 
             elif recvMsg.startswith("1008"):
-                mapcode = recvMsg.replace("1008","")
-                self.mapDownload(mapcode)
+                self.tempData = recvMsg
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 self.cmd = recvMsg.replace("CMD ", "")
@@ -279,7 +277,7 @@ class conTcp():
         '''
         global roominfo
 
-        while True:
+        while joinedRoomName != "":
             for i in range(10):
 
                 self.tcpSock.send("1005".encode()) #방 정보 요청
@@ -314,7 +312,7 @@ class conTcp():
                     break
 
             self.tcpSock.send("7780".encode()) #하트비트 대신 보내기
-        
+
         sys.exit()
         
     def getMapCodeList(self):
@@ -328,32 +326,34 @@ class conTcp():
 
         return mapCodes #맵코드 목록 반환
     
-
-
-    def readyPlay(self):
+    def readyPlayer(self): #단순 준비 활성화 함수
         self.tcpSock.send("1006".encode())
 
-
-
+    def unReady(self): #준비 비활성화 함수
+        self.tcpSock.send("1007".encode())
 
     def ready2Start(self):
-        global joinedRoomName
         global roominfo
-        self.tempData = ""
-
         playerReadyDict = strToDict(roominfo[3])
         if False in playerReadyDict.values():
-            return "noReady" #준비 안된 사람이 한명이라도 있으면, noReady반환
+            print("NOREADY", playerReadyDict.values)
+            return "NOREADY"
+        else:
+            print("1008 전송")
+            self.tcpSock.send("1008".encode())
+            return "Ready"
 
-        print("1008 전송")
-        self.tcpSock.send("1008".encode())
 
-    def mapDownload(self, mapcode):
+    def MapDownload(self):
+        
         print("정보 받기 시작")
 
-        while data == "" or data == None: #데이터 도착까지 기다리기
-            data = self.tempData
-            print(data) #다시받기
+        while self.tempData == "":
+            pass
+
+        data = self.tempData  # << tempData는 recv스레드에서 처리했다고!
+        print(data)
+        print("디코딩 끝")
         
         if data == "nofile":
             print("파일 없음")
@@ -368,7 +368,7 @@ class conTcp():
                 print("0000보냄")
                 self.tcpSock.send("0000".encode())
                 #맵 존재한다고 시그널 보내기, udp연결 하기 
-            
+
                 #udp연결하는 함수 실행
                 print("여기부터udp")
                 
@@ -402,11 +402,10 @@ class conTcp():
                 print("1111전송 함")
                 print(currentMapCode)
                 res = self._downloadMap(currentMapCode) #맵 다운 시작
-                self.mapDownloading = False #recv스레드 블락 풀기 (맵 다운 끝나면 바로)
                 print(res)
                 if res == "FAIL": #실패하면
                     self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
-                    
+                    global joinedRoomName
                     joinedRoomName = "" #방나가기
                     return "FAIL" #시작 실패보내기 >> 방에서 나가져야 함
                 
@@ -1027,6 +1026,7 @@ def serverJoinedRoom(handler: classmethod):
     fixedImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
     fixedButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom)) #undo 버튼
 
+    roominfo = False
     print("스레드 시작함")
     banginfoThread = threading.Thread(target=handler.getRoomInfo)
     banginfoThread.daemon = True
@@ -1037,8 +1037,6 @@ def serverJoinedRoom(handler: classmethod):
         pass
     while joinedRoomName != "":
 
-        
-        
 
         clock.tick(60)
 
@@ -1062,6 +1060,7 @@ def serverJoinedRoom(handler: classmethod):
         
 
         ReadyButton = None
+        startButton = None
         
         playerButtonList = []
 
@@ -1074,10 +1073,20 @@ def serverJoinedRoom(handler: classmethod):
         else: #맵코드가 있을시
             mapCodeText = f"mapcode:{currentMapCode}"
             if playerReadyDict[handler.nickName] == True: #준비상태라면
-                ReadyButton = Button( WHITE, "준비 해제", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36)
+                ReadyButton = Button( WHITE, "준비 해제", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.unReady)
+                if handler.nickName == playerList[0] and False not in playerReadyDict.values(): #0번 플레이어(방장)이고 모두 준비되어 있다면
+                    startButton = Button( WHITE, "게임 시작!", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 15, SCRSIZEX // 4, SCRSIZEX // 36, handler.ready2Start)
+                    startButton.displayButton()
             else: #준비가 아니라면
-                ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.ready2Start)
+                ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.readyPlayer)
+            
             ReadyButton.displayButton()
+
+
+
+            
+
+            
             
 
 

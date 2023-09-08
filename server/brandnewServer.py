@@ -594,12 +594,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         while not "mapOk" in self.msg: #mapOk사인이 올때까지 대기
                             if "ERR2GET" in self.msg: #클라이언트 오류가 존재할때는
 
-                            pass
+                                pass
                         self.msg = "" #메세지 초기화
                         data = f.read(1023) #그 다음 데이터 읽기
 
 
                 except :
+                    pass
 
 
 
@@ -607,7 +608,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             
         
         elif self.msg == "ALREADYMAP": #이미 맵이 존재할 시        
-        
+            pass
         
         
         
