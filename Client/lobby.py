@@ -217,7 +217,8 @@ class conTcp():
                 self.tcpSock.send("7780".encode()) #응답하기
                 
             elif recvMsg.startswith("1008"):
-                self.tempData = recvMsg
+                mapcode = recvMsg.replace("1008","")
+                self.mapDownload(mapcode)
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 self.cmd = recvMsg.replace("CMD ", "")
@@ -329,22 +330,26 @@ class conTcp():
     
 
 
+    def readyPlay(self):
+        self.tcpSock.send("1006".encode())
+
+
 
 
     def ready2Start(self):
         global joinedRoomName
+        global roominfo
         self.tempData = ""
 
-        self.mapDownloading = True #recv스레드 잠깐 멈추기 (맵 파일을 받을때 겹쳐서 오류)
+        playerReadyDict = strToDict(roominfo[3])
+        if False in playerReadyDict.values():
+            return "noReady" #준비 안된 사람이 한명이라도 있으면, noReady반환
+
         print("1008 전송")
         self.tcpSock.send("1008".encode())
-        
+
+    def mapDownload(self, mapcode):
         print("정보 받기 시작")
-        while self.tempData == "":
-            pass
-        data = self.tempData  # << tempData는 recv스레드에서 처리했다고!
-        print(data)
-        print("디코딩 끝")
 
         while data == "" or data == None: #데이터 도착까지 기다리기
             data = self.tempData

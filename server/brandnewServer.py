@@ -139,7 +139,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         !!중요!! 여기서 udp통신을 연다.
         
         '''
-
+        '''
         print("udp연결")
 
         globals()["udp-" + self.roomName] = udpGame(self.whosReady, self, f"udp-{self.roomName}")
@@ -149,6 +149,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         globals()["udp-" + self.roomName].start() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
             
         print("udp 포트 열기 완료")
+        '''
 
         for c in self.whos.copy().values(): #핸들러들에게, mapSend실행
             print(c)
@@ -415,7 +416,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         if self.msg == "0010":
                             print("ok")
                             self.msg = ""
-                            self.sendMsg("0080") #OK sign
+                            self.sendMsg("0080") #OK sign   
                         elif "0001" in self.msg: #이름 설정, 수신 형식 0001이름    ex) 0001ADEL
                             print("0001수신, 이름")
                             if not self.msg.replace("0001", "") in players:
@@ -545,6 +546,9 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             
                             pass
 
+                        elif self.msg == "mapOk": #맵 수신 완료를 받으면
+                            self.mapSign = "ok" #맵 사인 ok 변경 (항상 보낼때마다, no이고 계속 no이면 타임아웃으로 간주하고 연결 실패)
+
 
 
                         print(self.msg)
@@ -570,6 +574,49 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
     def sendMapfile(self, mapCode: str): #return이 문자열이라, 실행시 인스턴스처럼 실행시키고 조건문으로 결과비교 필요   맵 파일을 클라에게 전송
+        
+
+        self.soc.send(f"1008{mapCode}")
+
+        while self.msg != "READY2GET" and self.msg != "ALREADYMAP":
+            pass
+  
+        if self.msg == "READY2GET": #이 메세지 받을 시
+            print("맵이 존재하지 않음 >> 다운받기 시작")
+
+            with open(f"./Maps/{mapCode}.dat", 'r') as f:
+                try:
+                    data = f.read(1023) #1023바이트 읽기
+                    while data: #data가 없어질 때 까지
+                        self.soc.send(f"^{data}") #1023 크기의 맵 파일앞에 ^붙여서 전송
+                        print(len(data) + '전송함')
+
+                        while not "mapOk" in self.msg: #mapOk사인이 올때까지 대기
+                            if "ERR2GET" in self.msg: #클라이언트 오류가 존재할때는
+
+                            pass
+                        self.msg = "" #메세지 초기화
+                        data = f.read(1023) #그 다음 데이터 읽기
+
+
+                except :
+
+
+
+
+            
+        
+        elif self.msg == "ALREADYMAP": #이미 맵이 존재할 시        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         if f"{mapCode}.dat" in os.listdir("./Maps/"): #보낼 파일이 존재하지 않으면, 안되게 False전송
             
