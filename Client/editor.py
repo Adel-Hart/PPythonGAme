@@ -6,7 +6,6 @@ from math import *
 import re
 import time
 import testplay
-import pygetwindow
 
 
 import socket
@@ -77,14 +76,14 @@ def drawMap(): #맵 생성
 def isMap(): #클릭 좌표가 맵 안인지 판단
     
     global x, y
+    if tileSize:
+        x = (pyautogui.position()[0] - mapOrigin) // tileSize #마우스의 타일 X좌표
+        y = (pyautogui.position()[1]) // tileSize #마우스의 타일 Y좌표
 
-    x = (pyautogui.position()[0] - mapOrigin) // tileSize #마우스의 타일 X좌표
-    y = (pyautogui.position()[1]) // tileSize #마우스의 타일 Y좌표
-
-    if x < mapX and y < mapY:
-        return True
-    else:
-        return False
+        if x < mapX and y < mapY:
+            return True
+        else:
+            return False
 
 def colorChange(event): #색 변경
 
@@ -298,10 +297,27 @@ def infoLim():
     global infoCheck
     infoCheck = True
     info.destroy() #도움말 창 삭제 
+    
+
+def infoSize(event):
+    global infoY, defaultFontSize, info
+    info.update_idletasks()
+
+    if 80 < infoY - info.winfo_height() or -80 > infoY - info.winfo_height():
+        infoY = info.winfo_height()
+        infoX = infoY
+        info.geometry(f"{infoX}x{infoY}")
+        defaultFontSize = int(infoY/100) #글자 크기
+        
+        for i in range(len(texts)):
+            texts[i][0].config(font = ("맑은 고딕", int(texts[i][2]*defaultFontSize), texts[i][3]))
+            texts[i][0].place(x=0, y=infoY/labelPos*texts[i][1])
+
+
 
 def infoWindow(): #도움말 창 생성
 
-    global infoCheck, info
+    global infoCheck, info, infoY, defaultFontSize, texts, labelPos, info
 
     if infoCheck: #도움말 창이 띄워져 있지 않다면
 
@@ -309,16 +325,18 @@ def infoWindow(): #도움말 창 생성
 
         infoY = int(SCRSIZEY * 3/5) #창의 Y크기
         infoX = infoY #창의 X크기 (우선 Y랑 같게 설정)
-        defaultFontSize = int(infoY/100) #글자 크기
-        texts = []
-
+ 
         #창 설정
         info = tk.Tk() #에디터 설명 팝업 생성
         info.protocol("WM_DELETE_WINDOW", infoLim) #X버튼, AltF4 감지
         info.title("Info") #창의 이름
         info.geometry(f"{infoX}x{infoY}")
-        info.resizable(False, False) #창 크기 조절 가능 여부
+        info.resizable(False, True) #창 크기 조절 가능 여부
+        info.bind("<Configure>", infoSize)
 
+
+        defaultFontSize = int(infoY/100) #글자 크기
+        texts = []
         labelPos = 0
 
         with open("./editorInfo.txt","r", encoding="UTF-8") as f: #한글 가능하도록 UTF-8로 인코딩
@@ -334,7 +352,7 @@ def infoWindow(): #도움말 창 생성
                     scale = 1 #폰트 배율
                     slant = ""
                 fontSize = int(defaultFontSize*scale)
-                texts.append([(tk.Label(info, text = text, font = ("맑은 고딕", fontSize, slant))), labelPos])
+                texts.append([(tk.Label(info, text = text, font = ("맑은 고딕", fontSize, slant))), labelPos, scale, slant])
                 labelPos += fontSize
 
 
@@ -349,9 +367,7 @@ def infoWindow(): #도움말 창 생성
 def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, playerSpeed,\
-          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout, info
-
-    win = pyautogui.getWindowsWithTitle("mapTest")
+          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout, info, tileSize
 
     # ------------------------ GUI 요소 생성 ------------------------#
 
@@ -366,6 +382,7 @@ def runEditor():
     window.bind("<Button-2>", goal) #휠클릭 감지
 
     info = None
+    tileSize = None
 
     #프레임 생성
     buttonFrame = tk.Frame(width = mapOrigin)

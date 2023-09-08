@@ -622,24 +622,13 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     
 
     if otherPlayers != None: #다른 플레이어가 있다면
-        playerImageList = []
-        playerImageList.append(showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png")) 
 
         for p in otherPlayers:
 
-
-
-
-            globals()["p-"+p] == MovingObject(PPOS.x, PPOS.y, 0, 0, PSIZEX, PSIZEY, pygame.image.load("./images/Player.png")) #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-            mObjects.append(globals()["p-"+p]) #플레이어 목록에 추가
-
+            globals()["p-"+p] = showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
 
             #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
 
-
-
-
-    
     screen.fill(WHITE) # 화면 리셋
     
     #배경 이미지 설정
@@ -695,11 +684,19 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
             object.display() # 움직이는 오브젝트 일괄 출력
 
+        if  gameMode == "MultiPlay":
+            if otherPlayers != None: #다른 플레이어가 있다면
+                for p in otherPlayers:
+                    globals()["p-"+p].display()
+
+
         if gameMode == "TestPlay": #테스트 중이고 사망한 경우가 아니라면
             font = pygame.font.Font("fonts/Ramche.ttf", 200)
             img = font.render("ESC를 눌러 종료", True, BLACK) #렌더
             img = pygame.transform.scale(img, (SCRSIZEX//4, SCRSIZEX//40))
             screen.blit(img, (0,SCRSIZEY)) #텍스트 표시
+
+        
             
             
         pygame.display.update()
