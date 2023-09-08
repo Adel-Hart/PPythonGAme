@@ -1020,12 +1020,12 @@ def serverJoinedRoom(handler: classmethod):
                 handler.setMap(choosedMultiMap) #맵 설정 요청
                 choosedMultiMap = False #맵을 다시 고를 수 있다는 뜻
 
-        while roominfo != "": #방 정보 받아오는거 기다리기
+        while roominfo == "": #방 정보 받아오는거 기다리기
             pass
 
         joinedRoomName = roominfo[0]
         playerList = strToList(roominfo[1])
-        
+
         currentMapCode = roominfo[2]
         playerReadyDict = strToDict(roominfo[3])
         isGameReady = strToBool(roominfo[4])
