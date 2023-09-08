@@ -3,13 +3,14 @@ import pygame
 import editor
 import ctypes
 import re
-
+import time
 
 #요 아래는 서버용
 import os
 import socket
 import threading
 import selectors
+import sys
 
 import logging
 
@@ -31,11 +32,11 @@ inEditor = False # 에디터를 하고있는지
 
 connected = False #서버 연결 여부
 
-joinedRoomName = None #현재 접속중인 방의 이름
+joinedRoomName = "" #현재 접속중인 방의 이름
 
 choosedMultiMap = False #멀티에서 맵을 고를 시 True로 바뀜, 다시 방 화면으로 ㄱㄱ
 
-roominfo = ""
+roominfo = False
 
 sel = selectors.DefaultSelector() #셀렉터 초기화
 
@@ -210,11 +211,9 @@ class conTcp():
             recvMsg = self.tcpSock.recv(1024).decode()
 
 
-            if joinedRoomName != None:
-                global roominfo
-                roominfo = self.getRoomInfo()
+            
 
-            if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
+            if recvMsg == "7777" and joinedRoomName == "": #서버가 보낸 heartBeat신호일 시
                 self.tcpSock.send("7780".encode()) #응답하기
                 
             elif recvMsg.startswith("1008"):
@@ -222,9 +221,6 @@ class conTcp():
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 self.cmd = recvMsg.replace("CMD ", "")
-
-            elif recvMsg.startswith("ROOMINFO"):
-                self.data = recvMsg
 
             elif recvMsg == "CMD 5555":
                 self.udpPlay.startGame = True #게임 시작시키기
@@ -280,28 +276,45 @@ class conTcp():
         3 : 플레이어 준비 현황 {플레이어 : True}
         4 : 게임 시작 여부 - True or False
         '''
-        self.tcpSock.send("1005".encode()) #방 정보 요청
-        
-        while not self.cmd.startswith("ROOMINFO"): #데이터 도착까지 기다리기
-            pass
-        
-        if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
-            roomIf = self.cmd.replace("ROOMINFO", "")
-            roomIfList = roomIf.split("!")
-            self.cmd = ""
-            return roomIfList
-            
+        global roominfo
 
-            #형식 ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
+        while True:
+            for i in range(10):
 
-                #del data #변수 참조 삭제,  받는 변수로 바뀌어서 삭제하면 안된다.
+                self.tcpSock.send("1005".encode()) #방 정보 요청
                 
-                #return True #성공 메세지 받을 시 <<어짜피 실행 안될텐데
-            
-        else: #무효일시
-            #del data
-            self.cmd = ""
-            return "False"
+                while self.cmd == "":
+                    pass
+
+                self.cmd = self.cmd.replace("CMD ","")
+                
+                if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
+                    roomIf = self.cmd.replace("ROOMINFO", "")
+                    roomIfList = roomIf.split("!")
+                    self.cmd = ""
+                    roominfo = roomIfList
+                    
+
+                    #형식 ROOMINFO방이름!플레이어목록(@로 구분)!맵 코드(없으면 None)!플레이어 준비 현황({플레이어 : True or False}을 문자열로 )!True or False
+
+                        #del data #변수 참조 삭제,  받는 변수로 바뀌어서 삭제하면 안된다.
+                        
+                        #return True #성공 메세지 받을 시 <<어짜피 실행 안될텐데
+                    
+                else: #무효일시
+                    #del data
+                    self.cmd = ""
+                    roominfo = False
+
+                time.sleep(1)
+
+                if joinedRoomName == "":
+                    print("getroominfo 탈출")
+                    break
+
+            self.tcpSock.send("7780".encode()) #하트비트 대신 보내기
+        
+        sys.exit()
         
     def getMapCodeList(self):
         self.tcpSock.send("1000".encode()) #맵코드 목록 요청
@@ -389,7 +402,7 @@ class conTcp():
                 if res == "FAIL": #실패하면
                     self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
                     
-                    joinedRoomName = None #방나가기
+                    joinedRoomName = "" #방나가기
                     return "FAIL" #시작 실패보내기 >> 방에서 나가져야 함
                 
                 elif res == "OK":
@@ -408,7 +421,7 @@ class conTcp():
 
 
                 if self.cmd == "smterr": #서버측에서 무언가 오류가 난 경우
-                    joinedRoomName = None #방 나가기
+                    joinedRoomName = "" #방 나가기
                     self.cmd = ""
                     return "SERVERFAIL" #서버 실패 보내기 >> 방ㅇ서 나가져야 함
                 
@@ -989,6 +1002,9 @@ def serverJoinedRoom(handler: classmethod):
 
     global joinedRoomName
     global choosedMultiMap
+    global clock
+    global currentMapCode
+    global roominfo
     fixedButtonList, fixedImageList = [], []
 
     print(joinedRoomName, "들어옴")
@@ -1006,10 +1022,28 @@ def serverJoinedRoom(handler: classmethod):
     fixedImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20)) #undo 버튼
     fixedButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, handler.leaveRoom)) #undo 버튼
 
-    while joinedRoomName != None:
-        global clock
-        global currentMapCode
+    print("스레드 시작함")
+    banginfoThread = threading.Thread(target=handler.getRoomInfo)
+    banginfoThread.daemon = True
+    banginfoThread.start()
+    
+    print("스레드 성공")
+    while roominfo == False: #기다리기
+        pass
+    while joinedRoomName != "":
+
+        
+        
+
         clock.tick(60)
+
+        if roominfo != False:
+            joinedRoomName = roominfo[0]
+            playerList = strToList(roominfo[1])
+
+            currentMapCode = roominfo[2]
+            playerReadyDict = strToDict(roominfo[3])
+            isGameReady = strToBool(roominfo[4])
 
         screen.fill(T1_BG)
 
@@ -1020,15 +1054,7 @@ def serverJoinedRoom(handler: classmethod):
                 handler.setMap(choosedMultiMap) #맵 설정 요청
                 choosedMultiMap = False #맵을 다시 고를 수 있다는 뜻
 
-        while roominfo == "": #방 정보 받아오는거 기다리기
-            pass
-
-        joinedRoomName = roominfo[0]
-        playerList = strToList(roominfo[1])
-
-        currentMapCode = roominfo[2]
-        playerReadyDict = strToDict(roominfo[3])
-        isGameReady = strToBool(roominfo[4])
+        
 
         ReadyButton = None
         
@@ -1232,7 +1258,7 @@ while not done: # loop the game
 
     pygame.display.update()
 
-    if joinedRoomName != None: #방 입장시
+    if joinedRoomName != "": #방 입장시
 
         serverJoinedRoom(tcpHandler)
 
