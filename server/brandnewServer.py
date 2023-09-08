@@ -94,8 +94,8 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.copy().values():
             c.inGamePlayer = False #각 핸들러의 inGamePlayer신호 끄기
             
-        globals()["udp-" + self.roomName].endGame() #소켓 닫기
-        del globals()["udp-" + self.roomName] #gameHandler 인스턴스 삭제
+        self.udpHandler.endGame()
+        del self.udpHandler
 
     def multiCastChat(self, msg, name): #방에 있는 모든 클라이언트에게 룸챗 메세지 전송
         for c in self.whos.copy().values():
