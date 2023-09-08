@@ -35,6 +35,8 @@ joinedRoomName = None #현재 접속중인 방의 이름
 
 choosedMultiMap = False #멀티에서 맵을 고를 시 True로 바뀜, 다시 방 화면으로 ㄱㄱ
 
+roominfo = ""
+
 sel = selectors.DefaultSelector() #셀렉터 초기화
 
 
@@ -208,7 +210,9 @@ class conTcp():
             recvMsg = self.tcpSock.recv(1024).decode()
 
 
-            
+            if joinedRoomName != None:
+                global roominfo
+                roominfo = self.getRoomInfo()
 
             if recvMsg == "7777": #서버가 보낸 heartBeat신호일 시
                 self.tcpSock.send("7780".encode()) #응답하기
@@ -1016,11 +1020,12 @@ def serverJoinedRoom(handler: classmethod):
                 handler.setMap(choosedMultiMap) #맵 설정 요청
                 choosedMultiMap = False #맵을 다시 고를 수 있다는 뜻
 
-        roominfo = handler.getRoomInfo()
+        while roominfo != "": #방 정보 받아오는거 기다리기
+            pass
 
         joinedRoomName = roominfo[0]
         playerList = strToList(roominfo[1])
-    
+        
         currentMapCode = roominfo[2]
         playerReadyDict = strToDict(roominfo[3])
         isGameReady = strToBool(roominfo[4])
@@ -1077,6 +1082,7 @@ def serverJoinedRoom(handler: classmethod):
                 if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
                     handler.leaveRoom()
 
+    roominfo = ""
     print("joinedroom탈출!")
         
     return

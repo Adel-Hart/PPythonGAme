@@ -79,6 +79,10 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
         # self.mapDownloading = True #하트비트 잠깐 끄기
         
+        
+
+
+
         volatile_sendMap = threading.Thread(target=self._sendMap2Client)
         volatile_sendMap.start() #맵 전송 스레드 시작 (recv스레드와 병목되어서)
 
@@ -144,7 +148,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         globals()["udp-" + self.roomName].start() #udp 통신 실행 정보 udp소켓과 tcp 소켓은 분리되어있다!
             
-        print("udp연결 완료")
+        print("udp 포트 열기 완료")
 
         for c in self.whos.copy().values(): #핸들러들에게, mapSend실행
             print(c)
@@ -518,6 +522,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         elif self.msg == "1006": #준비 sign
                             self.roomHandler.readyPlayer(self.name)
 
+                            
+
+
+
                             self.msg = ""
                         elif self.msg == "1007": #준비 해제 sign
                             self.roomHandler.noreadyPlayer(self.name)
@@ -651,6 +659,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
         infoData = f"CMD ROOMINFO{self.roomHandler.roomName}!{str(list(self.roomHandler.whosReady.keys()))}!{self.roomHandler.mapCode}!{str(self.roomHandler.whosReady)}!{self.roomHandler.inGame}"
+        print(infoData)
         return infoData
         #.keys()는 dic_list객체라, list로 만들고 다시 문자열 str로 감싸야 함
 
