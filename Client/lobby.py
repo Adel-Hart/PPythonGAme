@@ -204,27 +204,22 @@ class conTcp():
         self.cmd = ""
         while True:
 
-            # if not self.mapDownloading: #맵 다운이 아닐때만, 서버 메세지 받기
-                # print(self.mapDownloading)
-                # print("나 받는당")
             recvMsg = self.tcpSock.recv(1024).decode()
-
-
-            
 
             if recvMsg == "7777":
                 if joinedRoomName == "": #서버가 보낸 heartBeat신호일 시
                     self.tcpSock.send("7780".encode()) #응답하기
                 
             elif recvMsg.startswith("1008"):
-                self.tempData = recvMsg
+                mapCode = recvMsg.replace("1008","")
+                print("맵큐드",mapCode)
+                self.MapDownload(mapCode)
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 self.cmd = recvMsg.replace("CMD ", "")
 
             elif recvMsg == "CMD 5555":
                 self.udpPlay.startGame = True #게임 시작시키기
-
 
             elif recvMsg.startswith("^"): #맵인 경우에
                 logger.debug(self.mapStream)
@@ -334,6 +329,7 @@ class conTcp():
         self.tcpSock.send("1007".encode())
 
     def ready2Start(self):
+        print("r2s")
         global roominfo
         playerReadyDict = strToDict(roominfo[3])
         if False in playerReadyDict.values():
@@ -345,118 +341,81 @@ class conTcp():
             return "Ready"
 
 
-    def MapDownload(self):
+    def MapDownload(self, mapCode):
         
         print("정보 받기 시작")
 
-        while self.tempData == "":
-            pass
+        print(mapCode)
 
-        data = self.tempData  # << tempData는 recv스레드에서 처리했다고!
-        print(data)
-        print("디코딩 끝")
-        
-        if data == "nofile":
-            print("파일 없음")
-            #여기서 버튼을 수정 밍러마러ㅣㄴ멍;ㅣ
+        if f"{mapCode}.dat" in os.listdir("./maps/extensionMap"): #서버다운 맵들 중 맵이 존재하는지 확인했을 때 존재하면
+            print("ALREADYMAP보냄")
+            self.tcpSock.send("ALREADYMAP".encode())
+            #맵 존재한다고 시그널 보내기, udp연결 하기 
 
-        elif data.startswith("1008"):
-            print("여기"+data)
-            mapCode = data[4:] #1008을 뺀 맵 코드를 저장
-            print(mapCode)
-
-            if f"{mapCode}.dat" in os.listdir("./maps/extensionMap"): #서버다운 맵들 중 맵이 존재하는지 확인했을 때 존재하면
-                print("0000보냄")
-                self.tcpSock.send("0000".encode())
-                #맵 존재한다고 시그널 보내기, udp연결 하기 
-
-                #udp연결하는 함수 실행
-                print("여기부터udp")
-                
-                tempRoomInfo = self.getRoomInfo()
-                if tempRoomInfo == "False":
-                    print("방정보 가져오기 실패하뮤 ㅜㅜ")
+            #udp연결하는 함수 실행
+            print("여기부터udp")
+            
+            tempRoomInfo = self.getRoomInfo()
+            if tempRoomInfo == "False":
+                print("방정보 가져오기 실패하뮤 ㅜㅜ")
 
 
-                roomName = tempRoomInfo[0]
-                mapCode = tempRoomInfo[2]
-                print("서버 데이터받음")
+            roomName = tempRoomInfo[0]
+            mapCode = tempRoomInfo[2]
+            print("서버 데이터받음")
 
-                
+            
 
-                #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
-                main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
-                self.udpPlay = main.udpHandler #인스턴스 연결
-                
-                self.udpPlay.standingBy() #준비 시작
-                
+            #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
+            main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
+            self.udpPlay = main.udpHandler #인스턴스 연결
+            
+            self.udpPlay.standingBy() #준비 시작
+            
 
 
-                return
+            return
 
 
 
 
-            else: #존재 안 하면, 맵 다운 받아야 함
-                print("1111전송")
-                self.tcpSock.send("1111".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
-                print("1111전송 함")
-                print(currentMapCode)
-                res = self._downloadMap(currentMapCode) #맵 다운 시작
-                print(res)
-                if res == "FAIL": #실패하면
-                    self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
-                    global joinedRoomName
-                    joinedRoomName = "" #방나가기
-                    return "FAIL" #시작 실패보내기 >> 방에서 나가져야 함
-                
-                elif res == "OK":
-                    self.tcpSock.send("0080".encode()) #클라이언트 성공 시그널 전송
-                else:
-                    self.tcpSock.send("0000".encode()) #그래도 일단 실패 시그널
-                    pass #이러는 경우는 없다 사실상
+        else: #존재 안 하면, 맵 다운 받아야 함
+            print("READY2GET보냄")
+            self.tcpSock.send("READY2GET".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
+            print(currentMapCode)
+            dMapThread = threading.Thread(target=self._downloadMap,args=(currentMapCode,)) #맵 다운 시작, tuple로 전환하기 위해(,) 형태로 사용
+            dMapThread.daemon = True
+            dMapThread.start()
 
-                
-                self.cmd = ""
-                while self.cmd == "": #기다리기
-                    pass
-                
-                print(self.cmd, "CMD")
-                
+            #print(res)
+            
+            # if res == "FAIL": #실패하면
+            #     self.tcpSock.send("0000".encode()) #클라이언트 실패 시그널 전송
+            #     global joinedRoomName
+            #     joinedRoomName = "" #방나가기
+            #     return "FAIL" #시작 실패보내기 >> 방에서 나가져야 함
+            
+            # elif res == "OK":
+            #     self.tcpSock.send("0080".encode()) #클라이언트 성공 시그널 전송
+            # else:
+            #     self.tcpSock.send("0000".encode()) #그래도 일단 실패 시그널
+            #     pass #이러는 경우는 없다 사실상
 
-
-                if self.cmd == "smterr": #서버측에서 무언가 오류가 난 경우
-                    joinedRoomName = "" #방 나가기
-                    self.cmd = ""
-                    return "SERVERFAIL" #서버 실패 보내기 >> 방ㅇ서 나가져야 함
-                
-                elif self.cmd == "0080": #성공한 경우
-                    print("성공")
-                    
-                    #대충 udp연결 시작하는 내용
-                    print("여기부터udp")
+            
+            # self.cmd = ""
+            # while self.cmd == "": #기다리기
+            #     pass
+            
+            # print(self.cmd, "CMD")
+            
 
 
-                    tempRoomInfo = self.getRoomInfo()
-                    if tempRoomInfo == "False":
-                        print("방정보 가져오기 실패하뮤 ㅜㅜ")
+            # if self.cmd == "smterr": #서버측에서 무언가 오류가 난 경우
+            #     joinedRoomName = "" #방 나가기
+            #     self.cmd = ""
+            #     return "SERVERFAIL" #서버 실패 보내기 >> 방ㅇ서 나가져야 함
 
-
-                    roomName = tempRoomInfo[0]
-                    mapCode = tempRoomInfo[2]
-                    print("서버 데이터받음")
-
-                    
-
-                    #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
-                    main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
-                    self.udpPlay = main.udpHandler #인스턴스 연결
-                    
-                    self.udpPlay.standingBy() #준비 시작
-                    
-
-
-                    return
+            return
                     
                 
                 
@@ -480,10 +439,6 @@ class conTcp():
         with open(f"./maps/extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
             print("파일 쓰기")
             try:
-                while not self.mapStream:
-                    pass #mapStream의 값이 없으면 >> 읽어오지 못하면 계속 대기
-
-
                 while True: #EOF명령(*)을 받으면, 쓰기 종료
                     while self.mapStream == "":
                         pass #공백이면, 대기
@@ -494,11 +449,12 @@ class conTcp():
                     f.write(self.mapStream[1:]) #stream 쓰기 (앞문자인 ^을 빼고)
                     
                     if self.mapStream.strip()[-1] == "*": #마지막 문자가 *이면 (종료면)
+                        self.tcpSock.send("mapOk".encode())
+                        logger.debug("마지막, mapOk전송")
                         self.mapStream = "" #초기화
                         break #종료
                     else:
                         self.mapStream = "" #다시 받기전, 원래 버퍼를 초기화
-                        
                         self.tcpSock.send("mapOk".encode())
                         logger.debug("스탠디 바이, mapOk전송")
                         
@@ -508,10 +464,34 @@ class conTcp():
                 print("완료")
                 f.close() #파일 저장
 
+                print("성공")
+            
+                #대충 udp연결 시작하는 내용
+                print("여기부터udp")
+
+
+                tempRoomInfo = self.getRoomInfo()
+                if tempRoomInfo == "False":
+                    print("방정보 가져오기 실패하뮤 ㅜㅜ")
+
+
+                roomName = tempRoomInfo[0]
+                mapCode = tempRoomInfo[2]
+                print("서버 데이터받음")
+
+                
+
+                #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
+                main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
+                self.udpPlay = main.udpHandler #인스턴스 연결
+                
+                self.udpPlay.standingBy() #준비 시작
+
                 return "OK"
                 
 
             except Exception as e:
+                print("맵읽기버그!")
                 return f"FAIL, {e}"
 
   
@@ -1119,6 +1099,8 @@ def serverJoinedRoom(handler: classmethod):
                             break
                     if ReadyButton != None:
                         ReadyButton.checkFunction()
+                    if startButton != None:
+                        startButton.checkFunction()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
                     handler.leaveRoom()

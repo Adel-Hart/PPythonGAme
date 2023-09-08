@@ -608,13 +608,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def sendMapfile(self, mapCode: str): #return이 문자열이라, 실행시 인스턴스처럼 실행시키고 조건문으로 결과비교 필요   맵 파일을 클라에게 전송
         
-
-        self.soc.send(f"1008{mapCode}")
+        
+        self.soc.send(f"1008{mapCode}".encode())
 
         while self.msg != "READY2GET" and self.msg != "ALREADYMAP":
             pass
-  
+        
+        print("반응옴", self.msg)
+
         if self.msg == "READY2GET": #이 메세지 받을 시
+            self.msg = ""
             print("맵이 존재하지 않음 >> 다운받기 시작")
 
             with open(f"./Maps/{mapCode}.dat", 'r') as f:
@@ -623,16 +626,21 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                     data = f.read(1023) #1023바이트 읽기
                     while data: #data가 없어질 때 까지
-                        self.soc.send(f"^{data}") #1023 크기의 맵 파일앞에 ^붙여서 전송
-                        print(len(data) + '전송함')
+                        self.soc.send(f"^{data}".encode()) #1023 크기의 맵 파일앞에 ^붙여서 전송
+                        print(len(data), '전송함')
  
-                        time.sleep(2) #2초 정도 받는 것 기다림
+                        time.sleep(0.5) #0.5초 정도 받는 것 기다림
+                        if self.mapSign == "no":
+                            
+                            time.sleep(1) #1초 더 기다림(1번 기회)
                         if self.mapSign == "no":
                             return "FAIL" #실패 반환
+                        
                         self.msg = "" #메세지 초기화
                         self.mapSign = "no"
                         print("맵 데이터 다시 전송")
                         data = f.read(1023) #그 다음 데이터 읽기
+
 
                     return "OK" #성공 반환
                 
@@ -645,7 +653,8 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     return "FAIL"
                 
         
-        elif self.msg == "ALREADYMAP": #이미 맵이 존재할 시        
+        elif self.msg == "ALREADYMAP": #이미 맵이 존재할 시     
+            self.msg = ""   
             return "ALREADY" #맵 존재 시그널 반환
         
         
