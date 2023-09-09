@@ -317,13 +317,13 @@ def infoSize(event):
 
 def infoWindow(): #도움말 창 생성
 
-    global infoCheck, info, infoY, defaultFontSize, texts, labelPos, info
+    global infoCheck, info, infoY, defaultFontSize, texts, labelPos
 
     if infoCheck: #도움말 창이 띄워져 있지 않다면
 
         infoCheck = False
 
-        infoY = int(SCRSIZEY * 3/5) #창의 Y크기
+        infoY = int(SCRSIZEY * 4/5) #창의 Y크기
         infoX = infoY #창의 X크기 (우선 Y랑 같게 설정)
  
         #창 설정
