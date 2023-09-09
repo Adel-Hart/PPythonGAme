@@ -678,26 +678,41 @@ def customButtons(): #커스텀 선택창
     currentImageList.append(Image("Editor", SCRSIZEX // 5 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2 ))
     currentImageList.append(Image("Play", SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2 ))
     currentButtonList.append(Button( T1_BTNBG,"", None, 1, SCRSIZEX // 5 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2, runEditor))
-    currentButtonList.append(Button( T1_BTNBG,"", None, 1,SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2, test))
+    currentButtonList.append(Button( T1_BTNBG,"", None, 1,SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2, PlayButtons))
  
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
     currentButtonList.append(Button( T1_BTNBG,"맵 에디터", WHITE, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
-    currentButtonList.append(Button( T1_BTNBG,"플레이", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, test))
+    currentButtonList.append(Button( T1_BTNBG,"플레이", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, PlayButtons))
     return
 
-def PlayButtons(page):
+def PlayButtons(page:int = 1):
 
-
+    global currentImageList, currentButtonList
     currentImageList, currentButtonList = [],[] #초기화
+
+    global currentundo
+    currentundo = customButtons
+
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+
+    filelist = os.listdir("./maps/")
+    print(filelist)
+    mapCodeList = []
+    for fileName in filelist:
+        if ".dat" in fileName:
+            mapCodeList.append(fileName[:-4])  #.dat을 뺀 맵 이름만 저장
+
+    
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, chooseMap, "*NONE*")) #undo 버튼
     
     currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverBrowseMap, 1)) #새로고침 버튼
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, PlayButtons, 1)) #새로고침 버튼
 
     mapCount = len(mapCodeList)
 
@@ -711,16 +726,16 @@ def PlayButtons(page):
 
         for i in range(len(currentPageMaps)): #현재 페이지의 맵 수만큼
             mapCode = currentPageMaps[i].replace(".dat","")
-            currentButtonList.append(Button( GRAY,mapCode, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, chooseMap, mapCode))
+            currentButtonList.append(Button( GRAY,mapCode, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, openCustomMap, mapCode))
         pass
     
         if page != 1: #1페이지가 아니라면
                 #왼쪽으로 버튼 추가
-                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap, page - 1))
+                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, PlayButtons, page - 1))
 
         if page != pageCount: #끝 페이지가 아니라면
             #오른쪽으로 버튼 추가
-            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap, page + 1))
+            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, PlayButtons, page + 1))
         pass
 
     #안내 버튼
@@ -821,6 +836,13 @@ def openStoryMap(chapter: int,level: int): #[챕터번호, 레벨번호]
             break
     
     return clear
+
+def openCustomMap(mapCode:str): #커스텀 맵 열기
+    while True:
+        clear = main.runGame(f"maps/{mapCode}")
+        if clear != 0: # 직접 중단 or 클리어시
+            break
+    return
 
 def undo():
 
