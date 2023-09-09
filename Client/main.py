@@ -171,7 +171,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
     def udpRecvHandler(self):
         while not globalDone: #전역변수가 만들어질 때까지 기다리기
             pass
-
+        print("recv핸들러 시작")
         while not self.done: #게임 끝나는 신호 오기 전까지
             data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
             
@@ -669,15 +669,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     print("runGame 입장")
     print(mapName,gameMode,otherPlayers)
 
-    if otherPlayers != None: #다른 플레이어가 있다면
-
-        for p in otherPlayers:
-
-            globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Goal.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-
-            #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
-        global globalDone
-        globalDone = True
+    
 
     user32 = ctypes.windll.user32
     global SCRSIZEX, SCRSIZEY
@@ -714,6 +706,16 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         return
     
     print(str(mapName)+" 로딩 완료")
+
+    if otherPlayers != None: #다른 플레이어가 있다면
+
+        for p in otherPlayers:
+
+            globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Goal.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
+
+            #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
+        global globalDone
+        globalDone = True
     
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
