@@ -135,10 +135,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
         otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
-        
-        print("run게임 시작한다.")
-        runGame(f"extensionMap/{self.mapCode}", otherPlayer)
-
 
         udpReciver = threading.Thread(target=self.udpRecvHandler)
         udpSender = threading.Thread(target=self.udpSendHandler) #송수신 스레드 설정
