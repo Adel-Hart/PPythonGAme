@@ -174,18 +174,27 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             pass
         while not self.done: #게임 끝나는 신호 오기 전까지
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
-            self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
-            if self.rgb != RGBList:
-                RGBList = self.rgb
-                backGroundApply()
+            
+            text = f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}"
+            
+            #self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
+            
+            
+                
             if wantRGB[0] == True:
-                print(wantRGB,RGBList, "I Want TO Change!!!")
 
                 if wantRGB[1] != RGBList:
-                    print("sended")
-                    self._postMan(f"R{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}")
+                    print("sended", f"R{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}")
+                    text += f"!{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}"
                 else:
                     wantRGB[0] = False
+
+            if self.rgb != RGBList:
+                print(RGBList,self.rgb,"로 바뀜")
+                RGBList = self.rgb
+                backGroundApply()
+            
+            
 
             pass
          
@@ -203,6 +212,9 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
             
             data = data.decode()
+
+            print(data)
+            
             if data.startswith('P'): #위치 정보를 수신
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
@@ -623,7 +635,6 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
                     temp[i] = not temp[i]
             
             wantRGB = [True, temp]
-            print("I Want TO Change To ",wantRGB)
 
 
 
@@ -827,7 +838,6 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     while not done: # loop the game
 
         clock.tick(60) # FPS 적용
-        
 
         #배경사진 출력
         
