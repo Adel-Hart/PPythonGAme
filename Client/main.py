@@ -264,8 +264,8 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
             image.set_colorkey((255, 255, 255))
             self.image[imagenumber] = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
-        self.direction = "RIGHT" #보고 있는 방향
-        self.animation = "0" #현재 이미지 번호
+        self.direction = "RIGHT" #보고 있는 방향, 보고 있는 방향도 서버에 보내야 함
+        self.animation = "0" #현재 이미지 번호, 이걸 서버에 보내야 함
         self.delayani = 0 #다음 애니메이션까지 남은 딜레이 = 기다릴 프레임 수
 
     def display(self): #화면에 표시
