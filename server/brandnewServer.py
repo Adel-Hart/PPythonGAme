@@ -940,6 +940,9 @@ class udpGame(threading.Thread):
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.       
 
             if self.change == self.rgb: #rgb값이 변하지 않았을 때는, 위치정보만 전달.  >>위치정보는 P로 시작, RGB는 R로 시작
+
+                res = ",".join(self.rgb)
+
                 for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
                     for t in self.clientAddr.keys():
                         if c == t:
