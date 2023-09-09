@@ -90,7 +90,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
     def endGame(self):
-        self.inGame = False
+        self.inGame = False 
         for c in self.whos.copy().values():
             c.inGamePlayer = False #각 핸들러의 inGamePlayer신호 끄기
             

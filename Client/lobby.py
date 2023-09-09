@@ -50,6 +50,8 @@ class conTcp():
         self.data = ""
         self.mapStream = "" #하나의 리시브로 작동하기때문에, 맵 전송 내용이 담길 변수다.
 
+        self.startGame = False #모든 준비가 끝나, udp통신을 시작하라는 트리거
+
 
 
     def run(self): #연결 실행함수
@@ -209,17 +211,36 @@ class conTcp():
             if recvMsg == "7777":
                 if joinedRoomName == "": #서버가 보낸 heartBeat신호일 시
                     self.tcpSock.send("7780".encode()) #응답하기
-                
+
+
+        
+
             elif recvMsg.startswith("1008"):
                 mapCode = recvMsg.replace("1008","")
                 print("맵큐드",mapCode)
-                self.MapDownload(mapCode)
+
+
+                settingGame = threading.Thread(target=self.setGame, args=(mapCode, )) #
+                settingGame.daemon = True
+                settingGame.stat() #게임 준비 스레드 작동하기!
+
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
+                
                 self.cmd = recvMsg.replace("CMD ", "")
+                
+
+            elif recvMsg == "CMD UdpOPEN": #위에서 실행되고, 여기서도 실행
+                self.startGame = True #1008수신때, False로 초기화됨
+
+
+            elif recvMsg == "CMD ERR2GET":
+                #오류 발생
+                print("맵 가져오는데 오류 발생")
+
 
             elif recvMsg == "CMD 5555":
-                self.udpPlay.startGame = True #게임 시작시키기
+                self.udpPlay.startGame = True #udp설정 끝, udp게임시작 통신 개시            
 
             elif recvMsg.startswith("^"): #맵인 경우에
                 logger.debug(self.mapStream)
@@ -242,7 +263,7 @@ class conTcp():
                     logger.debug("새로운 것을 수신하지 않음")
 
 
-
+            
 
             else:
                 self.data = recvMsg
@@ -341,7 +362,15 @@ class conTcp():
             return "Ready"
 
 
-    def MapDownload(self, mapCode):
+    def setGame(self, mapCode):
+        '''
+        recv의 병목현상 때문에, 스레드로 실행한다.
+        이곳에선 맵의 존재 udp통신 실행 등등 게임 시작 전의 모든 과정을 처리한다.
+        
+        
+        '''
+        self.startGame = False #게임 시작 트리거 초기화, 서버로 부터 모든 플레이어가 준비가 끝남을 받았을때 작동됨
+        
         
         print("정보 받기 시작")
 
@@ -352,9 +381,23 @@ class conTcp():
             self.tcpSock.send("ALREADYMAP".encode())
             #맵 존재한다고 시그널 보내기, udp연결 하기 
 
+            while self.startGame: #모든 플레이어가 준비되, 게임 시작하라는 메세지가 올때 까지
+
+                screen.fill(T1_BG)
+                text = pygame.font.render("다른 플레이어를 기다리는 중...", True, T1_TEXT)
+
+                
+                screen.blit(text, (SCRSIZEX // 2, SCRSIZEY // 2)) #화면 중앙에, 대기 문자 표시
+
+                pygame.display.update()    
+            
+            
             #udp연결하는 함수 실행
             print("여기부터udp")
             
+
+
+
             tempRoomInfo = self.getRoomInfo()
             if tempRoomInfo == "False":
                 print("방정보 가져오기 실패하뮤 ㅜㅜ")
@@ -380,12 +423,54 @@ class conTcp():
 
 
         else: #존재 안 하면, 맵 다운 받아야 함
-            print("READY2GET보냄")
-            self.tcpSock.send("READY2GET".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
-            print(currentMapCode)
-            dMapThread = threading.Thread(target=self._downloadMap,args=(currentMapCode,)) #맵 다운 시작, tuple로 전환하기 위해(,) 형태로 사용
-            dMapThread.daemon = True
-            dMapThread.start()
+            
+            
+            print(mapCode)
+
+            res = self._downloadMap(mapCode=mapCode) #맵 다운로드 하기
+
+            if res == "OK":
+                #대기,
+
+                while self.startGame: #모든 플레이어가 준비되, 게임 시작하라는 메세지가 올때 까지
+
+                    screen.fill(T1_BG)
+                    text = pygame.font.render("다른 플레이어를 기다리는 중...", True, T1_TEXT)
+
+                    
+                    screen.blit(text, (SCRSIZEX // 2, SCRSIZEY // 2)) #화면 중앙에, 대기 문자 표시
+                    pygame.display.update()  
+
+                #udp 통신 시작하는 코드
+
+                tempRoomInfo = self.getRoomInfo()
+                if tempRoomInfo == "False":
+                    print("방정보 가져오기 실패하뮤 ㅜㅜ")
+
+
+                roomName = tempRoomInfo[0]
+                mapCode = tempRoomInfo[2]
+                print("서버 데이터받음")
+
+                
+
+                #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
+                main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
+                self.udpPlay = main.udpHandler #인스턴스 연결
+                
+                self.udpPlay.standingBy() #준비 시작
+                
+
+
+                return                
+
+
+
+            elif res.startswith("FAIL"):
+                #실패시,
+                joinedRoomName = "" #방에서 나가기(강제)
+                return
+
 
             #print(res)
             
@@ -422,7 +507,7 @@ class conTcp():
 
                 
 
-
+    
     
 
 
@@ -435,6 +520,10 @@ class conTcp():
 
         한번에 여러번 보내면, 데이터가 중첩되어 사라질 수 있어서, 데이터를 수신시 그 다음 송신 요청하는 코드를 보내야 한다.
         '''
+        print("READY2GET보냄")
+
+        self.tcpSock.send("READY2GET".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
+
 
         with open(f"./maps/extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
             print("파일 쓰기")
@@ -443,6 +532,8 @@ class conTcp():
                     while self.mapStream == "":
                         pass #공백이면, 대기
 
+
+                    
 
                     
                     logger.debug(f"stream을 읽어와, 쓴다 {self.mapStream}")
@@ -465,7 +556,13 @@ class conTcp():
                 f.close() #파일 저장
 
                 print("성공")
+                return "OK"
             
+            except Exception as e:
+                print("맵읽기버그!")
+                return f"FAIL, {e}"
+
+            '''
                 #대충 udp연결 시작하는 내용
                 print("여기부터udp")
 
@@ -489,10 +586,9 @@ class conTcp():
 
                 return "OK"
                 
+            '''
 
-            except Exception as e:
-                print("맵읽기버그!")
-                return f"FAIL, {e}"
+            
 
   
     
