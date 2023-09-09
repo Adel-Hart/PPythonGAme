@@ -809,7 +809,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             temp.set_colorkey((255, 255, 255))
         switchImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
 
-    
+    backGroundApply()
 
     while not done: # loop the game
 
