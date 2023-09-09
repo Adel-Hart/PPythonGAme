@@ -246,6 +246,7 @@ class conTcp():
 
                 elif self.cmd == "5555":
                     print("5555수신함")
+                    time.sleep(1)
                     self.udpPlay.startGame = True #udp설정 끝, udp게임시작 통신 개시    
 
                     
@@ -1249,7 +1250,7 @@ def serverJoinedRoom(handler: classmethod):
                 print("오!!", handler.udpPlay.runGame,handler.udpPlay.otherPlayer )
                 clear = 0
                 while clear == 0:
-                    clear = main.runGame(handler.udpPlay.runGame, "MultiPlay",handler.udpPlay.otherPlayer)
+                    clear = main.runGame(handler.udpPlay.runGame, "MultiPlay", handler.udpPlay.otherPlayer)
                 print("게임 종료")
 
         if not tcpHandler.wating: #맵 다운이거나, 다른플레이 기다릴때 이게 작동됨

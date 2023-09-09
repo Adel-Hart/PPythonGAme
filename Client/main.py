@@ -145,8 +145,11 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
         print("스레드 시작 완료")
 
-
-        self.otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
+        print(self.players)
+        print(self.nickName)
+        self.otherPlayer = self.players
+        self.otherPlayer.remove(self.nickName) #자신을 제외한 플레이어 리스트
+        print(self.otherPlayer)
 
         self.runGame = f"maps/extensionMap/{self.mapCode}"
         #runGame(f"maps/extensionMap/{self.mapCode}", "MultiPlay",otherPlayer)
