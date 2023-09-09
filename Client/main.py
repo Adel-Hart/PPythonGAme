@@ -182,7 +182,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                     haveChangedRGB = False
             else:
                 if self.rgb != RGBList:
-                    RGBList = self.rgb[0]
+                    RGBList = self.rgb
                 
             pass
          
