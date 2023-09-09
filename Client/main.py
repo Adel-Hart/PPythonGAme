@@ -610,6 +610,7 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
 
 def activateSwitch(pos:pos): #스위치라면 발동시킨다
     global wantRGB
+    global RGBList
     if TileList[pos.x][pos.y][0] == "switch": #그 좌표의 타일이 스위치라면
         if thisGameMode != "MultiPlay":
             for i in range(3): #R, G, B 마다 한번씩
