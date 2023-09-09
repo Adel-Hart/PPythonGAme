@@ -2,7 +2,7 @@ from PIL import Image
 
 import numpy as np
 
-imgname = "grassland"
+imgname = "mountain"
 
 img = Image.open(f"./images/backgrounds/{imgname}/default.png")
 
