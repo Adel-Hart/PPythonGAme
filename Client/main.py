@@ -174,19 +174,15 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         while not self.done: #게임 끝나는 신호 오기 전까지
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
             self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
-            
-            if wantRGB[0] == True:
-                if RGBList != wantRGB:
-                    self._postMan(f"R{self.roomName}!{RGBList[0]},{RGBList[1]},{RGBList[2]}")
-                    
-                else:
-                    backGroundApply()
-                    wantRGB[0] = False
-                
-            
             if self.rgb != RGBList:
                 RGBList = self.rgb
                 backGroundApply()
+            if wantRGB[0] == True:
+                if wantRGB[1] != self.rgb:
+                    self._postMan(f"R{self.roomName}!{wantRGB[0]},{wantRGB[1]},{wantRGB[2]}")
+                else:
+                    wantRGB[0] = False
+
             pass
          
 
@@ -559,16 +555,10 @@ def backGroundApply():
     return
 
 def changeRGB(changedRGB): #RGB 변경 시
-    global wantRGB
-    if thisGameMode == "MultiPlay":
-        temp = RGBList
-        temp[changedRGB] = not temp[changedRGB] 
-        wantRGB[1] = temp
-    else:
+    if thisGameMode != "MultiPlay":
         RGBList[changedRGB] = not RGBList[changedRGB]
         backGroundApply()
     return
-    
     
     
 
@@ -615,12 +605,20 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
     return [False,[]]
 
 def activateSwitch(pos:pos): #스위치라면 발동시킨다
+    global wantRGB
     if TileList[pos.x][pos.y][0] == "switch": #그 좌표의 타일이 스위치라면
-        #print("switch", pos.x, pos.y)
-        for i in range(3): #R, G, B 마다 한번씩
-            if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
-                changeRGB(i) #RGB값중 하나 변경
-        wantRGB[0] = True
+        if thisGameMode != "MultiPlay":
+            for i in range(3): #R, G, B 마다 한번씩
+                if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
+                    changeRGB(i) #RGB값중 하나 변경
+        else: #멀티플레이 시
+            temp = RGBList
+            for i in range(3): #R, G, B 마다 한번씩
+                if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
+                    temp[i] = not temp[i]
+            
+            wantRGB = [True, temp]
+
 
 
 def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 있으면 ~
@@ -767,17 +765,18 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     
 
     print(str(mapName)+" 로딩 완료")
+    global wantRGB
+    wantRGB = [False, [False,False,False]]
+
     if gameMode == "MultiPlay":
-        global wantRGB
-        wantRGB = [False, [False, False, False]] #[바꾸길원하는지, RGB]
         if otherPlayers != None: #다른 플레이어가 있다면
             for p in otherPlayers:
                 print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
                 globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
 
                 #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
-            global globalDone
-            globalDone = True
+        global globalDone
+        globalDone = True
     
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성

@@ -921,9 +921,8 @@ class udpGame(threading.Thread):
 
             if msg[0][1:] == self.room.roomName: #해당 방이름의 요청에만 응답!   msg[1] > P방이름 or R방이름 , msg[1:] >> R과 P (앞글자가 사라짐)
                 if msg[0][0] == "R": #RGB변경 메세지 일때     msg[0][0] >> 슬라이스 된 값의 앞글자 한글자
-                    self.rgb[0] = msg[1].split(',')[0]
-                    self.rgb[1] = msg[1].split(',')[1]
-                    self.rgb[2] = msg[1].split(',')[2] #Rgb정보 저장
+                    wantRGB = msg[1].split(',')
+                    self.rgb = wantRGB
 
                 elif msg[0][0] == "P": #위치정보 저장 (거의 대부분 이게 요청 됨.)
                     self.clientPos[msg[2]] = msg[1]
