@@ -36,6 +36,8 @@ PORT = 8080
 
 SERVERCONNECT = False #핸들러 만들어짐 판단 여부
 
+globalDone = False #전역변수 만들어짐 여부
+
 
 def multiGamePlay(players: list, roomName: str, name: str, mapCode: str):
     '''
@@ -130,7 +132,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     def runGameScreen(self):
         print("멀티 게임 시작")
-        
+        global globalDone
+        globalDone = False
         udpReciver = threading.Thread(target=self.udpRecvHandler)
         udpSender = threading.Thread(target=self.udpSendHandler) #송수신 스레드 설정
 
@@ -166,6 +169,9 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
     def udpRecvHandler(self):
+        while not globalDone: #전역변수가 만들어질 때까지 기다리기
+            pass
+
         while not self.done: #게임 끝나는 신호 오기 전까지
             data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
             
@@ -646,6 +652,16 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     print("runGame 입장")
     print(mapName,gameMode,otherPlayers)
 
+    if otherPlayers != None: #다른 플레이어가 있다면
+
+        for p in otherPlayers:
+
+            globals()["p-"+p] = showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
+
+            #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
+        global globalDone
+        globalDone = True
+
     user32 = ctypes.windll.user32
     global SCRSIZEX, SCRSIZEY
     SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
@@ -687,13 +703,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
 
     
 
-    if otherPlayers != None: #다른 플레이어가 있다면
-
-        for p in otherPlayers:
-
-            globals()["p-"+p] = showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-
-            #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
+    
 
     screen.fill(WHITE) # 화면 리셋
     
