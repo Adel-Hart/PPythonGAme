@@ -17,14 +17,11 @@ with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
 PORT = 8080
 
-'''
-이재용 작성
-사용 모듈 : 
-'''
 
 brushColor = 0
 brushCheck = True
-colorList = ("black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray") #색 목록
+colorList = ["black", "red", "green", "blue", "yellow", "cyan", "magenta", "white", "gray"] #색 목록
+backgroundList = ["grassland", "city", "mountain"]
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
 infoCheck = True
@@ -137,7 +134,7 @@ def save(fileName): #맵 파일 작성
                 f.write("!" + f"{playerX},{playerY}")
                 f.write("\n@" + f"{PWidth},{PHeight}")
                 f.write("\n#" + playerStatus(float(jumpHeight.get()), float(jumpTime.get()), float(playerSpeed.get())))
-                f.write("\n$" + background.get())
+                f.write("\n$" + bg.get())
                 f.write("\n%" + f"{goalX},{goalY}")
                 f.write("\n*") #파일 업로드를 위해 끝 메세지 저장
 
@@ -246,11 +243,12 @@ def goal(evnet): #도착지점 생성 (크기 1*2)
         return
 
 def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
+    #print(bgSelect.c)
 
     check = re.compile("[^a-zA-Z0-9]") #영어와 숫자가 아닌 값들을 검사
     
     try:
-        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, background.get(), goalX] #검사할 값 목록
+        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, bg.get(), goalX] #검사할 값 목록
 
         if all(valueList) and not check.search(mapName.get()) and mapName.get(): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
             return True
@@ -367,7 +365,7 @@ def infoWindow(): #도움말 창 생성
 def runEditor():
 
     global window, XEntry, YEntry, jumpHeight, jumpTime, mapName, playerSpeed,\
-          playerWidth, playerHeight, background, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout, info, tileSize
+          playerWidth, playerHeight, bg, canvas, playerCanvas, goalCanvas, mapUpload, mapTest, blank, guiLayout, info, tileSize, bgSelect
 
     # ------------------------ GUI 요소 생성 ------------------------#
 
@@ -397,7 +395,7 @@ def runEditor():
     jumpTimeLabel = tk.Label(window, text = "점프 시간 입력")
     mapNameLabel = tk.Label(window, text = "맵 이름 입력")
     speedLabel = tk.Label(window, text = "이동 속도 입력")
-    backgroundLabel = tk.Label(window, text = "배경사진 이름 입력")
+    bgLabel = tk.Label(window, text = "배경사진 이름 입력")
     blank = tk.Label(window, text="") #공백
 
     #엔트리 생성
@@ -409,7 +407,7 @@ def runEditor():
     playerSpeed = tk.Entry(window)
     playerWidth = tk.Entry(window)
     playerHeight = tk.Entry(window)
-    background = tk.Entry(window)
+    bg = tk.Entry(window)
 
     #버튼 생성
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
@@ -433,12 +431,17 @@ def runEditor():
     playerCanvas = tk.Canvas()
     goalCanvas = tk.Canvas()
 
+    #리스트박스 생성
+    # bgSelect = tk.Listbox(height=len(backgroundList))
+    # for i in range(len(backgroundList)):
+    #     bgSelect.insert(i, backgroundList[i])
+
     # ------------------------ GUI 배치 ------------------------#
 
     guiLayout = [editorInfo,XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
                 playerHeigheLabel, playerHeight, playerWidthLabel, playerWidth, 
                 jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed,
-                backgroundLabel, background,
+                bgLabel, bg,
                 mapNameLabel, mapName, saveButton, closeButton, mapUpload, mapTest, blank]
    
 
@@ -460,7 +463,7 @@ def runEditor():
     jumpHeight.insert(0, "4")
     jumpTime.insert(0, "40")
     playerSpeed.insert(0, "0.2")
-    background.insert(0, "test")
+    bg.insert(0, "grassland")
 
     window.mainloop()
 
