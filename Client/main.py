@@ -184,6 +184,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             else:
                 if self.rgb != RGBList:
                     RGBList = self.rgb
+                    backGroundApply()
                 
             pass
          
@@ -529,14 +530,11 @@ def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
         return False
     return True # 배경색과 다를 경우
 
-
-def changeRGB(changedRGB): #RGB 변경 시
+def backGroundApply():
     global backImage  
-    global haveChangedRGB
-    haveChangedRGB = True
-    RGBList[changedRGB] = not RGBList[changedRGB]
     imgnumber = 8
-
+    
+    
     if RGBList == [0,0,0]:
         imgnumber = 0
     elif RGBList == [1,0,0]:
@@ -555,8 +553,17 @@ def changeRGB(changedRGB): #RGB 변경 시
         imgnumber = 7
     else:
         pass
-    
+
     backImage = pygame.transform.scale(pygame.image.load(f"./images/backgrounds/{backgroundImage}/colors/{imgnumber}.png"), (MAPTILESIZE*MAPSIZEX, MAPTILESIZE*MAPSIZEY))
+    return
+
+def changeRGB(changedRGB): #RGB 변경 시
+    RGBList[changedRGB] = not RGBList[changedRGB]
+    backGroundApply()
+    return
+    
+    
+    
 
 
 
@@ -605,6 +612,8 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
         #print("switch", pos.x, pos.y)
         for i in range(3): #R, G, B 마다 한번씩
             if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
+                global haveChangedRGB
+                haveChangedRGB = True
                 changeRGB(i) #RGB값중 하나 변경 
 
 def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 있으면 ~
