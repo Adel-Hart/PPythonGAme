@@ -439,6 +439,7 @@ class conTcp():
             #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
             main.multiGamePlay(self.playerList, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
             self.udpPlay = main.udpHandler #인스턴스 연결
+
             self.udpPlay.runGame = ""
             self.isudp = True
 
@@ -496,6 +497,7 @@ class conTcp():
                 #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
                 main.multiGamePlay(self.playerList, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
                 self.udpPlay = main.udpHandler #인스턴스 연결
+                self.udpPlay.runGame = ""
                 self.isudp = True
                 print("인스턴스 생성 완료")
                 
