@@ -174,12 +174,14 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         while not self.done: #게임 끝나는 신호 오기 전까지
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
             self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
-
+            
             if haveChangedRGB == True: #RGB를 바꾼 직후라면
                 if self.rgb != RGBList:
                     self._postMan(f"R{self.roomName}!{RGBList[0]},{RGBList[1]},{RGBList[2]}")
                 else:
+                    backGroundApply()
                     haveChangedRGB = False
+                
             elif haveChangedRGB == False:
                 if self.rgb != RGBList:
                     RGBList = self.rgb
@@ -907,13 +909,6 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
                         gameClear()
                     else:
                         findSwitch(maincharacter)
-
-                # if event.key == pygame.K_r: # R 변경
-                #     changeRGB(0)
-                # elif event.key == pygame.K_g: # G 변경
-                #     changeRGB(1)
-                # elif event.key == pygame.K_b: # B 변경
-                #     changeRGB(2)
 
         maincharacter.speedX = wantToMoveX*moveSpeed # 이동속도만큼 X좌표 속도 설정
 
