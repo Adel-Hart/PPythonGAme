@@ -444,10 +444,10 @@ def runEditor():
 
     # ------------------------ GUI 배치 ------------------------#
 
-    guiLayout = [editorInfo,XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
+    guiLayout = [closeButton, editorInfo, XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
                 playerHeigheLabel, playerHeight, playerWidthLabel, playerWidth, 
                 jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed, bgLabel, bgSelect, 
-                mapNameLabel, mapName, saveButton, closeButton, mapUpload, mapTest, blank]
+                mapNameLabel, mapName, saveButton, mapUpload, mapTest, blank]
    
 
     buttonFrame.grid(row = len(guiLayout)+1)
