@@ -612,8 +612,8 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
         for i in range(3): #R, G, B 마다 한번씩
             if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
                 global haveChangedRGB
+                changeRGB(i) #RGB값중 하나 변경
                 haveChangedRGB = True
-                changeRGB(i) #RGB값중 하나 변경 
 
 def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 있으면 ~
     xStart = int(object.coordX-object.sizeX/2+0.1)
