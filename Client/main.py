@@ -180,6 +180,9 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                     self._postMan(f"R{self.roomName}!{RGBList[0]},{RGBList[1]},{RGBList[2]}")
                 else:
                     haveChangedRGB = False
+            else:
+                if self.rgb != RGBList:
+                    RGBList = self.rgb[0]
                 
             pass
          
@@ -216,7 +219,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 self.rgb[1] = strToBool(data[1])
                 self.rgb[2] = strToBool(data[2]) #rgb정보 저장
                 
-                RGBList = self.rgb[0]
+                
         
         
     
