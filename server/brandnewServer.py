@@ -937,41 +937,23 @@ class udpGame(threading.Thread):
         sys.exit(0) #self.done 이 켜지면 스레드 종료
 
     def sendMsg(self): #스레드 1개 사용
-        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.       
+        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.             
 
-            if self.change == self.rgb: #rgb값이 변하지 않았을 때는, 위치정보만 전달.  >>위치정보는 P로 시작, RGB는 R로 시작
-
-                res = ",".join(self.rgb)
-
-                for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
-                    for t in self.clientAddr.keys():
-                        if c == t:
-                            pass
-                        else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
-                            
-                            #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
-
-                            #P누군지이름!좌표!애니메이션!방향
-
-                self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
-
-
-            else:
-                #rgb의 값을 클라이언트에게 전송 + 그 후 위치정보도 같이 전달
-                self.change = self.rgb
-                res = ",".join(self.rgb)
-                for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
-                    for t in self.clientAddr.keys():
-                        if c == t:
-                            pass
-                        else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
-                            #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
-                            #P누군지이름!좌표!애니메이션!방향
-                        #사람 한명당 4명의 위치 정보가 필요하니 2중for문
+            for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
+                for t in self.clientAddr.keys():
+                    if c == t:
+                        pass
+                    else:
+                        self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
+                        res = ",".join(self.rgb)
+                        self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+                        
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
-                    self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+
+                        #P누군지이름!좌표!애니메이션!방향
+
+                
+
         
         self.endGame()
         sys.exit(0) #self.done 이 켜지면 스레드 종료
