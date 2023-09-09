@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 import mapload
-
+import os
 import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
@@ -245,7 +245,7 @@ WSWITCH = ["switch",7,[True, True, True]]
 #NEWSIZE = 1 #한 타일을 50개로 쪼개서 좌표를 정의한다.
 
 class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
-    def __init__(self, cx, cy, sx, sy, zx, zy, image): #오브젝트의 기본정보를 지정
+    def __init__(self, cx, cy, sx, sy, zx, zy, imagefolder): #오브젝트의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
         self.coordX = cx
         self.coordY = cy
@@ -257,13 +257,42 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
         #크기(직사각형) = 히트박스, 사용할 이미지 파일 : rect
         self.sizeX = zx
         self.sizeY = zy
-        self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
+        self.image = {} #이미지번호 : 이미지의 딕셔너리로 만든다
+        for imagename in os.listdir(imagefolder):
+            imagenumber = imagename[0] #이미지 이름의 첫 글자가 이미지 번호
+            image = pygame.image.load(f"{imagefolder}/{imagename}")
+            image.set_colorkey((255, 255, 255))
+            self.image[imagenumber] = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
-        self.realimage = self.image #realimage는 원본image(playerimg)를 변화시키는거라 따로 제작
+        self.direction = "RIGHT" #보고 있는 방향
+        self.animation = "0" #현재 이미지 번호
+        self.delayani = 0 #다음 애니메이션까지 남은 딜레이 = 기다릴 프레임 수
+
     def display(self): #화면에 표시
-        rect = self.image.get_rect()
+        displayImage = self.image[self.animation]
+        if self.direction == "RIGHT": #오른쪽을 보고 있다면
+            displayImage = pygame.transform.flip(displayImage,True,False) #뒤집기
+        rect = displayImage.get_rect()
         rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
-        screen.blit(self.realimage, rect) #스크린에 출력
+        screen.blit(displayImage, rect) #스크린에 출력
+
+    def updateAnimation(self): #현재 이미지를 애니메이션에 맞게 수정
+        if self.speedX != 0 and self.speedY == 0: #x방향으로만 움직이고 있다면
+            if self.delayani == 0:
+                self.animation = str(int(self.animation) + 1) #1 더하기
+                if self.animation == "6":
+                    self.animation = "1" #5번이었다면, 다시 1번으로
+                self.delayani = 5
+                pass
+            else:
+                self.delayani -= 1 #남은 딜레이를 1 감소
+
+        else:
+            self.animation = "0"
+            pass
+
+
+
     
 class showImage: #타일, 주인공, 배경을 제외하고 게임 화면에 나올 수 있는 모든 이미지들 
     def __init__(self, cx, cy, zx, zy, image): #이미지의 기본정보를 지정
@@ -301,9 +330,9 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
 
         global maincharacter
 
-        playerimg = pygame.image.load("./images/Player.png")
+        #playerimg = pygame.image.load("./images/Player.png")
 
-        maincharacter = MovingObject(PPOS.x, PPOS.y, 0, 0, PSIZEX, PSIZEY, playerimg) #MovingObject 주인공을 maincharacter로 선언
+        maincharacter = MovingObject(PPOS.x, PPOS.y, 0, 0, PSIZEX, PSIZEY, "./images/player") #MovingObject 주인공을 maincharacter로 선언
         
         mObjects.append(maincharacter) #오브젝트 목록에 추가
 
@@ -732,11 +761,11 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             if event.type == pygame.KEYDOWN: # 방향키 누르기
                 if event.key == pygame.K_LEFT:
                     wantToMoveX = -1
-                    maincharacter.realimage = pygame.transform.flip(maincharacter.image,True,False)
+                    maincharacter.direction = "LEFT"
 
                 elif event.key == pygame.K_RIGHT:
                     wantToMoveX = 1
-                    maincharacter.realimage = maincharacter.image
+                    maincharacter.direction = "RIGHT"
                 
                 if event.key == pygame.K_UP:
                     wantToJump = True
@@ -765,6 +794,8 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
 
         if wantToJump and onGround(maincharacter) and maincharacter.speedY == 0: #점프하고 싶다면 바닥에 있으며 y속도가 0이여야 한다
             maincharacter.speedY = -1 * jumpPower
+
+        maincharacter.updateAnimation() #애니메이션 업데이트
     
     #while문 탈출 : 게임 종료
     if clear > 0 and gameMode == "TestPlay": #테스트 중이고 사망한 경우가 아니라면
