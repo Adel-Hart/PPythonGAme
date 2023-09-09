@@ -836,6 +836,7 @@ class udpGame(threading.Thread):
         self.room = room #udp가 실행된 room 방 객체를 가져온다.
         self.clientPos = {} #플레이어들의 위치 값
         self.clientAddr = {} #접속 한 클라이언트의 아이피주소와 포트의 튜플 값 key:닉네임, value : 튜플
+        self.clientStat = {} #플레이어의 애니메이션과 방향을 나타냄
         self.rgb = [0, 0, 0] #rgb 값 저장할 리스트
         self.change = self.rgb #rgb의 변화량 감지 리스트
         self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
@@ -843,7 +844,7 @@ class udpGame(threading.Thread):
         for c in clientsName:
             self.clientPos[c] = "0,0" #클라이언트  이름: "x, y" 위치정보를 저장
             self.clientAddr[c] = ("", 0000) #주소값 초기화
-        
+            self.clientStat[c] = [0, 0] #1번째는 애니메이션 장면, 2번째는 방향 (0 오른쪽, 1 왼쪽)
 
 
        
@@ -913,7 +914,7 @@ class udpGame(threading.Thread):
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
             msg, fromAddr = self.udpSock.recvfrom(1024)
             msg = msg.decode()
-            msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름
+            msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름!애니메이션장면!방향(flip)
                                 # RGB변경시 메세지 > 형식 : R방이름!R,G,B!이름
                                 #게임 종료 메세지 > @!
             #방 이름이 없는데 요청한경우 오류가 나기 때문에.
@@ -927,6 +928,8 @@ class udpGame(threading.Thread):
 
                 elif msg[0][0] == "P": #위치정보 저장 (거의 대부분 이게 요청 됨.)
                     self.clientPos[msg[2]] = msg[1]
+                    self.clientStat[msg[2]] = int(msg[3]), int(msg[4]) #플레이어 애니메이션과, 방향 추가
+                    
                 elif msg[0] == "@":
                     self.room.multiCastCmd("GAMEOUT") #TCP모듈에 게임 끝 선언
                     self.endGame()
@@ -943,8 +946,10 @@ class udpGame(threading.Thread):
                         if c == t:
                             pass
                         else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}".encode(), self.clientAddr[t])
+                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[0]}!{self.clientStat[1]}".encode(), self.clientAddr[t])
                             #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
+
+                            #P누군지이름!좌표!애니메이션!방향
 
 
 
@@ -957,8 +962,9 @@ class udpGame(threading.Thread):
                         if c == t:
                             pass
                         else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]},{self.clientPos[c][1]}".encode(), self.clientAddr[t])
+                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[0]}!{self.clientStat[1]}".encode(), self.clientAddr[t])
                             #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
+                            #P누군지이름!좌표!애니메이션!방향
                         #사람 한명당 4명의 위치 정보가 필요하니 2중for문
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
                     self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
