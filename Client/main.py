@@ -65,6 +65,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         self.players = players
         self.playerList = {} #이름 : 위치 클래스
 
+        self.initCon = False  #초반, 서버와의 설정이 끝났는지 감지, lobby tcp로 감지한다
+
         self.startGame = False #tcp로 5555를 받으면 활성화 되며, 이게 활성화 되면 스레드 2개(받기 보내기)를 시작함
 
 
@@ -98,31 +100,26 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
 
+            
+
             self.udpSock.sendto(f"S{self.nickName}!{temPos.x},{temPos.y}".encode(), (HOST, PORT))
-            #udp서버에 접속 설정 메세지전송, 시간 검사해, 2초이내로 제대로 된 답을 못 얻으면, 다시 보낸다
-
-            self.udpSock.settimeout(3)
-
-            try:
-                print("udp 받기 시작")
-                msg, addr = self.udpSock.recvfrom(1024)#udp통신 값 받기
-                msg = msg.decode()
+            #udp서버에 접속 설정 메세지전송, udp통신때 포트가 필요하기에 이런 과정을 거친다
 
 
-                if msg == "0080":
-                    print("메세지를 받았다")
-                    break #""(공백)이나 None출력이 아닐때, 즉 값이 존재 할때 받는걸 중지
+            print("udp 받기 시작")
 
-            except socket.timeout: #타임 아웃 > 못 받았을 시
-                print("못 받아서 타임 아웃")
-                pass #다시 보내기
+            if self.initCon == True: #udp는 소실 위험이 있어서, tcp로
+                print("메세지를 받았다")
+                break #설정 성공시
+
+            time.sleep(3) #잠깐 멈췄다 보내기
 
 
         #이 아래는, 서버에 잘 보내고, 서버에서도 저장이 잘 된 경우
-        print(msg)
 
 
         while not self.startGame: #0080 수신하고, 다른 플레이어 기다리기 (다른 플레이어들이 모두 준비되면, 5555를 tcp로 받고 startGame이 True가 됨)
+            print("5555대기중")
             pass
 
         self.runGameScreen() #게임 실행
@@ -135,9 +132,12 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         
         udpReciver = threading.Thread(target=self.udpRecvHandler)
         udpSender = threading.Thread(target=self.udpSendHandler) #송수신 스레드 설정
+        udpReciver.daemon = True
+        udpSender.daemon = True
 
         udpReciver.start()
         udpSender.start()
+
 
         otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
         runGame(f"extensionMap/{self.mapCode}.dat", otherPlayer)

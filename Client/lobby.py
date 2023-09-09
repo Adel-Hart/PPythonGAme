@@ -241,9 +241,14 @@ class conTcp():
 
 
                 elif self.cmd == "5555":
+                    print("5555수신함")
                     self.udpPlay.startGame = True #udp설정 끝, udp게임시작 통신 개시    
 
                     
+                elif self.cmd == "okUDP":
+                    self.udpPlay.initCon = True #세팅 성공 트리거 작동, 기본값은 False이며 udpPlay만들때 초기화 됨
+
+
 
             elif recvMsg.startswith("^"): #맵인 경우에
                 logger.debug(self.mapStream)
@@ -414,18 +419,21 @@ class conTcp():
             print("while문 나감")
 
             tempRoomInfo = roominfo
-            if tempRoomInfo == "False":
+            while tempRoomInfo == "False" or tempRoomInfo == False:
+                print(tempRoomInfo)
                 print("방정보 가져오기 실패하뮤 ㅜㅜ")
+                tempRoomInfo = roominfo
 
 
             roomName = tempRoomInfo[0]
             mapCode = tempRoomInfo[2]
-            print("서버 데이터받음")
+            self.playerList = strToList(roominfo[1])
+            print(self.playerList)
 
             
 
             #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
-            main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
+            main.multiGamePlay(self.playerList, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
             self.udpPlay = main.udpHandler #인스턴스 연결
             print("인스턴스 생성 완료")
             
@@ -472,12 +480,13 @@ class conTcp():
 
                 roomName = tempRoomInfo[0]
                 mapCode = tempRoomInfo[2]
-                print("서버 데이터받음")
+                self.playerList = strToList(roominfo[1])
+                print(self.playerList)
 
                 
 
                 #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
-                main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
+                main.multiGamePlay(self.playerList, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
                 self.udpPlay = main.udpHandler #인스턴스 연결
                 print("인스턴스 생성 완료")
                 
