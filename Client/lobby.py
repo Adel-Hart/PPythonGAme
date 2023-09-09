@@ -394,16 +394,6 @@ class conTcp():
             print("ALREADYMAP보냄")
             self.tcpSock.send("ALREADYMAP".encode())
             #맵 존재한다고 시그널 보내기, udp연결 하기 
-
-            while self.startGame: #모든 플레이어가 준비되, 게임 시작하라는 메세지가 올때 까지
-
-                screen.fill(T1_BG)
-                text = pygame.font.render("다른 플레이어를 기다리는 중...", True, T1_TEXT)
-
-                
-                screen.blit(text, (SCRSIZEX // 2, SCRSIZEY // 2)) #화면 중앙에, 대기 문자 표시
-
-                pygame.display.update()    
             
             
             #udp연결하는 함수 실행

@@ -148,7 +148,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
         self.otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
 
-        self.rungame = f"maps/extensionMap/{self.mapCode}"
+        self.runGame = f"maps/extensionMap/{self.mapCode}"
         #runGame(f"maps/extensionMap/{self.mapCode}", "MultiPlay",otherPlayer)
 
 
@@ -706,6 +706,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     
 
     screen.fill(WHITE) # 화면 리셋
+    pygame.display.update()
     
     #배경 이미지 설정
     global backImage
