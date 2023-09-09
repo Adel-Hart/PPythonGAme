@@ -246,7 +246,7 @@ def goal(evnet): #도착지점 생성 (크기 1*2)
 def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
 
     try:
-        bg = backgroundList[bgSelect.curselection()]
+        bg = backgroundList[bgSelect.curselection()[0]]
     except:
         bg = backgroundList[0]
 
