@@ -180,10 +180,12 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                     self._postMan(f"R{self.roomName}!{RGBList[0]},{RGBList[1]},{RGBList[2]}")
                 else:
                     haveChangedRGB = False
-            else:
+            elif haveChangedRGB == False:
                 if self.rgb != RGBList:
                     RGBList = self.rgb
                     backGroundApply()
+            else:
+                pass
                 
             pass
          
@@ -612,6 +614,7 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
         for i in range(3): #R, G, B 마다 한번씩
             if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
                 global haveChangedRGB
+                haveChangedRGB = "NONE"
                 changeRGB(i) #RGB값중 하나 변경
                 haveChangedRGB = True
 
