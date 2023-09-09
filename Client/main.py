@@ -179,7 +179,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 backGroundApply()
             if wantRGB[0] == True:
                 if wantRGB[1] != self.rgb:
-                    self._postMan(f"R{self.roomName}!{wantRGB[0]},{wantRGB[1]},{wantRGB[2]}")
+                    self._postMan(f"R{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}")
                 else:
                     wantRGB[0] = False
 
