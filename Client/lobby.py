@@ -656,12 +656,75 @@ def singleButtons(): #싱글플레이
 
     currentImageList.append(Image("story", SCRSIZEX // 5 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2 ))
     currentImageList.append(Image("custom", SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2 ))
+    currentButtonList.append(Button( T1_BTNBG,"", None, 1, SCRSIZEX // 5 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2, storyButtons))
+    currentButtonList.append(Button( T1_BTNBG,"", None, 1,SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2, customButtons))
+ 
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
     currentButtonList.append(Button( T1_BTNBG,"스토리", WHITE, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
-    currentButtonList.append(Button( T1_BTNBG,"커스텀", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"커스텀", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, customButtons))
+    return
+
+def customButtons(): #커스텀 선택창
+    global currentImageList, currentButtonList
+    currentImageList, currentButtonList = [],[] #초기화
+
+    global currentundo
+    currentundo = singleButtons
+
+
+    currentImageList.append(Image("Editor", SCRSIZEX // 5 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2 ))
+    currentImageList.append(Image("Play", SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2 ))
+    currentButtonList.append(Button( T1_BTNBG,"", None, 1, SCRSIZEX // 5 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2, runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"", None, 1,SCRSIZEX * 11 // 20 , SCRSIZEY // 6,  SCRSIZEX // 4, SCRSIZEY // 2, test))
+ 
+
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+
+    currentButtonList.append(Button( T1_BTNBG,"맵 에디터", WHITE, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"플레이", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, test))
+    return
+
+def PlayButtons(page):
+
+
+    currentImageList, currentButtonList = [],[] #초기화
+
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, chooseMap, "*NONE*")) #undo 버튼
+    
+    currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverBrowseMap, 1)) #새로고침 버튼
+
+    mapCount = len(mapCodeList)
+
+    pageCount = (mapCount - 1) // 5 + 1
+
+    if mapCount == 0: #맵이 없네
+        pass
+
+    else: #맵이 있다
+        currentPageMaps = mapCodeList[page * 5 - 5:page * 5] #현재 페이지의 맵 목록 불러오기
+
+        for i in range(len(currentPageMaps)): #현재 페이지의 맵 수만큼
+            mapCode = currentPageMaps[i].replace(".dat","")
+            currentButtonList.append(Button( GRAY,mapCode, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, chooseMap, mapCode))
+        pass
+    
+        if page != 1: #1페이지가 아니라면
+                #왼쪽으로 버튼 추가
+                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap, page - 1))
+
+        if page != pageCount: #끝 페이지가 아니라면
+            #오른쪽으로 버튼 추가
+            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap, page + 1))
+        pass
+
+    #안내 버튼
+    currentButtonList.append(Button( GRAY,"맵을 고르세요!", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20))
     return
 
 def runEditor():
@@ -685,7 +748,7 @@ def storyButtons(): #스토리모드 = 챕터선택창
     for i in range(3):
         currentImageList.append(Image(f"chaptericons/{i+1}", SCRSIZEX * (i * 4 + 1) // 13 , SCRSIZEY // 2 - SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 13))
         currentButtonList.append(Button( GRAY, "", T1_BTNBG, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 - SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 13, chapterButtons, i + 1))
-        currentButtonList.append(Button( BLACK, f"CHAPTER{i+1}", WHITE, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 + SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 65))
+        currentButtonList.append(Button( BLACK, f"CHAPTER{i+1}", WHITE, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 + SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 65, chapterButtons, i + 1))
 
     return
 
