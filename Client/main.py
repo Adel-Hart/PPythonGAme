@@ -173,7 +173,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             pass
         while not self.done: #게임 끝나는 신호 오기 전까지
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
-            self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}") #자신의 좌표 전송
+            self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
 
             if haveChangedRGB == True: #RGB를 바꾼 직후라면
                 if self.rgb != RGBList:
@@ -207,6 +207,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
                 globals()["p-"+data[0]].coordX = float(pos[0]) #위치정보를 멤버 변수에 저장
                 globals()["p-"+data[0]].coordY = float(pos[1])
+                globals()["p-"+data[0]].animation = data[2]
+                globals()["p-"+data[0]].direction = data[3]
 
 
 
