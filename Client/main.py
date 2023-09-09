@@ -562,8 +562,8 @@ def changeRGB(changedRGB): #RGB 변경 시
     global wantRGB
     if thisGameMode == "MultiPlay":
         temp = RGBList
-        temp[changedRGB] = not RGBList[changedRGB] 
-        wantRGB = [True, temp]
+        temp[changedRGB] = not temp[changedRGB] 
+        wantRGB[1] = temp
     else:
         RGBList[changedRGB] = not RGBList[changedRGB]
         backGroundApply()
@@ -620,6 +620,7 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
         for i in range(3): #R, G, B 마다 한번씩
             if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
                 changeRGB(i) #RGB값중 하나 변경
+        wantRGB[0] = True
 
 
 def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 있으면 ~
@@ -763,6 +764,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     
     global RGBList #현재 화면 상태
     RGBList = [False, False, False]
+    
 
     print(str(mapName)+" 로딩 완료")
     if gameMode == "MultiPlay":
