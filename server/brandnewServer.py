@@ -250,12 +250,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def shutDown(self): #종료
         
-        self.soc.close()
         
         if not self.inEditor:
             players.remove(self.name)
             
-            
+        self.soc.close()
         print("shutdown the thread")
         del self
 
@@ -269,7 +268,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             try:
                 print("7777전송")
                 self.heartStack += 1
-                self.sendMsg("7777") #7777이라는 heartbeat 신호 보내기 
+                self.sendMsg("7777") #7777이라는 heartbeat 신호 보내기
                     
             except: #오류 발생시 그냥 보내버리기
                 break
@@ -281,7 +280,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         if self.inRoom and self.inGamePlayer == False: #방에 있을 때는
             self.inRoom = False
             self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
-            del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
                 #룸 핸들러의 참조가 모두 사라지면, 파이썬의 garbage collector가 자동으로 룸 핸들러를 삭제시킴
 
 
@@ -290,7 +288,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             self.roomHandler.udpHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
             self.inRoom = False
             self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
-            del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
+            print("완료")
 
         else:
             print("아무것도 아닌... 하트비트 내용")
@@ -1029,7 +1027,6 @@ class udpGame(threading.Thread):
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind((HOST, PORT))
 sock.listen()
 print("서버 시작")
