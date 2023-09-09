@@ -240,8 +240,9 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def run(self): #시작
         
-        heatBeatThread = threading.Thread(target = self.heartBeat) #하트비트 시작
-        heatBeatThread.start()
+
+        self.heatBeatThread = threading.Thread(target = self.heartBeat) #하트비트 시작
+        self.heatBeatThread.start()
         recvThread = threading.Thread(target=self.recvMsg) #받기 시작
         recvThread.start()
         
@@ -266,7 +267,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         while self.heartStack <= self.howAlive:
             time.sleep(10) #10초간격으로, 스레드 안에서 진행이라 논 블락킹이다! ㅎㅎ
             try:
-                print("")
+                print("7777전송")
                 self.heartStack += 1
                 self.sendMsg("7777") #7777이라는 heartbeat 신호 보내기 
                     
@@ -274,9 +275,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                 break
 
             if self.heartStack > self.howAlive:
+                print(self.inGamePlayer)
                 break
 
-        if self.inRoom: #방에 있을 때는
+        if self.inRoom and self.inGamePlayer == False: #방에 있을 때는
             self.inRoom = False
             self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
             del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
@@ -284,8 +286,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
         elif self.inGamePlayer: #게임 중 (UDP 통신 중일 시에는)
-            self.roomHandler.gameHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
-            del self.roomHandler
+            print("gameRoom상태라, udp끄러 간다")
+            self.roomHandler.udpHandler.connDown(self.name) #해당 방 udp핸들러의 connDown 실행(udp 통신 중에서 제거 하는 것)
+            self.inRoom = False
+            self.roomHandler.leaveRoom(self.addr, self.name) #방 핸들러에서 자신의 정보 제거
+            del self.roomHandler #조심 del 함수는 참조를 없애는거기 때문에, 룸 핸들러가 없어지는게 아님
 
         else:
             print("아무것도 아닌... 하트비트 내용")
@@ -350,6 +355,10 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
             
 
             while True:
+
+                print(self.heatBeatThread.is_alive())
+
+
                 data = self.soc.recv(1024).decode()
 
 
@@ -974,12 +983,13 @@ class udpGame(threading.Thread):
 
 
     def connDown(self, targetC): #플레이어 연결이 예상치 못하게 끊켰을 때 목록에서 지우는 것
-        self.udpSock.close()
-        print("소켓 닫음")
+       
         self.clientAddr.pop(targetC)
         self.clientPos.pop(targetC)
-
-        self.udpSock.sendto(f"S{targetC}", self.clientAddr[targetC])
+        
+        if len(self.clientAddr.keys()) == 0: #연결 된 사람이 없다면
+            self.udpSock.close()
+            print("소켓 닫음")
 
 
 '''

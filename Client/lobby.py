@@ -210,6 +210,7 @@ class conTcp():
             recvMsg = self.tcpSock.recv(1024).decode()
 
             if recvMsg == "7777":
+                print("7777전송")
                 if joinedRoomName == "": #서버가 보낸 heartBeat신호일 시
                     self.tcpSock.send("7780".encode()) #응답하기
 
@@ -229,6 +230,8 @@ class conTcp():
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 
                 self.cmd = recvMsg.replace("CMD ", "")
+
+                logger.debug(self.cmd)
 
                 if self.cmd == "UdpOPEN": #위에서 실행되고, 여기서도 실행
                     print("UDP오픈 메세지 수신")
