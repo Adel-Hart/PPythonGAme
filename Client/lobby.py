@@ -682,9 +682,10 @@ def storyButtons(): #스토리모드 = 챕터선택창
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
-    for i in range(5):
-        currentImageList.append(Image(f"chaptericons/{i+1}", SCRSIZEX * (i * 8 + 1) // 40 , SCRSIZEY // 2 - SCRSIZEX * 3 // 40, SCRSIZEX * 3 // 20, SCRSIZEX * 3 // 20))
-        currentButtonList.append(Button( GRAY, "", T1_BTNBG, 0, SCRSIZEX * (i * 8 + 1) // 40, SCRSIZEY // 2 - SCRSIZEX * 3 // 40, SCRSIZEX * 3 // 20, SCRSIZEX * 3 // 20, chapterButtons, i + 1))
+    for i in range(3):
+        currentImageList.append(Image(f"chaptericons/{i+1}", SCRSIZEX * (i * 4 + 1) // 13 , SCRSIZEY // 2 - SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 13))
+        currentButtonList.append(Button( GRAY, "", T1_BTNBG, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 - SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 13, chapterButtons, i + 1))
+        currentButtonList.append(Button( BLACK, f"CHAPTER{i+1}", WHITE, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 + SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 65))
 
     return
 
