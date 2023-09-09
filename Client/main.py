@@ -258,6 +258,23 @@ WSWITCH = ["switch",7,[True, True, True]]
 #해상도 관계없이 플레이 가능하도록, 좌표를 픽셀 기준에서 타일 기준으로 변경 quick fix
 #NEWSIZE = 1 #한 타일을 50개로 쪼개서 좌표를 정의한다.
 
+class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객체.
+    def __init__(self, cx, cy, zx, zy, image): #이미지의 기본정보를 지정
+        #2차원 공간적 좌표(중심좌표)
+        self.coordX = cx
+        self.coordY = cy
+        #크기(직사각형) = 히트박스, 사용할 이미지 파일 : rect
+        self.sizeX = zx
+        self.sizeY = zy
+        self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
+
+        self.realimage = self.image #realimage는 원본image를 변화시키는거라 따로 제작
+
+    def display(self): #화면에 표시
+        rect = self.image.get_rect()
+        rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
+        screen.blit(self.realimage, rect) #스크린에 출력
+
 class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
     def __init__(self, cx, cy, sx, sy, zx, zy, imagefolder): #오브젝트의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
@@ -656,7 +673,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
 
         for p in otherPlayers:
 
-            globals()["p-"+p] = showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
+            globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Goal.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
 
             #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
         global globalDone
@@ -758,13 +775,15 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         for image in sImages: # 모든 이미지 불러오기 
             image.display() # 이미지 일괄 출력
 
-        for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
-            object.display() # 움직이는 오브젝트 일괄 출력
-
-        if  gameMode == "MultiPlay":
+        if gameMode == "MultiPlay":
             if otherPlayers != None: #다른 플레이어가 있다면
                 for p in otherPlayers:
                     globals()["p-"+p].display()
+
+        for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
+            object.display() # 움직이는 오브젝트 일괄 출력
+
+        
 
 
         if gameMode == "TestPlay": #테스트 중이고 사망한 경우가 아니라면
