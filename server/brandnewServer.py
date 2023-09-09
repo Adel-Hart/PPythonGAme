@@ -841,7 +841,7 @@ class udpGame(threading.Thread):
         self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
         self.done = False #스레드의 while문을 종료시킬 원격 함수
         for c in clientsName:
-            self.clientPos[c] = "0, 0" #클라이언트  이름: "x, y" 위치정보를 저장
+            self.clientPos[c] = "0,0" #클라이언트  이름: "x, y" 위치정보를 저장
             self.clientAddr[c] = ("", 0000) #주소값 초기화
         
 
@@ -943,7 +943,7 @@ class udpGame(threading.Thread):
                         if c == t:
                             pass
                         else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}".encode(), self.clientAddr[t])
+                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}".encode(), self.clientAddr[t])
                             #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
 
 
@@ -957,7 +957,7 @@ class udpGame(threading.Thread):
                         if c == t:
                             pass
                         else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}".encode(), self.clientAddr[t])
+                            self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]},{self.clientPos[c][1]}".encode(), self.clientAddr[t])
                             #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
                         #사람 한명당 4명의 위치 정보가 필요하니 2중for문
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소

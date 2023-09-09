@@ -183,6 +183,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             
             data = data.decode()
             if data.startswith('P'): #위치 정보를 수신
+                print(data)
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
