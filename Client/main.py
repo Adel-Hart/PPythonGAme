@@ -185,8 +185,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
 
 
-                globals()["p-"+data[0]].coordX = pos[0] #위치정보를 멤버 변수에 저장
-                globals()["p-"+data[0]].coordY = pos[1]
+                globals()["p-"+data[0]].coordX = float(pos[0]) #위치정보를 멤버 변수에 저장
+                globals()["p-"+data[0]].coordY = float(pos[1])
 
 
 
@@ -286,7 +286,9 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
         if self.direction == "RIGHT": #오른쪽을 보고 있다면
             displayImage = pygame.transform.flip(displayImage,True,False) #뒤집기
         rect = displayImage.get_rect()
+        print(type(self.coordX), type(MAPTILESIZE), type(ORIGINPOINT.x))
         rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
+
         screen.blit(displayImage, rect) #스크린에 출력
 
 class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
@@ -723,7 +725,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     if otherPlayers != None: #다른 플레이어가 있다면
 
         for p in otherPlayers:
-
+            print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
             globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
 
             #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
