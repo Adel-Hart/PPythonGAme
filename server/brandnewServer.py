@@ -837,7 +837,7 @@ class udpGame(threading.Thread):
         self.clientPos = {} #플레이어들의 위치 값
         self.clientAddr = {} #접속 한 클라이언트의 아이피주소와 포트의 튜플 값 key:닉네임, value : 튜플
         self.clientStat = {} #플레이어의 애니메이션과 방향을 나타냄
-        self.rgb = [False, False, False] #rgb 값 저장할 리스트
+        self.rgb = ["False", "False", "False"] #rgb 값 저장할 리스트
         self.change = self.rgb #rgb의 변화량 감지 리스트
         self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
         self.done = False #스레드의 while문을 종료시킬 원격 함수
@@ -937,38 +937,23 @@ class udpGame(threading.Thread):
         sys.exit(0) #self.done 이 켜지면 스레드 종료
 
     def sendMsg(self): #스레드 1개 사용
-        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.       
+        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.             
 
-            if self.change == self.rgb: #rgb값이 변하지 않았을 때는, 위치정보만 전달.  >>위치정보는 P로 시작, RGB는 R로 시작
-                for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
-                    for t in self.clientAddr.keys():
-                        if c == t:
-                            pass
-                        else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
-                            
-                            #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
-
-                            #P누군지이름!좌표!애니메이션!방향
-
-                self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
-
-
-            else:
-                #rgb의 값을 클라이언트에게 전송 + 그 후 위치정보도 같이 전달
-                self.change = self.rgb
-                res = ",".join(self.rgb)
-                for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
-                    for t in self.clientAddr.keys():
-                        if c == t:
-                            pass
-                        else:
-                            self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
-                            #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
-                            #P누군지이름!좌표!애니메이션!방향
-                        #사람 한명당 4명의 위치 정보가 필요하니 2중for문
+            for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
+                for t in self.clientAddr.keys():
+                    if c == t:
+                        pass
+                    else:
+                        self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
+                        res = ",".join(self.rgb)
+                        self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+                        
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
-                    self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+
+                        #P누군지이름!좌표!애니메이션!방향
+
+                
+
         
         self.endGame()
         sys.exit(0) #self.done 이 켜지면 스레드 종료
