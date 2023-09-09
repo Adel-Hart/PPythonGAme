@@ -52,6 +52,7 @@ class conTcp():
 
         self.startGame = False #모든 준비가 끝나, udp통신을 시작하라는 트리거
 
+        self.wating = False
 
 
     def run(self): #연결 실행함수
@@ -222,25 +223,27 @@ class conTcp():
 
                 settingGame = threading.Thread(target=self.setGame, args=(mapCode, )) #
                 settingGame.daemon = True
-                settingGame.stat() #게임 준비 스레드 작동하기!
+                settingGame.start() #게임 준비 스레드 작동하기!
 
 
             elif recvMsg.startswith("CMD"): #CMD로 시작되는, 서버 설정 메세지인 경우
                 
                 self.cmd = recvMsg.replace("CMD ", "")
-                
 
-            elif recvMsg == "CMD UdpOPEN": #위에서 실행되고, 여기서도 실행
-                self.startGame = True #1008수신때, False로 초기화됨
-
-
-            elif recvMsg == "CMD ERR2GET":
-                #오류 발생
-                print("맵 가져오는데 오류 발생")
+                if self.cmd == "UdpOPEN": #위에서 실행되고, 여기서도 실행
+                    print("UDP오픈 메세지 수신")
+                    self.startGame = True #1008수신때, False로 초기화됨
 
 
-            elif recvMsg == "CMD 5555":
-                self.udpPlay.startGame = True #udp설정 끝, udp게임시작 통신 개시            
+                elif self.cmd == "ERR2GET":
+                    #오류 발생
+                    print("맵 가져오는데 오류 발생")
+
+
+                elif self.cmd == "5555":
+                    self.udpPlay.startGame = True #udp설정 끝, udp게임시작 통신 개시    
+
+                    
 
             elif recvMsg.startswith("^"): #맵인 경우에
                 logger.debug(self.mapStream)
@@ -266,6 +269,7 @@ class conTcp():
             
 
             else:
+                logger.debug(f"못 받은 메세지 : {self.data}")
                 self.data = recvMsg
                 
             
@@ -395,10 +399,21 @@ class conTcp():
             #udp연결하는 함수 실행
             print("여기부터udp")
             
+            self.wating = True
+            time.sleep(1) #체킹 시작 기다리기
 
+            screen.fill(T1_BG)
+            btn = Button(T1_BG, "다른 플레이어를 기다리는 중...", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 4, SCRSIZEX // 2, SCRSIZEY // 2)
+            btn.displayButton()
+            pygame.display.update()
 
+            while not self.startGame: #모든 플레이어가 준비되, 게임 시작하라는 메세지가 올때 까지
+                pass
+            #udp 통신 시작하는 코드
 
-            tempRoomInfo = self.getRoomInfo()
+            print("while문 나감")
+
+            tempRoomInfo = roominfo
             if tempRoomInfo == "False":
                 print("방정보 가져오기 실패하뮤 ㅜㅜ")
 
@@ -412,12 +427,13 @@ class conTcp():
             #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
             main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
             self.udpPlay = main.udpHandler #인스턴스 연결
+            print("인스턴스 생성 완료")
             
             self.udpPlay.standingBy() #준비 시작
+            print("main.py실행함")
             
 
-
-            return
+            return                
 
 
 
@@ -432,18 +448,24 @@ class conTcp():
             if res == "OK":
                 #대기,
 
-                while self.startGame: #모든 플레이어가 준비되, 게임 시작하라는 메세지가 올때 까지
+                print("대기중")
+                print("기다리기 메세지 전송")
 
-                    screen.fill(T1_BG)
-                    text = pygame.font.render("다른 플레이어를 기다리는 중...", True, T1_TEXT)
+                self.wating = True #방화면 불러오는거 멈추기
+                time.sleep(1) #체킹 시작 기다리기
 
-                    
-                    screen.blit(text, (SCRSIZEX // 2, SCRSIZEY // 2)) #화면 중앙에, 대기 문자 표시
-                    pygame.display.update()  
+                screen.fill(T1_BG)
+                btn = Button(T1_BG, "다른 플레이어를 기다리는 중...", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 4, SCRSIZEX // 2, SCRSIZEY // 2)
+                btn.displayButton()
+                pygame.display.update()
 
+                while not self.startGame: #모든 플레이어가 준비되, 게임 시작하라는 메세지가 올때 까지
+                    pass
                 #udp 통신 시작하는 코드
 
-                tempRoomInfo = self.getRoomInfo()
+                print("while문 나감")
+
+                tempRoomInfo = roominfo
                 if tempRoomInfo == "False":
                     print("방정보 가져오기 실패하뮤 ㅜㅜ")
 
@@ -457,10 +479,11 @@ class conTcp():
                 #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
                 main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
                 self.udpPlay = main.udpHandler #인스턴스 연결
+                print("인스턴스 생성 완료")
                 
                 self.udpPlay.standingBy() #준비 시작
+                print("main.py실행함")
                 
-
 
                 return                
 
@@ -524,6 +547,15 @@ class conTcp():
 
         self.tcpSock.send("READY2GET".encode()) #다운 필요 신호, 맵 다운 시작 신호 >> 여기서부터 오는 메세지는 맵 파일이다
 
+        self.wating = True
+        time.sleep(1) #화면 멈추기
+
+        screen.fill(T1_BG)
+        btn = Button(T1_BG, "맵 다운로드 중...", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 4, SCRSIZEX // 2, SCRSIZEY // 2)
+        btn.displayButton()
+        pygame.display.update()
+
+
 
         with open(f"./maps/extensionMap/{mapCode}.dat", "w") as f: #파일 읽어서 저장 시작
             print("파일 쓰기")
@@ -556,10 +588,13 @@ class conTcp():
                 f.close() #파일 저장
 
                 print("성공")
+
+                self.wating = False
                 return "OK"
             
             except Exception as e:
                 print("맵읽기버그!")
+                self.wating = False
                 return f"FAIL, {e}"
 
             '''
@@ -1200,92 +1235,91 @@ def serverJoinedRoom(handler: classmethod):
         pass
     while joinedRoomName != "":
 
+        if not tcpHandler.wating: #맵 다운이거나, 다른플레이 기다릴때 이게 작동됨
+            clock.tick(60)
 
-        clock.tick(60)
+            if roominfo != False:
+                joinedRoomName = roominfo[0]
+                playerList = strToList(roominfo[1])
 
-        if roominfo != False:
-            joinedRoomName = roominfo[0]
-            playerList = strToList(roominfo[1])
+                currentMapCode = roominfo[2]
+                playerReadyDict = strToDict(roominfo[3])
+                isGameReady = strToBool(roominfo[4])
 
-            currentMapCode = roominfo[2]
-            playerReadyDict = strToDict(roominfo[3])
-            isGameReady = strToBool(roominfo[4])
+            screen.fill(T1_BG)
 
-        screen.fill(T1_BG)
+            if choosedMultiMap != False: #맵을 골랐을 시!!
+                if choosedMultiMap == "*NONE*":
+                    choosedMultiMap = False #무효일시 넘어가기
+                else: #유효할 시
+                    handler.setMap(choosedMultiMap) #맵 설정 요청
+                    choosedMultiMap = False #맵을 다시 고를 수 있다는 뜻
 
-        if choosedMultiMap != False: #맵을 골랐을 시!!
-            if choosedMultiMap == "*NONE*":
-                choosedMultiMap = False #무효일시 넘어가기
-            else: #유효할 시
-                handler.setMap(choosedMultiMap) #맵 설정 요청
-                choosedMultiMap = False #맵을 다시 고를 수 있다는 뜻
+            
+
+            ReadyButton = None
+            startButton = None
+            
+            playerButtonList = []
+
+            for i, player in enumerate(playerList):
+                showingText = f"{i+1}. {player} " +("Ready" if playerReadyDict[player] else "") #플레이어 이름과 준비상태로 텍스트 만들기
+                playerButtonList.append(Button( WHITE, showingText, RED, 0, 0, SCRSIZEY // 5 + SCRSIZEY // 10 * (i+1), SCRSIZEY // 40 * len(showingText), SCRSIZEY // 20))
+
+            if currentMapCode == "": #현재 맵코드가 없을시
+                mapCodeText = "mapcode:*EMPTY*" #맵이 없음
+            else: #맵코드가 있을시
+                mapCodeText = f"mapcode:{currentMapCode}"
+                if playerReadyDict[handler.nickName] == True: #준비상태라면
+                    ReadyButton = Button( WHITE, "준비 해제", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.unReady)
+                    if handler.nickName == playerList[0] and False not in playerReadyDict.values(): #0번 플레이어(방장)이고 모두 준비되어 있다면
+                        startButton = Button( WHITE, "게임 시작!", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 15, SCRSIZEX // 4, SCRSIZEX // 36, handler.ready2Start)
+                        startButton.displayButton()
+                else: #준비가 아니라면
+                    ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.readyPlayer)
+                
+                ReadyButton.displayButton()
+
+
+
+                
+
+                
+                
+
+
+            mapCodeButton = Button( None, mapCodeText, WHITE, 0, SCRSIZEX // 2 - (SCRSIZEX * len(mapCodeText) // 50) // 2, SCRSIZEY // 20, SCRSIZEX * len(mapCodeText) // 50, SCRSIZEX // 30)
+
+            for button in fixedButtonList: #버튼들 모두 출력
+                button.displayButton()
+
+            for button in playerButtonList: #플레이어 이름 모두 출력
+                button.displayButton()
+
+            for button in fixedImageList: #이미지들 모두 출력
+                button.displayImage()
+
+            mapCodeButton.displayButton()
 
         
+            pygame.display.update()
 
-        ReadyButton = None
-        startButton = None
-        
-        playerButtonList = []
-
-        for i, player in enumerate(playerList):
-            showingText = f"{i+1}. {player} " +("Ready" if playerReadyDict[player] else "") #플레이어 이름과 준비상태로 텍스트 만들기
-            playerButtonList.append(Button( WHITE, showingText, RED, 0, 0, SCRSIZEY // 5 + SCRSIZEY // 10 * (i+1), SCRSIZEY // 40 * len(showingText), SCRSIZEY // 20))
-
-        if currentMapCode == "": #현재 맵코드가 없을시
-            mapCodeText = "mapcode:*EMPTY*" #맵이 없음
-        else: #맵코드가 있을시
-            mapCodeText = f"mapcode:{currentMapCode}"
-            if playerReadyDict[handler.nickName] == True: #준비상태라면
-                ReadyButton = Button( WHITE, "준비 해제", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.unReady)
-                if handler.nickName == playerList[0] and False not in playerReadyDict.values(): #0번 플레이어(방장)이고 모두 준비되어 있다면
-                    startButton = Button( WHITE, "게임 시작!", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 15, SCRSIZEX // 4, SCRSIZEX // 36, handler.ready2Start)
-                    startButton.displayButton()
-            else: #준비가 아니라면
-                ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.readyPlayer)
-            
-            ReadyButton.displayButton()
-
-
-
-            
-
-            
-            
-
-
-        mapCodeButton = Button( None, mapCodeText, WHITE, 0, SCRSIZEX // 2 - (SCRSIZEX * len(mapCodeText) // 50) // 2, SCRSIZEY // 20, SCRSIZEX * len(mapCodeText) // 50, SCRSIZEX // 30)
-
-        for button in fixedButtonList: #버튼들 모두 출력
-            button.displayButton()
-
-        for button in playerButtonList: #플레이어 이름 모두 출력
-            button.displayButton()
-
-        for button in fixedImageList: #이미지들 모두 출력
-            button.displayImage()
-
-        mapCodeButton.displayButton()
-
-            
-
-        pygame.display.update()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT: # 종료 이벤트
-                global done
-                done=True
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1: #좌클릭이라면   
-                    for button in fixedButtonList: #마우스와 겹치는 버튼을 작동시킨다
-                        if button.checkFunction():
-                            break
-                    if ReadyButton != None:
-                        ReadyButton.checkFunction()
-                    if startButton != None:
-                        startButton.checkFunction()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
-                    handler.leaveRoom()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT: # 종료 이벤트
+                    global done
+                    done=True
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1: #좌클릭이라면   
+                        for button in fixedButtonList: #마우스와 겹치는 버튼을 작동시킨다
+                            if button.checkFunction():
+                                break
+                        if ReadyButton != None:
+                            ReadyButton.checkFunction()
+                        if startButton != None:
+                            startButton.checkFunction()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE: #ESC 누를시 방 나가기 기능
+                        handler.leaveRoom()
 
     roominfo = ""
     print("joinedroom탈출!")

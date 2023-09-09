@@ -172,8 +172,10 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         if not self.errBool: #성공인 경우
             #UDP연결 열기
             #TCP로 UDP연껼 씨짞 뽀냬끼
+            print("연결 성공 확인돔")
             self.udpOpen = True #udp소켓열림, udp핸들러가 존재함을 알려준다
             self.udpHandler = udpGame(self.whos.keys(), self, f"UDP-{self.roomName}") #객체 선언, 자동으로 열어진다(스레드라서)
+            print("udp열었고, 알림 보냄")
             self.multiCastCmd("UdpOPEN") #udp열림 보내기 (클라이언트 대기 해제)
             
             sys.exit() #스레드 종료
@@ -582,6 +584,13 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         elif self.msg == "mapOk": #맵 수신 완료를 받으면
                             self.mapSign = "ok" #맵 사인 ok 변경 (항상 보낼때마다, no이고 계속 no이면 타임아웃으로 간주하고 연결 실패)
 
+                        elif "READY2GET" in self.msg:
+                            self.tempRes = "READY2GET"
+                            print("tmepres넣었음")
+                        elif "ALREADYMAP" in self.msg:
+                            self.tempRes = "ALREADYMAP"
+
+
 
 
                         print(self.msg)
@@ -608,15 +617,16 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
     def sendMapfile(self, mapCode: str): #return이 문자열이라, 실행시 인스턴스처럼 실행시키고 조건문으로 결과비교 필요   맵 파일을 클라에게 전송
         
+        self.tempRes = ""
         
         self.soc.send(f"1008{mapCode}".encode())
 
-        while self.msg != "READY2GET" and self.msg != "ALREADYMAP":
+        while not (self.tempRes == "READY2GET" or self.tempRes == "ALREADYMAP"):
             pass
-        
-        print("반응옴", self.msg)
 
-        if self.msg == "READY2GET": #이 메세지 받을 시
+
+
+        if self.tempRes == "READY2GET": #이 메세지 받을 시
             self.msg = ""
             print("맵이 존재하지 않음 >> 다운받기 시작")
 
@@ -653,12 +663,15 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                     return "FAIL"
                 
         
-        elif self.msg == "ALREADYMAP": #이미 맵이 존재할 시     
+        elif self.tempRes == "ALREADYMAP": #이미 맵이 존재할 시     
             self.msg = ""   
             return "ALREADY" #맵 존재 시그널 반환
         
         
-        
+        else:
+            print("이상한 신호")
+            print(self.msg)
+
         '''
         
         전 버전
