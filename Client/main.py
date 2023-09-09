@@ -126,9 +126,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
         #이 아래는, 서버에 잘 보내고, 서버에서도 저장이 잘 된 경우
 
-
+        print("5555대기중")
         while not self.startGame: #0080 수신하고, 다른 플레이어 기다리기 (다른 플레이어들이 모두 준비되면, 5555를 tcp로 받고 startGame이 True가 됨)
-            print("5555대기중")
             pass
 
         self.runGameScreen() #게임 실행
