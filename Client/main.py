@@ -278,17 +278,44 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
 
     def updateAnimation(self): #현재 이미지를 애니메이션에 맞게 수정
         if self.speedX != 0 and self.speedY == 0: #x방향으로만 움직이고 있다면
+           
             if self.delayani == 0:
-                self.animation = str(int(self.animation) + 1) #1 더하기
+                if 1 <= int(self.animation) <= 5: #걷는상태일 경우
+                    self.animation = str(int(self.animation) + 1) #1 더하기
+                else:
+                    self.animation = "1" #일반 걷기 동작으로
+                
                 if self.animation == "6":
-                    self.animation = "1" #5번이었다면, 다시 1번으로
-                self.delayani = 5
+                    self.animation = "1" #5번이었다면, 6번이 되는데 이때 다시 1번으로
+
+                self.delayani = 5 #딜레이 설정
                 pass
             else:
                 self.delayani -= 1 #남은 딜레이를 1 감소
 
+            
+        elif self.speedY < 0: #위쪽으로 움직이고 있다면
+            if self.animation != "6" and self.animation != "7": #점프 모션이 아니라면
+                self.animation = "6" #점프 시작
+                self.delayani = 5 #딜레이 설정
+            elif self.animation == "6": #점프 시작까지 했다면
+                if self.delayani == 0:
+                     self.animation = "7" #다음 동작으로
+                else:
+                    self.delayani -= 1 #남은 딜레이를 1 감소
+        elif self.speedY > 0: #떨어지고 있다면
+            self.animation = "8"
         else:
-            self.animation = "0"
+            if self.animation == "8": #떨어지는 도중이었다면
+                self.animation = "9" #착지모션
+                self.delayani = 10
+            elif self.animation == "9": #착지모션
+                if self.delayani > 0:
+                    self.delayani -= 1
+                else:
+                    self.animation = "0"
+            else:
+                self.animation = "0"
             pass
 
 
