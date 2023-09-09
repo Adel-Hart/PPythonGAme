@@ -262,21 +262,30 @@ WSWITCH = ["switch",7,[True, True, True]]
 #NEWSIZE = 1 #한 타일을 50개로 쪼개서 좌표를 정의한다.
 
 class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객체.
-    def __init__(self, cx, cy, zx, zy, image): #이미지의 기본정보를 지정
+    def __init__(self, cx, cy, zx, zy, imagefolder): #이미지의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
         self.coordX = cx
         self.coordY = cy
         #크기(직사각형) = 히트박스, 사용할 이미지 파일 : rect
         self.sizeX = zx
         self.sizeY = zy
-        self.image = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
+        for imagename in os.listdir(imagefolder):
+            imagenumber = imagename[0] #이미지 이름의 첫 글자가 이미지 번호
+            image = pygame.image.load(f"{imagefolder}/{imagename}")
+            self.image[imagenumber] = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))
+
+        self.direction = "RIGHT" #보고 있는 방향, 보고 있는 방향도 서버에 보내야 함
+        self.animation = "0" #현재 이미지 번호, 이걸 서버에 보내야 함
         self.realimage = self.image #realimage는 원본image를 변화시키는거라 따로 제작
 
     def display(self): #화면에 표시
-        rect = self.image.get_rect()
+        displayImage = self.image[self.animation]
+        if self.direction == "RIGHT": #오른쪽을 보고 있다면
+            displayImage = pygame.transform.flip(displayImage,True,False) #뒤집기
+        rect = displayImage.get_rect()
         rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
-        screen.blit(self.realimage, rect) #스크린에 출력
+        screen.blit(displayImage, rect) #스크린에 출력
 
 class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
     def __init__(self, cx, cy, sx, sy, zx, zy, imagefolder): #오브젝트의 기본정보를 지정
@@ -295,7 +304,6 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
         for imagename in os.listdir(imagefolder):
             imagenumber = imagename[0] #이미지 이름의 첫 글자가 이미지 번호
             image = pygame.image.load(f"{imagefolder}/{imagename}")
-            image.set_colorkey((255, 255, 255))
             self.image[imagenumber] = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
         self.direction = "RIGHT" #보고 있는 방향, 보고 있는 방향도 서버에 보내야 함
@@ -714,7 +722,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
 
         for p in otherPlayers:
 
-            globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Goal.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
+            globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
 
             #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
         global globalDone
