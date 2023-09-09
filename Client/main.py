@@ -810,12 +810,12 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
                     else:
                         findSwitch(maincharacter)
 
-                if event.key == pygame.K_r: # R 변경
-                    changeRGB(0)
-                elif event.key == pygame.K_g: # G 변경
-                    changeRGB(1)
-                elif event.key == pygame.K_b: # B 변경
-                    changeRGB(2)
+                # if event.key == pygame.K_r: # R 변경
+                #     changeRGB(0)
+                # elif event.key == pygame.K_g: # G 변경
+                #     changeRGB(1)
+                # elif event.key == pygame.K_b: # B 변경
+                #     changeRGB(2)
 
         maincharacter.speedX = wantToMoveX*moveSpeed # 이동속도만큼 X좌표 속도 설정
 

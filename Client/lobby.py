@@ -834,8 +834,8 @@ def openStoryMap(chapter: int,level: int): #[챕터번호, 레벨번호]
             break
         elif clear == 2: #레벨 직접 중단시
             break
-    
-    return clear
+    chapterButtons(chapter)
+    return
 
 def openCustomMap(mapCode:str): #커스텀 맵 열기
     while True:
