@@ -169,6 +169,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
         global RGBList
+        global wantRGB
         while not globalDone: #전역변수가 만들어질 때까지 기다리기
             pass
         while not self.done: #게임 끝나는 신호 오기 전까지
@@ -178,7 +179,10 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 RGBList = self.rgb
                 backGroundApply()
             if wantRGB[0] == True:
-                if wantRGB[1] != self.rgb:
+                print(wantRGB,RGBList, "I Want TO Change!!!")
+
+                if wantRGB[1] != RGBList:
+                    print("sended")
                     self._postMan(f"R{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}")
                 else:
                     wantRGB[0] = False
@@ -618,6 +622,7 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
                     temp[i] = not temp[i]
             
             wantRGB = [True, temp]
+            print("I Want TO Change To ",wantRGB)
 
 
 
