@@ -25,6 +25,7 @@ backgroundList = ["grassland", "city", "mountain"]
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
 infoCheck = True
+bg = None
 
 user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0)-mapOrigin-50 #화면의 해상도 (픽셀수) 구하기 가로, 왼쪽 여유공간 600, 오른쪽 여유공간 50
@@ -134,7 +135,7 @@ def save(fileName): #맵 파일 작성
                 f.write("!" + f"{playerX},{playerY}")
                 f.write("\n@" + f"{PWidth},{PHeight}")
                 f.write("\n#" + playerStatus(float(jumpHeight.get()), float(jumpTime.get()), float(playerSpeed.get())))
-                f.write("\n$" + bg.get())
+                f.write("\n$" + bg)
                 f.write("\n%" + f"{goalX},{goalY}")
                 f.write("\n*") #파일 업로드를 위해 끝 메세지 저장
 
@@ -243,7 +244,12 @@ def goal(evnet): #도착지점 생성 (크기 1*2)
         return
 
 def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
-    #print(bgSelect.c)
+
+    try:
+        bg = backgroundList(bgSelect.curselection())
+    except:
+        bg = backgroundList[0]
+
 
     check = re.compile("[^a-zA-Z0-9]") #영어와 숫자가 아닌 값들을 검사
     
@@ -395,7 +401,7 @@ def runEditor():
     jumpTimeLabel = tk.Label(window, text = "점프 시간 입력")
     mapNameLabel = tk.Label(window, text = "맵 이름 입력")
     speedLabel = tk.Label(window, text = "이동 속도 입력")
-    bgLabel = tk.Label(window, text = "배경사진 이름 입력")
+    bgLabel = tk.Label(window, text = "배경 선택")
     blank = tk.Label(window, text="") #공백
 
     #엔트리 생성
@@ -407,7 +413,6 @@ def runEditor():
     playerSpeed = tk.Entry(window)
     playerWidth = tk.Entry(window)
     playerHeight = tk.Entry(window)
-    bg = tk.Entry(window)
 
     #버튼 생성
     mapButton = tk.Button(window, text = "맵 생성", command = drawMap)
@@ -432,16 +437,15 @@ def runEditor():
     goalCanvas = tk.Canvas()
 
     #리스트박스 생성
-    # bgSelect = tk.Listbox(height=len(backgroundList))
-    # for i in range(len(backgroundList)):
-    #     bgSelect.insert(i, backgroundList[i])
+    bgSelect = tk.Listbox(height=len(backgroundList))
+    for i in range(len(backgroundList)):
+        bgSelect.insert(i, backgroundList[i])
 
     # ------------------------ GUI 배치 ------------------------#
 
     guiLayout = [editorInfo,XLabel, XEntry, YLabel, YEntry, mapButton, #GUI 배치 순서
                 playerHeigheLabel, playerHeight, playerWidthLabel, playerWidth, 
-                jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed,
-                bgLabel, bg,
+                jumpHeightLabel, jumpHeight, jumpTimeLabel, jumpTime, speedLabel, playerSpeed, bgLabel, bgSelect, 
                 mapNameLabel, mapName, saveButton, closeButton, mapUpload, mapTest, blank]
    
 
@@ -463,7 +467,6 @@ def runEditor():
     jumpHeight.insert(0, "4")
     jumpTime.insert(0, "40")
     playerSpeed.insert(0, "0.2")
-    bg.insert(0, "grassland")
 
     window.mainloop()
 
