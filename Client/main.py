@@ -131,11 +131,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
     def runGameScreen(self):
         print("멀티 게임 시작")
         
-        
-
-
-        otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
-
         udpReciver = threading.Thread(target=self.udpRecvHandler)
         udpSender = threading.Thread(target=self.udpSendHandler) #송수신 스레드 설정
 
