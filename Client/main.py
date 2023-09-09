@@ -45,6 +45,7 @@ SERVERCONNECT = False #핸들러 만들어짐 판단 여부
 globalDone = False #전역변수 만들어짐 여부
 
 
+
 def multiGamePlay(players: list, roomName: str, name: str, mapCode: str):
     '''
     udpHandler는 트리거 (이 함수)를 통해, main에서 생성되어 정보를 교환 해 쓰이고, lobby(관리)에서 관리된다(삭제, 시작 등등)
@@ -167,7 +168,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
     def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
-        global haveChangedRGB
         global RGBList
         while not globalDone: #전역변수가 만들어질 때까지 기다리기
             pass
@@ -175,20 +175,18 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
             self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
             
-            if haveChangedRGB == True: #RGB를 바꾼 직후라면
-                if self.rgb != RGBList:
+            if wantRGB[0] == True:
+                if RGBList != wantRGB:
                     self._postMan(f"R{self.roomName}!{RGBList[0]},{RGBList[1]},{RGBList[2]}")
+                    
                 else:
                     backGroundApply()
-                    haveChangedRGB = False
+                    wantRGB[0] = False
                 
-            elif haveChangedRGB == False:
-                if self.rgb != RGBList:
-                    RGBList = self.rgb
-                    backGroundApply()
-            else:
-                pass
-                
+            
+            if self.rgb != RGBList:
+                RGBList = self.rgb
+                backGroundApply()
             pass
          
 
@@ -561,8 +559,14 @@ def backGroundApply():
     return
 
 def changeRGB(changedRGB): #RGB 변경 시
-    RGBList[changedRGB] = not RGBList[changedRGB]
-    backGroundApply()
+    global wantRGB
+    if thisGameMode == "MultiPlay":
+        temp = RGBList
+        temp[changedRGB] = not RGBList[changedRGB] 
+        wantRGB = [True, temp]
+    else:
+        RGBList[changedRGB] = not RGBList[changedRGB]
+        backGroundApply()
     return
     
     
@@ -615,10 +619,8 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
         #print("switch", pos.x, pos.y)
         for i in range(3): #R, G, B 마다 한번씩
             if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
-                global haveChangedRGB
-                haveChangedRGB = "NONE"
                 changeRGB(i) #RGB값중 하나 변경
-                haveChangedRGB = True
+
 
 def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 있으면 ~
     xStart = int(object.coordX-object.sizeX/2+0.1)
@@ -722,7 +724,8 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     print("runGame 입장")
     print(mapName,gameMode,otherPlayers)
 
-    
+    global thisGameMode
+    thisGameMode = gameMode
 
     user32 = ctypes.windll.user32
     global SCRSIZEX, SCRSIZEY
@@ -760,12 +763,11 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     
     global RGBList #현재 화면 상태
     RGBList = [False, False, False]
-    global haveChangedRGB 
-    haveChangedRGB = False #RGB를 바꾼 직후에 True가 된다
 
     print(str(mapName)+" 로딩 완료")
     if gameMode == "MultiPlay":
-        
+        global wantRGB
+        wantRGB = [False, [False, False, False]] #[바꾸길원하는지, RGB]
         if otherPlayers != None: #다른 플레이어가 있다면
             for p in otherPlayers:
                 print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
