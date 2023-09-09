@@ -942,8 +942,11 @@ class udpGame(threading.Thread):
             if self.change == self.rgb: #rgb값이 변하지 않았을 때는, 위치정보만 전달.  >>위치정보는 P로 시작, RGB는 R로 시작
                 for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
                     for t in self.clientAddr.keys():
-                        self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}".encode(), self.clientAddr[t])
-                        #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
+                        if c == t:
+                            pass
+                        else:
+                            self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}".encode(), self.clientAddr[t])
+                            #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
 
 
 
@@ -953,7 +956,11 @@ class udpGame(threading.Thread):
                 res = ",".join(self.rgb)
                 for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
                     for t in self.clientAddr.keys():
-                        self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}".encode(), self.clientAddr[t])
+                        if c == t:
+                            pass
+                        else:
+                            self.udpSock.sendto(f"P{c}!{self.clientPos[c][0]}, {self.clientPos[c][1]}".encode(), self.clientAddr[t])
+                            #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
                         #사람 한명당 4명의 위치 정보가 필요하니 2중for문
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
                     self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
