@@ -837,7 +837,7 @@ class udpGame(threading.Thread):
         self.clientPos = {} #플레이어들의 위치 값
         self.clientAddr = {} #접속 한 클라이언트의 아이피주소와 포트의 튜플 값 key:닉네임, value : 튜플
         self.clientStat = {} #플레이어의 애니메이션과 방향을 나타냄
-        self.rgb = [False, False, False] #rgb 값 저장할 리스트
+        self.rgb = ["False", "False", "False"] #rgb 값 저장할 리스트
         self.change = self.rgb #rgb의 변화량 감지 리스트
         self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
         self.done = False #스레드의 while문을 종료시킬 원격 함수
