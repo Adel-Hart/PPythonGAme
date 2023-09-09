@@ -53,6 +53,7 @@ class conTcp():
         self.startGame = False #모든 준비가 끝나, udp통신을 시작하라는 트리거
 
         self.wating = False
+        self.isudp = False
 
 
     def run(self): #연결 실행함수
@@ -332,7 +333,7 @@ class conTcp():
                 else: #무효일시
                     #del data
                     self.cmd = ""
-                    roominfo = False
+                    #roominfo = False
 
                 time.sleep(1)
 
@@ -375,6 +376,7 @@ class conTcp():
 
 
     def setGame(self, mapCode):
+        global roominfo
         '''
         recv의 병목현상 때문에, 스레드로 실행한다.
         이곳에선 맵의 존재 udp통신 실행 등등 게임 시작 전의 모든 과정을 처리한다.
@@ -422,11 +424,10 @@ class conTcp():
             print("while문 나감")
 
             tempRoomInfo = roominfo
-            while tempRoomInfo == "False" or tempRoomInfo == False:
-                print(tempRoomInfo)
-                print("방정보 가져오기 실패하뮤 ㅜㅜ")
-                tempRoomInfo = roominfo
 
+            while tempRoomInfo == "False" or tempRoomInfo == False:
+                tempRoomInfo = roominfo
+            print(tempRoomInfo)
 
             roomName = tempRoomInfo[0]
             mapCode = tempRoomInfo[2]
@@ -438,7 +439,11 @@ class conTcp():
             #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
             main.multiGamePlay(self.playerList, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
             self.udpPlay = main.udpHandler #인스턴스 연결
+            self.udpPlay.runGame = ""
+            self.isudp = True
+
             print("인스턴스 생성 완료")
+
             
             self.udpPlay.standingBy() #준비 시작
             print("main.py실행함")
@@ -491,6 +496,7 @@ class conTcp():
                 #아래에 이거 하기전에, 맵 정보 한번 더 불러오는게 권장돔
                 main.multiGamePlay(self.playerList, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
                 self.udpPlay = main.udpHandler #인스턴스 연결
+                self.isudp = True
                 print("인스턴스 생성 완료")
                 
                 self.udpPlay.standingBy() #준비 시작
@@ -629,7 +635,7 @@ class conTcp():
                 main.multiGamePlay(self.players, roomName, self.nickName, mapCode) #main내의, 인스턴스 생성 신호
                 self.udpPlay = main.udpHandler #인스턴스 연결
                 
-                self.udpPlay.standingBy() #준비 시작
+                self.udpPlay.standing By() #준비 시작
 
                 return "OK"
                 
@@ -1246,6 +1252,13 @@ def serverJoinedRoom(handler: classmethod):
     while roominfo == False: #기다리기
         pass
     while joinedRoomName != "":
+        if handler.isudp:
+            if handler.udpPlay.runGame != "":
+                print("오!!", handler.udpPlay.runGame,handler.udpPlay.otherPlayer )
+                clear = 0
+                while clear == 0:
+                    clear = main.runGame(handler.udpPlay.runGame, "MultiPlay",handler.udpPlay.otherPlayer)
+                print("게임 종료")
 
         if not tcpHandler.wating: #맵 다운이거나, 다른플레이 기다릴때 이게 작동됨
             clock.tick(60)

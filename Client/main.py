@@ -11,6 +11,8 @@ import threading
 import socket
 import time
 
+
+
 '''
 파이썬 게임 개발
 ! 2023 07 22 start
@@ -83,7 +85,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         '''
         
 
-
         setDat = mapload.readMap(f"maps/extensionMap/{self.mapCode}") #파일 먼저 읽기,
         
         print(type(setDat[3]))
@@ -148,6 +149,14 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         udpReciver.start()
         udpSender.start()
 
+        print("스레드 시작 완료")
+
+
+        self.otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
+
+        self.rungame = f"maps/extensionMap/{self.mapCode}"
+        #runGame(f"maps/extensionMap/{self.mapCode}", "MultiPlay",otherPlayer)
+
 
 
 
@@ -174,6 +183,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
+
+
                 globals()["p-"+data[0]].coordX = pos[0] #위치정보를 멤버 변수에 저장
                 globals()["p-"+data[0]].coordY = pos[1]
 
@@ -641,20 +652,22 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
 
 def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실행 함수
 
-    
-
+    print("runGame 입장")
+    print(mapName,gameMode,otherPlayers)
 
     user32 = ctypes.windll.user32
     global SCRSIZEX, SCRSIZEY
     SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
     SCRSIZEY = user32.GetSystemMetrics(1)  #세로
 
+    print(SCRSIZEX, SCRSIZEY)
+
     size = (int(SCRSIZEX), int(SCRSIZEY)) # set screen size
     global screen
     screen = pygame.display.set_mode(size)
 
     if gameMode == "TestPlay":
-        SCRSIZEY =  SCRSIZEY * 7//8 #텍스트 넣을 공간 확보
+        SCRSIZEY = SCRSIZEY * 7//8 #텍스트 넣을 공간 확보
 
     global clear
     clear = False
