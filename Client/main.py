@@ -32,7 +32,13 @@ with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
 PORT = 8080
 
-
+def strToBool(string:str):
+    if string == "True":
+        return True
+    elif string == "False":
+        return False
+    else:
+        return string
 
 SERVERCONNECT = False #핸들러 만들어짐 판단 여부
 
@@ -162,11 +168,19 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
     def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
+        global haveChangedRGB
         while not globalDone: #전역변수가 만들어질 때까지 기다리기
             pass
         while not self.done: #게임 끝나는 신호 오기 전까지
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
             self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}") #자신의 좌표 전송
+
+            if haveChangedRGB == True: #RGB를 바꾼 직후라면
+                if self.rgb != RGBList:
+                    self._postMan(f"R{self.roomName}!{RGBList[0]},{RGBList[1]},{RGBList[2]}")
+                else:
+                    haveChangedRGB = False
+                
             pass
          
 
@@ -175,6 +189,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
     def udpRecvHandler(self):
+        global RGBList
         while not globalDone: #전역변수가 만들어질 때까지 기다리기
             pass
         print("recv핸들러 시작")
@@ -183,12 +198,10 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             
             data = data.decode()
             if data.startswith('P'): #위치 정보를 수신
-                print(data)
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
 
-                print(pos)
                 globals()["p-"+data[0]].coordX = float(pos[0]) #위치정보를 멤버 변수에 저장
                 globals()["p-"+data[0]].coordY = float(pos[1])
 
@@ -197,9 +210,11 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             elif data.startswith('R'): #RGB변경 정보를 수신
                 data = data.replace("R", "") #P삭제
                 data = data.split(",")
-                self.rgb[0] = data[0]
-                self.rgb[1] = data[1]
-                self.rgb[2] = data[2] #rgb정보 저장
+                self.rgb[0] = strToBool(data[0])
+                self.rgb[1] = strToBool(data[1])
+                self.rgb[2] = strToBool(data[2]) #rgb정보 저장
+                
+                RGBList = self.rgb[0]
         
         
     
@@ -432,8 +447,7 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         
         #삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
 
-        global RGBList #현재 화면 상태
-        RGBList = [False, False, False] # RGB 모두 켜져 있다
+        
 
     def displayTiles(self): #타일 그리기
         #타일 그리기
@@ -512,6 +526,8 @@ def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
 
 def changeRGB(changedRGB): #RGB 변경 시
     global backImage  
+    global haveChangedRGB
+    haveChangedRGB = True
     RGBList[changedRGB] = not RGBList[changedRGB]
     imgnumber = 8
 
@@ -723,17 +739,22 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         print(str(mapName)+ "로딩 실패")
         return
     
+    global RGBList #현재 화면 상태
+    RGBList = [False, False, False]
+    global haveChangedRGB 
+    haveChangedRGB = False #RGB를 바꾼 직후에 True가 된다
+
     print(str(mapName)+" 로딩 완료")
+    if gameMode == "MultiPlay":
+        
+        if otherPlayers != None: #다른 플레이어가 있다면
+            for p in otherPlayers:
+                print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
+                globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
 
-    if otherPlayers != None: #다른 플레이어가 있다면
-
-        for p in otherPlayers:
-            print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
-            globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-
-            #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
-        global globalDone
-        globalDone = True
+                #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
+            global globalDone
+            globalDone = True
     
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
