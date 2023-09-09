@@ -169,6 +169,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
         global haveChangedRGB
+        global RGBList
         while not globalDone: #전역변수가 만들어질 때까지 기다리기
             pass
         while not self.done: #게임 끝나는 신호 오기 전까지
