@@ -270,6 +270,8 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
         self.sizeX = zx
         self.sizeY = zy
 
+        self.image = {}
+
         for imagename in os.listdir(imagefolder):
             imagenumber = imagename[0] #이미지 이름의 첫 글자가 이미지 번호
             image = pygame.image.load(f"{imagefolder}/{imagename}")
