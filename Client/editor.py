@@ -25,7 +25,6 @@ backgroundList = ["grassland", "city", "mountain"]
 mapOrigin = 300 # 캔버스의 시작 X좌표
 mapArray = []
 infoCheck = True
-bg = None
 
 user32 = ctypes.windll.user32
 SCRSIZEX = user32.GetSystemMetrics(0)-mapOrigin-50 #화면의 해상도 (픽셀수) 구하기 가로, 왼쪽 여유공간 600, 오른쪽 여유공간 50
@@ -245,6 +244,8 @@ def goal(evnet): #도착지점 생성 (크기 1*2)
 
 def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
 
+    global bg
+
     try:
         bg = backgroundList[bgSelect.curselection()[0]]
     except:
@@ -254,7 +255,7 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
     check = re.compile("[^a-zA-Z0-9]") #영어와 숫자가 아닌 값들을 검사
     
     try:
-        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, bg.get(), goalX] #검사할 값 목록
+        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, goalX] #검사할 값 목록
 
         if all(valueList) and not check.search(mapName.get()) and mapName.get(): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
             return True
