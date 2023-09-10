@@ -108,16 +108,12 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
         while True:
 
-
-
-            
-
             self.udpSock.sendto(f"S{self.nickName}!{temPos.x},{temPos.y}".encode(), (HOST, PORT))
             #udp서버에 접속 설정 메세지전송, udp통신때 포트가 필요하기에 이런 과정을 거친다
 
 
             print("udp 받기 시작")
-            
+
             if self.initCon == True: #udp는 소실 위험이 있어서, tcp로
                 print("메세지를 받았다")
                 break #설정 성공시
@@ -245,6 +241,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 
                 
     def outPlayer(self, targetP): #플레이어를 제거하는 함수
+        global done
         if targetP == self.nickName: #나가게 한 사람이 자기자신이면
             done = True #게임 종료
 

@@ -877,9 +877,7 @@ class udpGame(threading.Thread):
         '''
 
         #준비 메세지 : S이름!기본좌표
-        
-        msg, fromAddr = self.udpSock.recvfrom(1024)
-        msg = msg.decode()
+
         while True:
             msg, fromAddr = self.udpSock.recvfrom(1024)
             msg = msg.decode()
@@ -890,6 +888,7 @@ class udpGame(threading.Thread):
                 self.clientPos[msg[0]] = msg[1]
                 self.readyStack += 1 #준비 인원 +!
                 self.room.castCmd("okUDP", self.room.whos[msg[0]]) #tcp로 확인 메세지 보내기
+                print(msg[0], "okUDP 보냄")
                 break
             else:
                 msg = ""
