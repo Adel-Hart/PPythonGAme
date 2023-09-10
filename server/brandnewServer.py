@@ -105,6 +105,13 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         for c in self.whos.copy().values():
             c.sendMsg("CMD " + msg)
 
+
+    def multiCastMsg(self, msg): #CMD를 앞에 안붙인 커맨드 전송 모두에게
+        for c in self.whos.copy().values():
+            c.sendMsg(msg)
+
+
+
     def castCmd(self, msg: str, target: classmethod): 
         '''
         castCmd는
@@ -113,6 +120,9 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         '''
 
         target.sendMsg("CMD " + msg) 
+
+
+
 
     def garbageCollector(self):
         if len(self.whos.keys()) == 0: #방 인원이 0 명이면
