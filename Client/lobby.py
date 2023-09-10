@@ -255,7 +255,17 @@ class conTcp():
 
                 elif "QUITGAME" in self.cmd:
                     who = self.cmd.split("!")[1]
+                    if self.nickName == who: #자기 자신이 나가는 요청이면
+                        self.isudp = False #main.py 화면 업데이트 종료
+                        self.udpPlay.outPlayer(who)
+
+                    else:
+                        self.udpPlay.outPlayer(who)
                     
+                    
+                    
+                    
+
 
 
 
@@ -642,6 +652,8 @@ class conTcp():
 
   
     
+    def quitGame(self): #게임에서 자기가 나갈때, main에서 실행된다.     그리고, 응답 받으면 recv핸들러에서 처리
+        self.tcpSock.send(f"QUITGAME!{self.nickName}".encode())
 
 
 
