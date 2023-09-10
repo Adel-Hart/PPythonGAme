@@ -34,6 +34,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.mapDownloading = False
         self.whosReady = {} #닉네임 : 준비 여부
         self.udpOpen = False #현재, udp통신은 닫혀있음을 나타냄
+        self.players = [] #게임 플레이 중인 사람들
 
 
     
@@ -77,6 +78,7 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         self.inGame = True #방의 게임중 시그널 키기
         print("a")
         for c in self.whos.values():
+            self.players.append(c.name)
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
         # self.mapDownloading = True #하트비트 잠깐 끄기
         
@@ -121,6 +123,14 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
         target.sendMsg("CMD " + msg) 
 
+
+
+    def quitOne(self, player):
+        self.players.remove(player)
+        if len(self.players) == 0:
+            self.multiCastCmd("ENDGAME")
+            self.endGame()
+        
 
 
 
@@ -416,7 +426,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
 
 
-
+                    
                     elif "2000" in self.msg: #에디터 통신일 때
                         self.inEditor = True
                         reqMap = self.msg.replace("2000CODE", "") #2000을 보냈으면, 맵 코드를 보낸다.
@@ -612,7 +622,7 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         elif "QUITGAME" in self.msg:
                             self.roomHandler.multiCastCmd(f"QUITGAME!{self.name}") #게임 종료 메세지 보내기
                             time.sleep(1) #1초 기다리기
-                            self.roomHandler.udpHandler.connDown(self.name)
+                            self.roomHandler.quitOne(self.name)
 
 
 
