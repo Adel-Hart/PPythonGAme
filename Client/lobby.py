@@ -260,6 +260,7 @@ class conTcp():
                 elif "QUITGAME" in self.cmd:
                     who = self.cmd.split("!")[1]
                     if self.nickName == who: #자기 자신이 나가는 요청이면
+                        
                         pass
                     else:
                         self.udpPlay.outPlayer(who)
@@ -327,7 +328,7 @@ class conTcp():
 
         while joinedRoomName != "":
             for i in range(10):
-
+                print("getroominfo 순항중!")
                 self.tcpSock.send("1005".encode()) #방 정보 요청
                 
                 
@@ -513,6 +514,7 @@ class conTcp():
 
             elif res.startswith("FAIL"):
                 #실패시,
+                global joinedRoomName
                 joinedRoomName = "" #방에서 나가기(강제)
                 return
 
@@ -1266,6 +1268,8 @@ def serverJoinedRoom(handler: classmethod):
                     clear = main.runGame(handler.udpPlay.runGame, "MultiPlay", handler.udpPlay.otherPlayer)
                 
                 handler.isudp = False
+                handler.udpPlay.done = True
+                handler.udpPlay.runGame = ""
                 handler.quitGame()
                 
                 print("게임 종료")
@@ -1285,7 +1289,6 @@ def serverJoinedRoom(handler: classmethod):
                 currentMapCode = roominfo[2]
                 playerReadyDict = strToDict(roominfo[3])
                 isGameReady = strToBool(roominfo[4])
-
             screen.fill(T1_BG)
 
             if choosedMultiMap != False: #맵을 골랐을 시!!
