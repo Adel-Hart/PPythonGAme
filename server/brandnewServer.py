@@ -922,9 +922,9 @@ class udpGame(threading.Thread):
             if msg[0][1:] == self.room.roomName: #해당 방이름의 요청에만 응답!   msg[1] > P방이름 or R방이름 , msg[1:] >> R과 P (앞글자가 사라짐)
                 
                 if msg[0][0] == "P":
-                    print(msg)
                     if len(msg) > 5:
-                        self.rgb[0] = msg[5].split(',')
+                        if self.rgb != msg[5].split(','):
+                            self.rgb = msg[5].split(',')
                         print("They want", msg[5].split(','), "self.rgb = ",self.rgb)
 
                     self.clientPos[msg[2]] = msg[1]
@@ -941,13 +941,16 @@ class udpGame(threading.Thread):
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.             
 
             for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
+                res = ",".join(self.rgb)
+                self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+
                 for t in self.clientAddr.keys():
                     if c == t:
                         pass
                     else:
                         self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
-                        res = ",".join(self.rgb)
-                        self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+                        
+                        
                         
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
 
