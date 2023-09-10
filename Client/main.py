@@ -179,21 +179,22 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             
             #self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
             
+            if self.rgb != RGBList:
+                RGBList = self.rgb
+                wantRGB[0] = False
             
-                
             if wantRGB[0] == True:
 
-                if wantRGB[1] != RGBList:
-                    print("sended", f"R{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}")
-                    text += f"!{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}"
+                if wantRGB[1] != self.rgb:
+                    text += f"!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}"
                 else:
+                    print(wantRGB, self.rgb, RGBList)
+                    print("False로 바꿈")
                     wantRGB[0] = False
 
-            if self.rgb != RGBList:
-                print(RGBList,self.rgb,"로 바뀜")
-                RGBList = self.rgb
-                backGroundApply()
             
+            
+            self._postMan(text)
             
 
             pass
@@ -212,12 +213,11 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
             
             data = data.decode()
-
-            print(data)
             
             if data.startswith('P'): #위치 정보를 수신
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
+
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
 
                 globals()["p-"+data[0]].coordX = float(pos[0]) #위치정보를 멤버 변수에 저장
@@ -230,9 +230,18 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             elif data.startswith('R'): #RGB변경 정보를 수신
                 data = data.replace("R", "") #P삭제
                 data = data.split(",")
-                self.rgb[0] = strToBool(data[0])
-                self.rgb[1] = strToBool(data[1])
-                self.rgb[2] = strToBool(data[2]) #rgb정보 저장
+                temp = [0,0,0]
+
+                for i in range(3):
+                    if self.rgb[i]:
+                        temp[i] = True
+                    else:
+                        temp[i] = False
+                
+                temp[0] = strToBool(data[0])
+                temp[1] = strToBool(data[1])
+                temp[2] = strToBool(data[2]) #rgb정보 저장
+                self.rgb = temp
                 
                 
         
@@ -629,12 +638,18 @@ def activateSwitch(pos:pos): #스위치라면 발동시킨다
                 if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
                     changeRGB(i) #RGB값중 하나 변경
         else: #멀티플레이 시
-            temp = RGBList
+            temp = [0,0,0]
+            for i in range(3):
+                if RGBList[i]:
+                    temp[i] = True
+                else:
+                    temp[i] = False
             for i in range(3): #R, G, B 마다 한번씩
                 if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
                     temp[i] = not temp[i]
             
             wantRGB = [True, temp]
+            print(wantRGB, RGBList)
 
 
 
@@ -833,10 +848,14 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             temp.set_colorkey((255, 255, 255))
         switchImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
 
-    backGroundApply()
-
+    backgroundcool = 0
+    
     while not done: # loop the game
-
+        if backgroundcool < 10:
+            backgroundcool += 1
+        else:
+            backGroundApply()
+            backgroundcool = 0
         clock.tick(60) # FPS 적용
 
         #배경사진 출력
