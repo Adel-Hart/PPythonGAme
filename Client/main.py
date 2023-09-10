@@ -333,7 +333,7 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
 
         font = pygame.font.Font("fonts/Ramche.ttf", 200)
         img = font.render(name, True, BLACK) #렌더
-        self.img = pygame.transform.scale(img, (zy*MAPTILESIZE//10 * len(name),zy*MAPTILESIZE//5))
+        self.img = pygame.transform.scale(img, (self.zyzy*MAPTILESIZE//10 * len(name),self.zy*MAPTILESIZE//5))
 
         
 
@@ -816,7 +816,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             for p in otherPlayers:
                 print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
                 globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player", p) #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-                
+
                 #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
         global globalDone
         globalDone = True
