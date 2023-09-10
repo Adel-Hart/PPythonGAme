@@ -188,9 +188,9 @@ def player(event): #플레이어 생성
             
             return
         
-def isNumeric(s): #문자열 실수 판단
+def isNumeric(s): #문자열 실수이고, 0이 아닌지 판단
     try:
-        if float(s) != 0:
+        if float(s):
             return True
         else:
             return False
