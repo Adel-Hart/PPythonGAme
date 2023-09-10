@@ -330,8 +330,6 @@ class conTcp():
                 while self.cmd == "":
                     pass
 
-                self.cmd = self.cmd.replace("CMD ","")
-
                 if self.cmd == "okUDP":
                     pass
                 
