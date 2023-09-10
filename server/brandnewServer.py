@@ -883,13 +883,15 @@ class udpGame(threading.Thread):
         '''
 
         #준비 메세지 : S이름!기본좌표
+        self.room
+        udpHandler.Sres[self.room.roomName] = ()
 
         while True:
             msg = ""
             while msg == "":
-                while not udpHandler.res:
+                while not udpHandler.Sres[self.room.roomName]:
                     pass
-                res = udpHandler.res #res는 모든 메세지이므로 잘 구분해야함
+                res = udpHandler.Sres[self.room.roomName] #res는 모든 메세지이므로 잘 구분해야함
                 
                 msg = res[0].decode('utf-8', 'ignore')
                 fromAddr = res[1]
@@ -907,16 +909,8 @@ class udpGame(threading.Thread):
                     self.room.castCmd("okUDP", self.room.whos[msg[1]]) #tcp로 확인 메세지 보내기
                     print(msg[1], "okUDP 보냄")
 
-                    msg = ""
+                    udpHandler.Sres[self.room.roomName] = ()
 
-                    res = ()
-
-                else:
-                    msg = ""
-                    pass
-            else:
-                msg = ""
-                pass
 
             if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
                 self.room.inGame = True
@@ -934,16 +928,21 @@ class udpGame(threading.Thread):
 
     
     def recvMsg(self): #클라이언트로의 메세지를 분별 및 확인하여 전송
-        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
-            msg, fromAddr = udpHandler.res
-            msg = msg.decode()
-            msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름!애니메이션장면!방향(flip)
-                                # RGB변경시 메세지 > 형식 : R방이름!R,G,B!이름
-                                #게임 종료 메세지 > @!
-            #방 이름이 없는데 요청한경우 오류가 나기 때문에.
+
+        udpHandler.roomres[self.room.roomName] = {} #자신의 방 정보 목록을 딕셔너리로 초기화
         
-            if msg[0][1:] == self.room.roomName: #해당 방이름의 요청에만 응답!   msg[1] > P방이름 or R방이름 , msg[1:] >> R과 P (앞글자가 사라짐)
+        while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
+            #msg, fromAddr = udpHandler.res
+
+            for msg in udpHandler.roomres[self.room.roomName].copy().values():
+            
+                #msg = msg.decode()
+                msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름!애니메이션장면!방향(flip)
+                                    # RGB변경시 메세지 > 형식 : R방이름!R,G,B!이름
+                                    #게임 종료 메세지 > @!
+                #방 이름이 없는데 요청한경우 오류가 나기 때문에.
                 if msg[0][0] == "P":
+                    print("P로 시작!")
                     if len(msg) > 5:
                         if self.rgb != msg[5].split(','):
                             self.rgb = msg[5].split(',')
@@ -956,7 +955,7 @@ class udpGame(threading.Thread):
                     self.room.multiCastCmd("GAMEOUT") #TCP모듈에 게임 끝 선언
                     self.endGame()
     
-        self.endGame()
+        #self.endGame()
         sys.exit(0) #self.done 이 켜지면 스레드 종료
 
     def sendMsg(self): #스레드 1개 사용
@@ -1049,6 +1048,9 @@ class threadUdp:
         self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
         self.res = () #튜플이 반환값
 
+        self.Sres = {}
+        self.roomres = {}
+
         recvUdpHandler = threading.Thread(target=self.recvUdpMsg)
         recvUdpHandler.daemon = True
         recvUdpHandler.start()
@@ -1059,6 +1061,18 @@ class threadUdp:
         while True:
             msg, fromAddr = self.udpSock.recvfrom(1024)
             self.res = msg, fromAddr
+            if msg.decode().startswith("S"):
+                roomName = msg.decode().split("!")[0][1:]
+                self.Sres[roomName] = msg, fromAddr
+
+
+            elif msg.decode().startswith("P"):
+                roomName = msg.decode().split("!")[0][1:] #방 이름
+                self.roomres[roomName][fromAddr] = msg.decode()
+
+            self.res = () #초기화
+
+
 
     def sendUdpMsg(self, msg: str, target: tuple):
         self.udpSock.sendto(msg, target)

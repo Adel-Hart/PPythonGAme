@@ -863,7 +863,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
     backgroundcool = 0
     
     while not done: # loop the game
-        if backgroundcool < 10:
+        if backgroundcool < 5:
             backgroundcool += 1
         else:
             backGroundApply()
