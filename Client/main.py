@@ -238,7 +238,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 
                 
     def outPlayer(self, targetP): #플레이어를 제거하는 함수
-        notDisplayPlayers.append[targetP]
+        global notDisplayPlayers
+        notDisplayPlayers.append(targetP)
         
     
 
