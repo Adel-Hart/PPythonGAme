@@ -331,6 +331,9 @@ class conTcp():
                     pass
 
                 self.cmd = self.cmd.replace("CMD ","")
+
+                if self.cmd == "okUDP":
+                    pass
                 
                 if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
                     roomIf = self.cmd.replace("ROOMINFO", "")
