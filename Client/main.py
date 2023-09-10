@@ -117,7 +117,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
             print("udp 받기 시작")
-
+            
             if self.initCon == True: #udp는 소실 위험이 있어서, tcp로
                 print("메세지를 받았다")
                 break #설정 성공시

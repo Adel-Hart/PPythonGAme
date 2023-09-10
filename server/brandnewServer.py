@@ -877,26 +877,24 @@ class udpGame(threading.Thread):
         '''
 
         #준비 메세지 : S이름!기본좌표
+        
+        msg, fromAddr = self.udpSock.recvfrom(1024)
+        msg = msg.decode()
         while True:
             msg, fromAddr = self.udpSock.recvfrom(1024)
             msg = msg.decode()
-            while True:
-                while msg == None or msg == "": #공백이거나 없는 값(읽지 못 하면) 다시 불러온다
-                    msg, fromAddr = self.udpSock.recvfrom(1024)
-                    msg = msg.decode()
-                print(msg)
-                if msg.startswith("S"):
-                    msg = msg.replace("S", "").split("!") #!기준으로 나누기
-                    self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
-                    self.clientPos[msg[0]] = msg[1]
-                    self.readyStack += 1 #준비 인원 +!
-                    self.room.castCmd("okUDP", self.room.whos[msg[0]]) #tcp로 확인 메세지 보내기
-                    break
-                    
-                else:
-                    msg = ""
-                    pass
-
+            print(msg)
+            if msg.startswith("S"):
+                msg = msg.replace("S", "").split("!") #!기준으로 나누기
+                self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
+                self.clientPos[msg[0]] = msg[1]
+                self.readyStack += 1 #준비 인원 +!
+                self.room.castCmd("okUDP", self.room.whos[msg[0]]) #tcp로 확인 메세지 보내기
+                break
+            else:
+                msg = ""
+                pass
+        while True:
             if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
                 self.room.inGame = True
                 print("게임 돌입한다")
