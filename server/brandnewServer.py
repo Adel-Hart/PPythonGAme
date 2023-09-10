@@ -599,6 +599,11 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                             self.tempRes = "ALREADYMAP"
 
 
+                        elif "QUITGAME" in self.msg:
+                            self.roomHandler.multiCastCmd(f"QUITGAME!{self.name}") #게임 종료 메세지 보내기
+                            time.sleep(1) #1초 기다리기
+                            self.roomHandler.udpHandler.connDown(self.name)
+
 
 
                         print(self.msg)
@@ -983,7 +988,7 @@ class udpGame(threading.Thread):
         del self
 
 
-    def connDown(self, targetC): #플레이어 연결이 예상치 못하게 끊켰을 때 목록에서 지우는 것
+    def connDown(self, targetC: str): #플레이어 연결이 예상치 못하게 끊켰을 때 목록에서 지우는 것
        
         self.clientAddr.pop(targetC)
         self.clientPos.pop(targetC)

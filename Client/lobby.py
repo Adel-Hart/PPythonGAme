@@ -253,6 +253,10 @@ class conTcp():
                 elif self.cmd == "okUDP":
                     self.udpPlay.initCon = True #세팅 성공 트리거 작동, 기본값은 False이며 udpPlay만들때 초기화 됨
 
+                elif "QUITGAME" in self.cmd:
+                    who = self.cmd.split("!")[1]
+                    
+
 
 
             elif recvMsg.startswith("^"): #맵인 경우에
@@ -1457,8 +1461,54 @@ def strToList(string:str):
 
     
 def test():
-    print("test")
+
+    global currentImageList, currentButtonList
+    currentImageList, currentButtonList = [],[] #초기화
+
+    global currentundo
+    currentundo = lobbyButtons
+
+    themeList = os.listdir('./Themes/') #현재 테마 가져오기
+    themeList = map(lambda x : x.replace(".theme", ""), themeList) #뒤에 확장자 표기 제거
+
+
+    currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
+    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+
+    currentButtonList.append(Button( T1_BTNBG,"테마 설정", WHITE, 1, SCRSIZEX * 3 // 8, SCRSIZEY * 1 // 8, SCRSIZEX // 4, SCRSIZEY // 8))
+
+    tempCnt = 5.5
+    for t in themeList:
+        t = "%-9s" % t #최대길이인 8글자에 맞춰서 공백
+
+        currentButtonList.append(Button( T1_BTNBG, t, WHITE, 1, SCRSIZEX * 3 // 10, SCRSIZEY * tempCnt // 14, SCRSIZEX // 4, SCRSIZEY // 14, setTheme, t))
+        tempCnt += 1.5
+    
     return
+
+
+def setTheme(theme):
+    global T1_BG
+    global T1_BTNBG
+    global T1_TEXT
+    global T1_OBJ
+
+
+    theme = theme.strip()
+
+    with open(f"./Themes/{theme}.theme", "r") as f:
+        lines = f.readlines()
+
+        print
+
+        T1_BG = list(map(lambda x : int(x), strToList(lines[0].replace("\n", ""))))
+        T1_BTNBG = list(map(lambda x : int(x), strToList(lines[1].replace("\n", ""))))
+        T1_TEXT = list(map(lambda x : int(x), strToList(lines[2].replace("\n", ""))))
+        T1_OBJ = list(map(lambda x : int(x), strToList(lines[3])))
+        
+
+    return
+
 
 
 
