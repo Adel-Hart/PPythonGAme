@@ -880,27 +880,22 @@ class udpGame(threading.Thread):
         while True:
             msg, fromAddr = self.udpSock.recvfrom(1024)
             msg = msg.decode()
-            
-            while msg == None or msg == "": #공백이거나 없는 값(읽지 못 하면) 다시 불러온다
-                msg, fromAddr = self.udpSock.recvfrom(1024)
-                msg = msg.decode()
-
-            print(msg)
-
-
-
-            if msg.startswith("S"):
-                msg = msg.replace("S", "").split("!") #!기준으로 나누기
-                self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
-                self.clientPos[msg[0]] = msg[1]
-                self.readyStack += 1 #준비 인원 +!
-
-
-                self.room.castCmd("okUDP", self.room.whos[msg[0]]) #tcp로 확인 메세지 보내기
-
-                
-            else:
-                pass
+            while True:
+                while msg == None or msg == "": #공백이거나 없는 값(읽지 못 하면) 다시 불러온다
+                    msg, fromAddr = self.udpSock.recvfrom(1024)
+                    msg = msg.decode()
+                print(msg)
+                if msg.startswith("S"):
+                    msg = msg.replace("S", "").split("!") #!기준으로 나누기
+                    self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
+                    self.clientPos[msg[0]] = msg[1]
+                    self.readyStack += 1 #준비 인원 +!
+                    self.room.castCmd("okUDP", self.room.whos[msg[0]]) #tcp로 확인 메세지 보내기
+                    break
+                    
+                else:
+                    msg = ""
+                    pass
 
             if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
                 self.room.inGame = True
@@ -976,7 +971,6 @@ class udpGame(threading.Thread):
 
         self.room.multiCastCmd("5555") #플레이어들에게 tcp로 CMD 5555를 보낸다
             
-
         udpRecv.start()
         udpSend.start() #스레드 시작
 
