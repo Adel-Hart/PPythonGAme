@@ -181,7 +181,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             
             if self.rgb != RGBList:
                 RGBList = self.rgb
-                backGroundApply()
                 wantRGB[0] = False
             
             if wantRGB[0] == True:
@@ -191,7 +190,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 else:
                     print(wantRGB, self.rgb, RGBList)
                     print("False로 바꿈")
-                    backGroundApply()
                     wantRGB[0] = False
 
             
@@ -220,7 +218,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
 
-                print(f"나는{data}")
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
 
                 globals()["p-"+data[0]].coordX = float(pos[0]) #위치정보를 멤버 변수에 저장
@@ -233,7 +230,14 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             elif data.startswith('R'): #RGB변경 정보를 수신
                 data = data.replace("R", "") #P삭제
                 data = data.split(",")
-                temp = self.rgb
+                temp = [0,0,0]
+
+                for i in range(3):
+                    if self.rgb[i]:
+                        temp[i] = True
+                    else:
+                        temp[i] = False
+                
                 temp[0] = strToBool(data[0])
                 temp[1] = strToBool(data[1])
                 temp[2] = strToBool(data[2]) #rgb정보 저장
@@ -844,10 +848,14 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             temp.set_colorkey((255, 255, 255))
         switchImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
 
-    backGroundApply()
-
+    backgroundcool = 0
+    
     while not done: # loop the game
-
+        if backgroundcool < 10:
+            backgroundcool += 1
+        else:
+            backGroundApply()
+            backgroundcool = 0
         clock.tick(60) # FPS 적용
 
         #배경사진 출력
