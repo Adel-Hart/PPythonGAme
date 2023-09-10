@@ -333,7 +333,7 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
 
         font = pygame.font.Font("fonts/Ramche.ttf", 200)
         img = font.render(name, True, BLACK) #렌더
-        self.img = pygame.transform.scale(img, (self.zyzy*MAPTILESIZE//10 * len(name),self.zy*MAPTILESIZE//5))
+        self.img = pygame.transform.scale(img, (self.zy*MAPTILESIZE//10 * len(name),self.zy*MAPTILESIZE//5))
 
         
 
