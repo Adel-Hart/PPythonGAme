@@ -125,7 +125,6 @@ def save(fileName): #맵 파일 작성
 
     if valueCheck():
         try: # 오류 대비
-            #temp 폴더는 save될때 마다 만들면 오류 나니까, 너가 먼저 만들고, 저장만 하게 하면 됨 - 김동훈 남김
             with open(f"{fileName}{mapName.get()}.dat","w") as f: #맵이름 폴더 안에 dat 파일 생성
                 for y in range(mapY):
                     for x in range(mapX):
@@ -144,7 +143,7 @@ def save(fileName): #맵 파일 작성
                 mapTest.grid(row=guiLayout.index(mapTest)) #저장 성공시 테스트 버튼 띄우기
                 blank.grid_forget()
 
-            return True
+            return True 
         except: # 오류 발생시 실패를 알린다
             print("저장 실패")
             return False
