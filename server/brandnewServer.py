@@ -887,12 +887,11 @@ class udpGame(threading.Thread):
         '''
 
         #준비 메세지 : S이름!기본좌표
+    
+        print("스탠딩바이")
 
         while True:
-            msg = ""
-            while msg == "":
-                msg, fromAddr = self.udpSock.recvfrom(1024)
-
+            msg, fromAddr = self.udpSock.recvfrom(1024)
             msg = msg.decode()
             print(msg)
             if msg.startswith("S"):
