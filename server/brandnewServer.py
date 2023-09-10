@@ -894,19 +894,22 @@ class udpGame(threading.Thread):
 
         #준비 메세지 : S이름!기본좌표
         self.room
-        udpHandler.Sres[self.room.roomName] = ()
+        udpHandler.Sres[self.room.roomName] = {}
 
         while True:
-            msg = ""
-            while msg == "":
-                while not udpHandler.Sres[self.room.roomName]:
-                    pass
-                res = udpHandler.Sres[self.room.roomName] #res는 모든 메세지이므로 잘 구분해야함
-                
-                msg = res[0].decode('utf-8', 'ignore')
-                fromAddr = res[1]
-                
-                print(msg, fromAddr)
+
+            #Sres가 있을 때까지 기다리기
+            while len(udpHandler.Sres[self.room.roomName].copy().keys()) == 0:
+                pass
+
+            firstAddr = udpHandler.Sres[self.room.roomName].copy().keys()[0] #첫 요청 주소
+
+            res = udpHandler.Sres[self.room.roomName][firstAddr] #res는 모든 메세지이므로 잘 구분해야함
+            
+            msg = res[0].decode('utf-8', 'ignore')
+            fromAddr = res[1]
+            
+            print(msg, fromAddr)
 
 
             if msg.startswith("S"):
@@ -919,7 +922,7 @@ class udpGame(threading.Thread):
                     self.room.castCmd("okUDP", self.room.whos[msg[1]]) #tcp로 확인 메세지 보내기
                     print(msg[1], "okUDP 보냄")
 
-                    udpHandler.Sres[self.room.roomName] = ()
+                    del udpHandler.Sres[self.room.roomName][firstAddr] #요소 삭제
 
 
             if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
@@ -1073,7 +1076,7 @@ class threadUdp:
             self.res = msg, fromAddr
             if msg.decode().startswith("S"):
                 roomName = msg.decode().split("!")[0][1:]
-                self.Sres[roomName] = msg, fromAddr
+                self.Sres[roomName][fromAddr] = msg, fromAddr
 
 
             elif msg.decode().startswith("P"):
