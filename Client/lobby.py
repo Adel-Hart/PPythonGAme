@@ -792,10 +792,10 @@ def lobbyButtons(): #처음 시작 장면
     global currentundo
     currentundo = quit
 
-    currentButtonList.append(Button( T1_OBJ,"싱글플레이", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
-    currentButtonList.append(Button( T1_OBJ,"멀티플레이", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
-    currentButtonList.append(Button( T1_OBJ,"설정", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
-    currentButtonList.append(Button( T1_OBJ,"종료", T1_BTNBG, 1, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
+    currentButtonList.append(Button( T1_BTNBG,"싱글플레이", T1_TEXT, 1, SCRSIZEX // 3, SCRSIZEY // 2, SCRSIZEX // 3, SCRSIZEY * 3 // 40, singleButtons))
+    currentButtonList.append(Button( T1_BTNBG,"멀티플레이", T1_TEXT, 1, SCRSIZEX // 3, SCRSIZEY * 5 // 8 , SCRSIZEX // 3, SCRSIZEY * 3 // 40, multiButtons))
+    currentButtonList.append(Button( T1_BTNBG,"설정", T1_TEXT, 1, SCRSIZEX // 3, SCRSIZEY *3 // 4, SCRSIZEX // 3, SCRSIZEY * 3 // 40, test))
+    currentButtonList.append(Button( T1_BTNBG,"종료", T1_TEXT, 1, SCRSIZEX // 3, SCRSIZEY * 7 // 8, SCRSIZEX // 3, SCRSIZEY * 3 // 40, quit))
     return
 
 def singleButtons(): #싱글플레이

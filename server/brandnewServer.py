@@ -909,6 +909,8 @@ class udpGame(threading.Thread):
 
                     msg = ""
 
+                    res = ()
+
                 else:
                     msg = ""
                     pass
@@ -1040,7 +1042,7 @@ class udpGame(threading.Thread):
 
 
 
-class threadUdp():
+class threadUdp:
     
     def __init__(self):
         print("udp소켓 리스닝 중")
@@ -1050,16 +1052,23 @@ class threadUdp():
         self.res = () #튜플이 반환값
 
         recvUdpHandler = threading.Thread(target=self.recvUdpMsg)
+        recvUdpHandler.daemon = True
         recvUdpHandler.start()
 
 
 
     def recvUdpMsg(self):
-        msg, fromAddr = self.udpSock.recvfrom(1024)
-        self.res = msg, fromAddr
+        while True:
+            msg, fromAddr = self.udpSock.recvfrom(1024)
+            self.res = msg, fromAddr
 
     def sendUdpMsg(self, msg: str, target: tuple):
         self.udpSock.sendto(msg, target)
+
+
+    def close(self):
+        self.udpSock.close() #서버 닫기
+        sys.exit()
         
 
 
