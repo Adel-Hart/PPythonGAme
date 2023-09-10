@@ -238,12 +238,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 
                 
     def outPlayer(self, targetP): #플레이어를 제거하는 함수
-        global done
-        if targetP == self.nickName: #나가게 한 사람이 자기자신이면
-            done = True #게임 종료
-
-        else:
-            notDisplayPlayers.append[targetP]
+        notDisplayPlayers.append[targetP]
         
     
 
