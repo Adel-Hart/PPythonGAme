@@ -949,7 +949,7 @@ class udpGame(threading.Thread):
             #msg, fromAddr = udpHandler.res
 
             for msg in list(udpHandler.roomres[self.room.roomName].copy().values()):
-                time.sleep(0.1)
+                time.sleep(0.01)
             
                 #msg = msg.decode()
                 msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름!애니메이션장면!방향(flip)
