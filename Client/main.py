@@ -40,11 +40,7 @@ def strToBool(string:str):
     else:
         return string
 
-SERVERCONNECT = False #핸들러 만들어짐 판단 여부
 
-globalDone = False #전역변수 만들어짐 여부
-
-notDisplayPlayers = []
 
 def multiGamePlay(players: list, roomName: str, name: str, mapCode: str):
     '''
@@ -53,7 +49,6 @@ def multiGamePlay(players: list, roomName: str, name: str, mapCode: str):
     bool 변수를 통해, udpHandler가 존재하는지 알 수 있게 해야 함
     '''
     global udpHandler
-    SERVERCONNECT = True
     udpHandler = conUdp(players, roomName, name, mapCode)
 
     
@@ -758,7 +753,10 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
 def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실행 함수
 
     global notDisplayPlayers
-    
+    global globalDone
+    globalDone = False #전역변수 만들어짐 여부
+
+    notDisplayPlayers = []
 
     print("runGame 입장")
     print(mapName,gameMode,otherPlayers)
@@ -813,9 +811,9 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             for p in otherPlayers:
                 print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
                 globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player", p) #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-
+                
                 #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
-        global globalDone
+        
         globalDone = True
     
 
