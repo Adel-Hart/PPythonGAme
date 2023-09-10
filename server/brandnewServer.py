@@ -853,7 +853,7 @@ class udpGame(threading.Thread):
         self.clientAddr = {} #접속 한 클라이언트의 아이피주소와 포트의 튜플 값 key:닉네임, value : 튜플
         self.clientStat = {} #플레이어의 애니메이션과 방향을 나타냄
         self.rgb = ["False", "False", "False"] #rgb 값 저장할 리스트
-        self.change = self.rgb #rgb의 변화량 감지 리스트
+
         self.readyStack = 0 #준비 인원수 (방 인원수 만큼 되면 게임이 시작됨, 준비는 초기화 메세지를 보내면 스택 +1)
         self.done = False #스레드의 while문을 종료시킬 원격 함수
         for c in clientsName:
@@ -941,10 +941,8 @@ class udpGame(threading.Thread):
                                 # RGB변경시 메세지 > 형식 : R방이름!R,G,B!이름
                                 #게임 종료 메세지 > @!
             #방 이름이 없는데 요청한경우 오류가 나기 때문에.
-
-
+        
             if msg[0][1:] == self.room.roomName: #해당 방이름의 요청에만 응답!   msg[1] > P방이름 or R방이름 , msg[1:] >> R과 P (앞글자가 사라짐)
-                
                 if msg[0][0] == "P":
                     if len(msg) > 5:
                         if self.rgb != msg[5].split(','):

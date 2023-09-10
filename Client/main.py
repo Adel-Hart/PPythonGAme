@@ -185,12 +185,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 if wantRGB[1] != self.rgb:
                     text += f"!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}"
                 else:
-                    print(wantRGB, self.rgb, RGBList)
-                    print("False로 바꿈")
                     wantRGB[0] = False
 
-            
-            print(text, "보냄")
             self._postMan(text)
             
 
