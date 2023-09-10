@@ -79,7 +79,7 @@ def isMap(): #클릭 좌표가 맵 안인지 판단
 
         if x < mapX and y < mapY:
             return True
-        else:
+        else:   
             return False
 
 def colorChange(event): #색 변경
@@ -95,7 +95,7 @@ def colorChange(event): #색 변경
             mapArray[x][y] = brushColor
             canvas.create_rectangle(tileX + 1, tileY + 1, tileX + tileSize - 1, tileY + tileSize - 1, fill = colorList[brushColor]) # 1씩 작게 채움으로써 grid를 남긴다
         
-        else: #스위치 버튼을 클릭 경우
+        else: #스위치 버튼을 클릭한 경우
             mapArray[x][y] = colorList[brushColor][0]
             canvas.create_rectangle(tileX + 1, tileY + 1, tileX + tileSize - 1, tileY + tileSize - 1, fill = "black") #타일을 검정색으로 초기화
             canvas.create_rectangle(tileX + tileSize/4, tileY + tileSize/4, tileX + tileSize*3/4, tileY + tileSize*3/4, fill = colorList[brushColor])
@@ -255,9 +255,9 @@ def valueCheck(): #모든 값이 정상적으로 채워져있는지 검사
     check = re.compile("[^a-zA-Z0-9]") #영어와 숫자가 아닌 값들을 검사
     
     try:
-        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, goalX] #검사할 값 목록
+        valueList = [mapX, isNumeric(jumpHeight.get()), isNumeric(jumpTime.get()), isNumeric(playerSpeed.get()), PWidth, goalX, mapName.get()] #검사할 값 목록
 
-        if all(valueList) and not check.search(mapName.get()) and mapName.get(): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
+        if all(valueList) and not check.search(mapName.get()): # valueList의 값이 모두 참이고, 맵 이름에 영어와 숫자를 제외한 문자가 없다면
             return True
         else:
             return False
