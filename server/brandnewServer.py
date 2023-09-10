@@ -1045,7 +1045,7 @@ class threadUdp():
         self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
         self.res = () #튜플이 반환값
 
-        recvUdpHandler = threading.Thread(target= recvUdpHandler)
+        recvUdpHandler = threading.Thread(target=self.recvUdpMsg)
         recvUdpHandler.start()
 
 
