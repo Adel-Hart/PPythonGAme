@@ -887,14 +887,17 @@ class udpGame(threading.Thread):
         '''
 
         #준비 메세지 : S이름!기본좌표
-
+        print("스탠딩바이 시작")
         while True:
             msg = ""
+            print("S 시작 기다리는중")
             while msg == "":
                 msg, fromAddr = self.udpSock.recvfrom(1024)
 
+            
             msg = msg.decode()
-            print(msg)
+            print("S 시작 기다리는중 탈출, 받은 메세지", msg)
+
             if msg.startswith("S"):
                 msg = msg.replace("S", "").split("!") #!기준으로 나누기
                 self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
