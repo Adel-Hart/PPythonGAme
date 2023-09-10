@@ -110,7 +110,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
             
             self.udpSock.sendto(f"S{self.roomName}!{self.nickName}!{temPos.x},{temPos.y}".encode(), (HOST, PORT))
             #udp서버에 접속 설정 메세지전송, udp통신때 포트가 필요하기에 이런 과정을 거친다
-            print(f"S{self.nickName}!{temPos.x},{temPos.y}")
+            print(f"S{self.roomName}!{self.nickName}!{temPos.x},{temPos.y}")
 
 
             print("udp 받기 시작")
@@ -185,12 +185,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 if wantRGB[1] != self.rgb:
                     text += f"!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}"
                 else:
-                    print(wantRGB, self.rgb, RGBList)
-                    print("False로 바꿈")
                     wantRGB[0] = False
 
-            
-            
             self._postMan(text)
             
 
