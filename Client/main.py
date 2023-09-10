@@ -310,7 +310,7 @@ WSWITCH = ["switch",7,[True, True, True]]
 #NEWSIZE = 1 #한 타일을 50개로 쪼개서 좌표를 정의한다.
 
 class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객체.
-    def __init__(self, cx, cy, zx, zy, imagefolder): #이미지의 기본정보를 지정
+    def __init__(self, cx, cy, zx, zy, imagefolder, name): #이미지의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
         self.coordX = cx
         self.coordY = cy
@@ -318,6 +318,8 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
         self.sizeX = zx
         self.sizeY = zy
 
+
+        self.name = name
         self.image = {}
 
         for imagename in os.listdir(imagefolder):
@@ -329,6 +331,12 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
         self.animation = "0" #현재 이미지 번호, 이걸 서버에 보내야 함
         self.realimage = self.image #realimage는 원본image를 변화시키는거라 따로 제작
 
+        font = pygame.font.Font("fonts/Ramche.ttf", 200)
+        img = font.render(name, True, BLACK) #렌더
+        self.img = pygame.transform.scale(img, (zy*MAPTILESIZE//10 * len(name),zy*MAPTILESIZE//5))
+
+        
+
     def display(self): #화면에 표시
         displayImage = self.image[self.animation]
         if self.direction == "RIGHT": #오른쪽을 보고 있다면
@@ -337,6 +345,9 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
         rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
 
         screen.blit(displayImage, rect) #스크린에 출력
+        screen.blit(self.coordX*MAPTILESIZE+ORIGINPOINT.x, self.coordY*MAPTILESIZE+ORIGINPOINT.y - self.zy*MAPTILESIZE // 2 - self.zy*MAPTILESIZE//5) #텍스트 표시
+        #닉네임 출력
+
 
 class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
     def __init__(self, cx, cy, sx, sy, zx, zy, imagefolder): #오브젝트의 기본정보를 지정
@@ -804,8 +815,8 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         if otherPlayers != None: #다른 플레이어가 있다면
             for p in otherPlayers:
                 print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
-                globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-
+                globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player", p) #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
+                
                 #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
         global globalDone
         globalDone = True
