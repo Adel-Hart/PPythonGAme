@@ -813,10 +813,10 @@ def singleButtons(): #싱글플레이
  
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
-    currentButtonList.append(Button( T1_BTNBG,"스토리", WHITE, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
-    currentButtonList.append(Button( T1_BTNBG,"커스텀", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, customButtons))
+    currentButtonList.append(Button( T1_BTNBG,"스토리", T1_TEXT, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, storyButtons))
+    currentButtonList.append(Button( T1_BTNBG,"커스텀", T1_TEXT, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, customButtons))
     return
 
 def customButtons(): #커스텀 선택창
@@ -836,8 +836,8 @@ def customButtons(): #커스텀 선택창
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
     currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
-    currentButtonList.append(Button( T1_BTNBG,"맵 에디터", WHITE, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
-    currentButtonList.append(Button( T1_BTNBG,"플레이", WHITE, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, PlayButtons))
+    currentButtonList.append(Button( T1_BTNBG,"맵 에디터", T1_TEXT, 1, SCRSIZEX // 5, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, runEditor))
+    currentButtonList.append(Button( T1_BTNBG,"플레이", T1_TEXT, 1,SCRSIZEX * 11 // 20, SCRSIZEY * 2 // 3, SCRSIZEX // 4, SCRSIZEY // 8, PlayButtons))
     return
 
 def PlayButtons(page:int = 1):
@@ -849,7 +849,7 @@ def PlayButtons(page:int = 1):
     currentundo = customButtons
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
     filelist = os.listdir("./maps/")
     print(filelist)
@@ -861,10 +861,10 @@ def PlayButtons(page:int = 1):
     
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, chooseMap, "*NONE*")) #undo 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_TEXT, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, chooseMap, "*NONE*")) #undo 버튼
     
     currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, PlayButtons, 1)) #새로고침 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_TEXT, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, PlayButtons, 1)) #새로고침 버튼
 
     mapCount = len(mapCodeList)
 
@@ -878,20 +878,20 @@ def PlayButtons(page:int = 1):
 
         for i in range(len(currentPageMaps)): #현재 페이지의 맵 수만큼
             mapCode = currentPageMaps[i].replace(".dat","")
-            currentButtonList.append(Button( GRAY,mapCode, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, openCustomMap, mapCode))
+            currentButtonList.append(Button( T1_BTNBG,mapCode, T1_TEXT, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, openCustomMap, mapCode))
         pass
     
         if page != 1: #1페이지가 아니라면
                 #왼쪽으로 버튼 추가
-                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, PlayButtons, page - 1))
+                currentButtonList.append(Button( T1_BTNBG,"<", T1_TEXT, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, PlayButtons, page - 1))
 
         if page != pageCount: #끝 페이지가 아니라면
             #오른쪽으로 버튼 추가
-            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, PlayButtons, page + 1))
+            currentButtonList.append(Button( T1_BTNBG,">", T1_TEXT, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, PlayButtons, page + 1))
         pass
 
     #안내 버튼
-    currentButtonList.append(Button( GRAY,"맵을 고르세요!", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20))
+    currentButtonList.append(Button( T1_BTNBG,"맵을 고르세요!", T1_TEXT, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20))
     return
 
 def runEditor():
@@ -910,12 +910,12 @@ def storyButtons(): #스토리모드 = 챕터선택창
     currentButtonList.append(Button( T1_OBJ,"챕터 선택", T1_TEXT, 1, SCRSIZEX // 4, SCRSIZEY // 10 , SCRSIZEX // 2, SCRSIZEY // 10))
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", T1_BTNBG, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_TEXT, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
 
     for i in range(3):
         currentImageList.append(Image(f"chaptericons/{i+1}", SCRSIZEX * (i * 4 + 1) // 13 , SCRSIZEY // 2 - SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 13))
         currentButtonList.append(Button( GRAY, "", T1_BTNBG, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 - SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 13, chapterButtons, i + 1))
-        currentButtonList.append(Button( BLACK, f"CHAPTER{i+1}", WHITE, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 + SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 65, chapterButtons, i + 1))
+        currentButtonList.append(Button( T1_BTNBG, f"CHAPTER{i+1}", T1_TEXT, 0, SCRSIZEX * (i * 4 + 1) // 13, SCRSIZEY // 2 + SCRSIZEX * 3 // 26, SCRSIZEX * 3 // 13, SCRSIZEX * 3 // 65, chapterButtons, i + 1))
 
     return
 
@@ -942,20 +942,20 @@ def chapterButtons(chapter:int): #챕터 내부 = 레벨선택창
     for i in range(levelCount):
         if i <= (levelCount-1) // 2: #윗줄
             #currentImageList.append(Image( "stage1", margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength))
-            currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength, openStoryMap, chapter, i+1))
+            currentButtonList.append(Button( T1_BTNBG, f"{i+1}", T1_TEXT, 0, margin * (i * 8 + 1), SCRSIZEY // 2 - boxLength, boxLength, boxLength, openStoryMap, chapter, i+1))
             if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * (i * 8 + 1), SCRSIZEY // 2, boxLength, boxLength//4))
+                currentButtonList.append(Button( None, "클리어!", T1_TEXT, 1, margin * (i * 8 + 1), SCRSIZEY // 2, boxLength, boxLength//4))
         else:
             #currentImageList.append(Image( "stage1", margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY // 2 + margin, boxLength, boxLength))
             if levelCount % 2 == 0:
-                currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
+                currentButtonList.append(Button( T1_BTNBG, f"{i+1}", T1_TEXT, 0, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
                 if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                    currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
+                    currentButtonList.append(Button( None, "클리어!", T1_TEXT, 1, margin * ((i - levelCount // 2) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
         
             else:
-                currentButtonList.append(Button( WHITE, f"{i+1}", BLACK, 0, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
+                currentButtonList.append(Button( T1_BTNBG, f"{i+1}", T1_TEXT, 0, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - boxLength - margin, boxLength, boxLength, openStoryMap, chapter, i+1))
                 if i+1 in clearedList: #레벨이 클리어 목록에 있으면
-                    currentButtonList.append(Button( None, "클리어!", WHITE, 1, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
+                    currentButtonList.append(Button( None, "클리어!", T1_TEXT, 1, margin * ((i - levelCount // 2 - 1) * 8 + 1), SCRSIZEY - margin, boxLength, boxLength//4))
 
 def getChapterInfo(chapter: int): #현재 챕터의 info.dat 파일 해석, 내용 반환
     with open(f"./maps/story/chapter{chapter}/info.dat", "r") as f: #챕터 정보 파일 열기
@@ -1150,10 +1150,10 @@ def serverRoomList(handler: classmethod, page:int = 1):
     currentundo = lobbyButtons
 
     currentImageList.append(Image( "undo", 0, 0, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_TEXT, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, undo)) #undo 버튼
     
     currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverRoomList, handler, 1)) #새로고침 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_TEXT, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverRoomList, handler, 1)) #새로고침 버튼
 
     roomList = handler.checkRoomList() #방 목록을 리스트로 반환한다,
 
@@ -1179,21 +1179,21 @@ def serverRoomList(handler: classmethod, page:int = 1):
 
             showText = f"{roomName}|{playerCount}/4"
 
-            currentButtonList.append(Button( GRAY,roomName, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
+            currentButtonList.append(Button( T1_BTNBG,roomName, T1_TEXT, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(roomName) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, handler.joinRoom, roomName))
 
             
     
         if page != 1: #1페이지가 아니라면
                 #왼쪽으로 버튼 추가
-                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList, handler, page - 1))
+                currentButtonList.append(Button( T1_BTNBG,"<", T1_TEXT, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList, handler, page - 1))
 
         if page != pageCount: #끝 페이지가 아니라면
             #오른쪽으로 버튼 추가
-            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList,handler, page + 1))
+            currentButtonList.append(Button( T1_BTNBG,">", T1_TEXT, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverRoomList,handler, page + 1))
         pass
 
     #방 추가 버튼
-    currentButtonList.append(Button( GRAY,"방 만들기", BLACK,1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20, serverMakeRoom, handler))
+    currentButtonList.append(Button( T1_BTNBG,"방 만들기", T1_TEXT,1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20, serverMakeRoom, handler))
 
 def serverMakeRoom(handler: classmethod):
 
@@ -1233,9 +1233,9 @@ def serverJoinedRoom(handler: classmethod):
     print(joinedRoomName, "들어옴")
 
 
-    roomTitleButton1 = Button( GRAY,"방:", BLACK, 0, 0, SCRSIZEY // 10, SCRSIZEX // 20, SCRSIZEY // 10) #방 제목
-    roomTitleButton2 = Button( GRAY,joinedRoomName, BLACK, 0, SCRSIZEX // 20, SCRSIZEY // 10, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEY // 10) #방 제목
-    setMapCodeButton = Button( GRAY,"맵 바꾸기", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20, serverBrowseMap, handler, handler.getMapCodeList())
+    roomTitleButton1 = Button( T1_BTNBG,"방:", T1_TEXT, 0, 0, SCRSIZEY // 10, SCRSIZEX // 20, SCRSIZEY // 10) #방 제목
+    roomTitleButton2 = Button( T1_BTNBG,joinedRoomName, T1_TEXT, 0, SCRSIZEX // 20, SCRSIZEY // 10, len(joinedRoomName) * SCRSIZEX // 40, SCRSIZEY // 10) #방 제목
+    setMapCodeButton = Button( T1_BTNBG,"맵 바꾸기", T1_TEXT, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20, serverBrowseMap, handler, handler.getMapCodeList())
 
 
     fixedButtonList = [] #변하지 않는 버튼 리스트 ex) 방 제목, 나가기
@@ -1296,19 +1296,19 @@ def serverJoinedRoom(handler: classmethod):
 
             for i, player in enumerate(playerList):
                 showingText = f"{i+1}. {player} " +("Ready" if playerReadyDict[player] else "") #플레이어 이름과 준비상태로 텍스트 만들기
-                playerButtonList.append(Button( WHITE, showingText, RED, 0, 0, SCRSIZEY // 5 + SCRSIZEY // 10 * (i+1), SCRSIZEY // 40 * len(showingText), SCRSIZEY // 20))
+                playerButtonList.append(Button( T1_BTNBG, f"/ {showingText}", T1_OBJ, 0, 0, SCRSIZEY // 5 + SCRSIZEY // 10 * (i+1), SCRSIZEY // 40 * len(showingText), SCRSIZEY // 20))
 
             if currentMapCode == "": #현재 맵코드가 없을시
                 mapCodeText = "mapcode:*EMPTY*" #맵이 없음
             else: #맵코드가 있을시
                 mapCodeText = f"mapcode:{currentMapCode}"
                 if playerReadyDict[handler.nickName] == True: #준비상태라면
-                    ReadyButton = Button( WHITE, "준비 해제", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.unReady)
+                    ReadyButton = Button( T1_BTNBG, "준비 해제", T1_TEXT, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.unReady)
                     if handler.nickName == playerList[0] and False not in playerReadyDict.values(): #0번 플레이어(방장)이고 모두 준비되어 있다면
-                        startButton = Button( WHITE, "게임 시작!", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 15, SCRSIZEX // 4, SCRSIZEX // 36, handler.ready2Start)
+                        startButton = Button( T1_BTNBG, "게임 시작!", T1_TEXT, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 15, SCRSIZEX // 4, SCRSIZEX // 36, handler.ready2Start)
                         startButton.displayButton()
                 else: #준비가 아니라면
-                    ReadyButton = Button( WHITE, "준비 시작", GRAY, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.readyPlayer)
+                    ReadyButton = Button( T1_BTNBG, "준비 시작", T1_TEXT, 1, SCRSIZEX * 3 // 8, SCRSIZEY // 20 + SCRSIZEX // 30, SCRSIZEX // 4, SCRSIZEX // 36, handler.readyPlayer)
                 
                 ReadyButton.displayButton()
 
@@ -1372,7 +1372,7 @@ def serverBrowseMap(handler ,mapCodeList:list, page:int = 1): #맵을 서버에�
     currentButtonList.append(Button( GRAY,"", BLACK, 0, 0, 0, SCRSIZEX // 20, SCRSIZEY // 20, chooseMap, "*NONE*")) #undo 버튼
     
     currentImageList.append(Image( "refresh", SCRSIZEX - SCRSIZEX//20, 0 // 20, SCRSIZEX // 20, SCRSIZEY // 20))
-    currentButtonList.append(Button( GRAY,"", BLACK, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverBrowseMap, handler, mapCodeList,1)) #새로고침 버튼
+    currentButtonList.append(Button( T1_BTNBG,"", T1_TEXT, 0, SCRSIZEX - SCRSIZEX//20, 0, SCRSIZEX // 20, SCRSIZEY // 20, serverBrowseMap, handler, mapCodeList,1)) #새로고침 버튼
 
     mapCount = len(mapCodeList)
 
@@ -1386,20 +1386,20 @@ def serverBrowseMap(handler ,mapCodeList:list, page:int = 1): #맵을 서버에�
 
         for i in range(len(currentPageMaps)): #현재 페이지의 맵 수만큼
             mapCode = currentPageMaps[i].replace(".dat","")
-            currentButtonList.append(Button( GRAY,mapCode, BLACK, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, chooseMap, mapCode))
+            currentButtonList.append(Button( T1_BTNBG,mapCode, T1_TEXT, 0, SCRSIZEX // 10, SCRSIZEY // 6 + i * SCRSIZEY // 6, len(mapCode) * (SCRSIZEY // 8) // 2, SCRSIZEY // 8, chooseMap, mapCode))
         pass
     
         if page != 1: #1페이지가 아니라면
                 #왼쪽으로 버튼 추가
-                currentButtonList.append(Button( BLACK,"<", BLUE, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap, handler, mapCodeList,page - 1))
+                currentButtonList.append(Button( T1_BTNBG,"<", T1_TEXT, 0,0,SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap, handler, mapCodeList,page - 1))
 
         if page != pageCount: #끝 페이지가 아니라면
             #오른쪽으로 버튼 추가
-            currentButtonList.append(Button( BLACK,">", BLUE, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap,handler, mapCodeList,page + 1))
+            currentButtonList.append(Button( T1_BTNBG,">", T1_TEXT, 0, SCRSIZEX - SCRSIZEY // 14, SCRSIZEY // 2 - SCRSIZEY // 16 , SCRSIZEY // 14, SCRSIZEY // 8, serverBrowseMap,handler, mapCodeList,page + 1))
         pass
 
     #안내 버튼
-    currentButtonList.append(Button( GRAY,"맵을 고르세요!", BLACK, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20))
+    currentButtonList.append(Button( T1_OBJ,"맵을 고르세요!", T1_TEXT, 1, SCRSIZEX//5, 0, SCRSIZEX * 3 // 5, SCRSIZEY // 20))
 
     screen.fill(T1_BG) #임시 배경색 (차후에 이미지로 변경될수 있음)
 
