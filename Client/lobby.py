@@ -327,11 +327,6 @@ class conTcp():
 
                 self.tcpSock.send("1005".encode()) #방 정보 요청
                 
-                while self.cmd == "":
-                    pass
-
-                if self.cmd == "okUDP":
-                    pass
                 
                 if self.cmd.startswith("ROOMINFO"): #ROOMINFO로 시작하는 방 정보 메세지 일때
                     roomIf = self.cmd.replace("ROOMINFO", "")
@@ -347,9 +342,7 @@ class conTcp():
                         #return True #성공 메세지 받을 시 <<어짜피 실행 안될텐데
                     
                 else: #무효일시
-                    #del data
-                    self.cmd = ""
-                    #roominfo = False
+                    pass
 
                 time.sleep(1)
 
