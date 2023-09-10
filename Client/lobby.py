@@ -56,6 +56,7 @@ class conTcp():
         self.isudp = False
 
 
+
     def run(self): #연결 실행함수
 
         self.tcpSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #소켓 생성
@@ -253,6 +254,9 @@ class conTcp():
                 elif self.cmd == "okUDP":
                     self.udpPlay.initCon = True #세팅 성공 트리거 작동, 기본값은 False이며 udpPlay만들때 초기화 됨
 
+                elif self.cmd == "ENDGAME":
+                    self.wating = False
+                
                 elif "QUITGAME" in self.cmd:
                     who = self.cmd.split("!")[1]
                     if self.nickName == who: #자기 자신이 나가는 요청이면
@@ -261,6 +265,7 @@ class conTcp():
 
                     else:
                         self.udpPlay.outPlayer(who)
+                
                     
                     
                     
