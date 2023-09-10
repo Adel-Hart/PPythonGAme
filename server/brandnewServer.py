@@ -905,16 +905,20 @@ class udpGame(threading.Thread):
                 self.readyStack += 1 #준비 인원 +!
                 self.room.castCmd("okUDP", self.room.whos[msg[0]]) #tcp로 확인 메세지 보내기
                 print(msg[0], "okUDP 보냄")
-                break
+
+                msg = ""
             else:
                 msg = ""
                 pass
-        while True:
+
             if self.readyStack == len(self.clientPos.keys()): #모든 인원들이 준비가 된다면.
                 self.room.inGame = True
                 print("게임 돌입한다")
                 self.startGame()
                 break
+
+
+            
                 
 
         sys.exit() #스레드 종료 시키기
