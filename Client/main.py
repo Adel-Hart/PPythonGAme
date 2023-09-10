@@ -7,6 +7,7 @@ import ctypes #컴퓨터 정보, 화면 크기를 가져옴
 
 
 #아래는 서버용 (ONLY UDP)
+import sys
 import threading
 import socket
 import time
@@ -176,12 +177,11 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 wantRGB[0] = False
             
             if wantRGB[0] == True:
-
+                print(wantRGB, self.rgb)
                 if wantRGB[1] != self.rgb:
                     text += f"!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}"
                 else:
                     wantRGB[0] = False
-
             self._postMan(text)
             
 
@@ -811,7 +811,7 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             for p in otherPlayers:
                 print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
                 globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player", p) #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-                
+
                 #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
         
         globalDone = True

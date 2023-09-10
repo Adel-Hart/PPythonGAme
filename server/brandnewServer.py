@@ -76,7 +76,6 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
         self.inGame = True #방의 게임중 시그널 키기
-        print("a")
         for c in self.whos.values():
             self.players.append(c.name)
             c.inGamePlayer = True #각 핸들러의 inGamePlayer신호 켜기
@@ -89,13 +88,16 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
         volatile_sendMap = threading.Thread(target=self._sendMap2Client)
         volatile_sendMap.start() #맵 전송 스레드 시작 (recv스레드와 병목되어서)
 
+        
+
 
 
     def endGame(self):
         self.inGame = False 
         for c in self.whos.copy().values():
             c.inGamePlayer = False #각 핸들러의 inGamePlayer신호 끄기
-            
+        self.multiCastCmd("ENDGAME")
+        print("엔드게임 메세지 보냈다")
         self.udpHandler.endGame()
         del self.udpHandler
 
@@ -126,11 +128,12 @@ class Room: #룸 채팅까지는 TCP 연결, 게임 시작 후는 TCP 연결 유
 
 
     def quitOne(self, player):
+        print(self.players,player)
         self.players.remove(player)
+        print(self.players)
         if len(self.players) == 0:
-            self.multiCastCmd("ENDGAME")
             self.endGame()
-        
+            print("엔드게임 보냈다")
 
 
 
@@ -368,19 +371,15 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
         else:
             return "NULL"
 
-    def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러    조심! self파라미터에는 힌트 (: 속성) 작성 금지!, vscode에서 함수 내 코드가 힌트를 못 불러온다,
-            
-            
+    def recvMsg(self): #클라이언트로 부터의 메세지 수신 핸들러    조심! self파라미터에는 힌트 (: 속성) 작성 금지!, vscode에서 함수 내 코드가 힌트를 못 불러온다,  
 
             while True:
-
+                print("recvMsg 살아있다")
                 print(self.heatBeatThread.is_alive())
 
+                data = ""
 
-                data = self.soc.recv(1024).decode()
-
-
-                while data == "" and len(data) == 0: #데이터 도착까지 기다리기
+                while data == "": #데이터 도착까지 기다리기
                     data = self.soc.recv(1024).decode()
                     pass
 
@@ -388,9 +387,6 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
 
                 print(self.msg)
 
-
-                
-                
 
 
                 
@@ -622,11 +618,12 @@ class Handler(): #각 클라이언트의 요청을 처리함 스레드로 분리
                         elif "QUITGAME" in self.msg:
                             self.roomHandler.multiCastCmd(f"QUITGAME!{self.name}") #게임 종료 메세지 보내기
                             time.sleep(1) #1초 기다리기
-                            self.roomHandler.quitOne(self.name)
+                            print("quitOne")
+                            self.roomHandler.quitOne(self.name) #<--여기서 병목
+                            print("마무리!")
 
-
-
-                        print(self.msg)
+                        if self.msg != "1005":
+                            print(self.msg)
 
                     
                 else: #hearbeat 신호일시
@@ -900,7 +897,6 @@ class udpGame(threading.Thread):
 
             #Sres가 있을 때까지 기다리기
             while len(list(udpHandler.Sres[self.room.roomName].copy().keys())) == 0:
-                print(len(udpHandler.Sres[self.room.roomName].copy().keys()))
                 pass
 
             firstAddr = list(udpHandler.Sres[self.room.roomName].copy().keys())[0] #첫 요청 주소
@@ -949,14 +945,18 @@ class udpGame(threading.Thread):
         udpHandler.roomres[self.room.roomName] = {} #자신의 방 정보 목록을 딕셔너리로 초기화
         
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
+            
             #msg, fromAddr = udpHandler.res
 
-            for msg in udpHandler.roomres[self.room.roomName].copy().values():
+            for msg in list(udpHandler.roomres[self.room.roomName].copy().values()):
+                time.sleep(0.1)
             
                 #msg = msg.decode()
                 msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름!애니메이션장면!방향(flip)
                                     # RGB변경시 메세지 > 형식 : R방이름!R,G,B!이름
                                     #게임 종료 메세지 > @!
+
+                
                 #방 이름이 없는데 요청한경우 오류가 나기 때문에.
                 if msg[0][0] == "P":
                     if len(msg) > 5:
@@ -968,7 +968,6 @@ class udpGame(threading.Thread):
                     self.clientStat[msg[2]] = msg[3], msg[4] #플레이어 애니메이션과, 방향 추가
                     
                 elif msg[0] == "@":
-                    self.room.multiCastCmd("GAMEOUT") #TCP모듈에 게임 끝 선언
                     self.endGame()
     
         #self.endGame()
@@ -992,12 +991,8 @@ class udpGame(threading.Thread):
                         #{self.clientPos[c][0]} : x 값, {self.clientPos[c][1]} : y 값 / self.clientAddr[c] = 보낼 사람의 주소
 
                         #P누군지이름!좌표!애니메이션!방향
-
-                
-
+        sys.exit(0)
         
-        self.endGame()
-        sys.exit(0) #self.done 이 켜지면 스레드 종료
 
 
     
@@ -1007,18 +1002,18 @@ class udpGame(threading.Thread):
         udpSend = threading.Thread(target=self.sendMsg) #스레드 세팅
 
         self.room.multiCastCmd("5555") #플레이어들에게 tcp로 CMD 5555를 보낸다
-            
+        
         udpRecv.start()
         udpSend.start() #스레드 시작
 
 
     def endGame(self):
         self.done = True
-        del self
 
 
     def connDown(self, targetC: str): #플레이어 연결이 예상치 못하게 끊켰을 때 목록에서 지우는 것
        
+
         self.clientAddr.pop(targetC)
         self.clientPos.pop(targetC)
         
@@ -1077,6 +1072,7 @@ class threadUdp:
         while True:
             msg, fromAddr = self.udpSock.recvfrom(1024)
             self.res = msg, fromAddr
+
             if msg.decode().startswith("S"):
                 roomName = msg.decode().split("!")[0][1:]
                 self.Sres[roomName][fromAddr] = msg, fromAddr
@@ -1085,7 +1081,8 @@ class threadUdp:
             elif msg.decode().startswith("P"):
                 roomName = msg.decode().split("!")[0][1:] #방 이름
                 self.roomres[roomName][fromAddr] = msg.decode()
-
+            
+            msg = ""
             self.res = () #초기화
 
 
