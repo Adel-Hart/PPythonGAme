@@ -899,13 +899,17 @@ class udpGame(threading.Thread):
         while True:
 
             #Sres가 있을 때까지 기다리기
-            while len(udpHandler.Sres[self.room.roomName].copy().keys()) == 0:
+            while len(list(udpHandler.Sres[self.room.roomName].copy().keys())) == 0:
+                print(len(udpHandler.Sres[self.room.roomName].copy().keys()))
                 pass
 
-            firstAddr = udpHandler.Sres[self.room.roomName].copy().keys()[0] #첫 요청 주소
+            firstAddr = list(udpHandler.Sres[self.room.roomName].copy().keys())[0] #첫 요청 주소
+            print(firstAddr)
+
 
             res = udpHandler.Sres[self.room.roomName][firstAddr] #res는 모든 메세지이므로 잘 구분해야함
-            
+            print(res)
+
             msg = res[0].decode('utf-8', 'ignore')
             fromAddr = res[1]
             
