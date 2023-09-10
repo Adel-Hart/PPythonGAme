@@ -11,6 +11,8 @@ import threading
 import socket
 import time
 
+
+
 '''
 파이썬 게임 개발
 ! 2023 07 22 start
@@ -30,9 +32,18 @@ with open("../server/serverip.txt","r") as f:
     HOST = f.readline()
 PORT = 8080
 
-
+def strToBool(string:str):
+    if string == "True":
+        return True
+    elif string == "False":
+        return False
+    else:
+        return string
 
 SERVERCONNECT = False #핸들러 만들어짐 판단 여부
+
+globalDone = False #전역변수 만들어짐 여부
+
 
 
 def multiGamePlay(players: list, roomName: str, name: str, mapCode: str):
@@ -65,6 +76,8 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         self.players = players
         self.playerList = {} #이름 : 위치 클래스
 
+        self.initCon = False  #초반, 서버와의 설정이 끝났는지 감지, lobby tcp로 감지한다
+
         self.startGame = False #tcp로 5555를 받으면 활성화 되며, 이게 활성화 되면 스레드 2개(받기 보내기)를 시작함
 
 
@@ -80,7 +93,6 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
         보내는 데이터 "S이름!플레이어 시작 주소"
         '''
         
-
 
         setDat = mapload.readMap(f"maps/extensionMap/{self.mapCode}") #파일 먼저 읽기,
         
@@ -98,30 +110,24 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
 
+            
+
             self.udpSock.sendto(f"S{self.nickName}!{temPos.x},{temPos.y}".encode(), (HOST, PORT))
-            #udp서버에 접속 설정 메세지전송, 시간 검사해, 2초이내로 제대로 된 답을 못 얻으면, 다시 보낸다
-
-            self.udpSock.settimeout(3)
-
-            try:
-                print("udp 받기 시작")
-                msg, addr = self.udpSock.recvfrom(1024)#udp통신 값 받기
-                msg = msg.decode()
+            #udp서버에 접속 설정 메세지전송, udp통신때 포트가 필요하기에 이런 과정을 거친다
 
 
-                if msg == "0080":
-                    print("메세지를 받았다")
-                    break #""(공백)이나 None출력이 아닐때, 즉 값이 존재 할때 받는걸 중지
+            print("udp 받기 시작")
 
-            except socket.timeout: #타임 아웃 > 못 받았을 시
-                print("못 받아서 타임 아웃")
-                pass #다시 보내기
+            if self.initCon == True: #udp는 소실 위험이 있어서, tcp로
+                print("메세지를 받았다")
+                break #설정 성공시
+
+            time.sleep(3) #잠깐 멈췄다 보내기
 
 
         #이 아래는, 서버에 잘 보내고, 서버에서도 저장이 잘 된 경우
-        print(msg)
 
-
+        print("5555대기중")
         while not self.startGame: #0080 수신하고, 다른 플레이어 기다리기 (다른 플레이어들이 모두 준비되면, 5555를 tcp로 받고 startGame이 True가 됨)
             pass
 
@@ -132,15 +138,27 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
     def runGameScreen(self):
         print("멀티 게임 시작")
-        
+        global globalDone
+        globalDone = False
         udpReciver = threading.Thread(target=self.udpRecvHandler)
         udpSender = threading.Thread(target=self.udpSendHandler) #송수신 스레드 설정
+
+        udpReciver.daemon = True
+        udpSender.daemon = True
 
         udpReciver.start()
         udpSender.start()
 
-        otherPlayer = self.players.remove(self.nickName) #자신을 제외한 플레이어 리스트
-        runGame(f"extensionMap/{self.mapCode}.dat", otherPlayer)
+        print("스레드 시작 완료")
+
+        print(self.players)
+        print(self.nickName)
+        self.otherPlayer = self.players
+        self.otherPlayer.remove(self.nickName) #자신을 제외한 플레이어 리스트
+        print(self.otherPlayer)
+
+        self.runGame = f"maps/extensionMap/{self.mapCode}"
+        #runGame(f"maps/extensionMap/{self.mapCode}", "MultiPlay",otherPlayer)
 
 
 
@@ -150,35 +168,73 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
 
     def udpSendHandler(self): #서버에게 커맨드를 전송하는 핸들러, 스레드 필요
+        global RGBList
+        global wantRGB
+        while not globalDone: #전역변수가 만들어질 때까지 기다리기
+            pass
         while not self.done: #게임 끝나는 신호 오기 전까지
             #res = f"P{self.roomName}!{},{}!{self.nickName}" #P방이름!좌표x,좌표y!플레이어 이름 (자신 것)
+            
+            text = f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}"
+            
+            #self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}!{maincharacter.animation}!{maincharacter.direction}") #자신의 좌표 전송
+            
+            
+                
+            if wantRGB[0] == True:
+
+                if wantRGB[1] != RGBList:
+                    print("sended", f"R{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}")
+                    text += f"!{self.roomName}!{wantRGB[1][0]},{wantRGB[1][1]},{wantRGB[1][2]}"
+                else:
+                    wantRGB[0] = False
+
+            if self.rgb != RGBList:
+                print(RGBList,self.rgb,"로 바뀜")
+                RGBList = self.rgb
+                backGroundApply()
+            
+            
+
             pass
-        self._postMan(f"P{self.roomName}!{maincharacter.coordX},{maincharacter.coordY}!{self.nickName}") #자신의 좌표 전송
+         
 
 
 
 
 
     def udpRecvHandler(self):
+        global RGBList
+        while not globalDone: #전역변수가 만들어질 때까지 기다리기
+            pass
+        print("recv핸들러 시작")
         while not self.done: #게임 끝나는 신호 오기 전까지
             data, addr = self.udpSock.recvfrom(1024) #1024만큼 데이터 수신
             
             data = data.decode()
+
+            print(data)
+            
             if data.startswith('P'): #위치 정보를 수신
                 data = data.replace("P", "") #P삭제
                 data = data.split("!") #구분자가 !라서 !를 기준으로 분리
                 pos = data[1].split(",") #,기준으로 나눔 [0] : x, [1] : y
-                globals()["p-"+data[0]].coordX = pos[0] #위치정보를 멤버 변수에 저장
-                globals()["p-"+data[0]].coordY = pos[1]
+
+                globals()["p-"+data[0]].coordX = float(pos[0]) #위치정보를 멤버 변수에 저장
+                globals()["p-"+data[0]].coordY = float(pos[1])
+                globals()["p-"+data[0]].animation = data[2]
+                globals()["p-"+data[0]].direction = data[3]
 
 
 
             elif data.startswith('R'): #RGB변경 정보를 수신
                 data = data.replace("R", "") #P삭제
                 data = data.split(",")
-                self.rgb[0] = data[0]
-                self.rgb[1] = data[1]
-                self.rgb[2] = data[2] #rgb정보 저장
+                self.rgb[0] = strToBool(data[0])
+                self.rgb[1] = strToBool(data[1])
+                self.rgb[2] = strToBool(data[2]) #rgb정보 저장
+                
+                
         
         
     
@@ -244,6 +300,35 @@ WSWITCH = ["switch",7,[True, True, True]]
 #해상도 관계없이 플레이 가능하도록, 좌표를 픽셀 기준에서 타일 기준으로 변경 quick fix
 #NEWSIZE = 1 #한 타일을 50개로 쪼개서 좌표를 정의한다.
 
+class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객체.
+    def __init__(self, cx, cy, zx, zy, imagefolder): #이미지의 기본정보를 지정
+        #2차원 공간적 좌표(중심좌표)
+        self.coordX = cx
+        self.coordY = cy
+        #크기(직사각형) = 히트박스, 사용할 이미지 파일 : rect
+        self.sizeX = zx
+        self.sizeY = zy
+
+        self.image = {}
+
+        for imagename in os.listdir(imagefolder):
+            imagenumber = imagename[0] #이미지 이름의 첫 글자가 이미지 번호
+            image = pygame.image.load(f"{imagefolder}/{imagename}")
+            self.image[imagenumber] = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))
+
+        self.direction = "RIGHT" #보고 있는 방향, 보고 있는 방향도 서버에 보내야 함
+        self.animation = "0" #현재 이미지 번호, 이걸 서버에 보내야 함
+        self.realimage = self.image #realimage는 원본image를 변화시키는거라 따로 제작
+
+    def display(self): #화면에 표시
+        displayImage = self.image[self.animation]
+        if self.direction == "RIGHT": #오른쪽을 보고 있다면
+            displayImage = pygame.transform.flip(displayImage,True,False) #뒤집기
+        rect = displayImage.get_rect()
+        rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
+
+        screen.blit(displayImage, rect) #스크린에 출력
+
 class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오브젝트가 여러개가 될 수 있어서 클래스화
     def __init__(self, cx, cy, sx, sy, zx, zy, imagefolder): #오브젝트의 기본정보를 지정
         #2차원 공간적 좌표(중심좌표)
@@ -261,7 +346,6 @@ class MovingObject: #MovingObject 객체 생성 : 움직이는 오브젝트, 오
         for imagename in os.listdir(imagefolder):
             imagenumber = imagename[0] #이미지 이름의 첫 글자가 이미지 번호
             image = pygame.image.load(f"{imagefolder}/{imagename}")
-            image.set_colorkey((255, 255, 255))
             self.image[imagenumber] = pygame.transform.scale(image, (MAPTILESIZE*zx, MAPTILESIZE*zy))#불러온 이미지의 크기를 타일에 맞춰 조정
 
         self.direction = "RIGHT" #보고 있는 방향, 보고 있는 방향도 서버에 보내야 함
@@ -383,8 +467,7 @@ class initMap(): #맵 생성 클래스, 맵이 바뀔수 있어서 클래스화
         
         #삼항 연산자, 만약 random.randrange(10)이 참 [0이 아니면] BLACK으로, 0일때는(확률이 1/10) 255(coloron)이나 0 중 하나로 만든 색 (0, 0, 0 같은)을 타일로 지정함을 Y만큼 반복 하는걸 X 만큼 반복(2차원 배열 생성)
 
-        global RGBList #현재 화면 상태
-        RGBList = [False, False, False] # RGB 모두 켜져 있다
+        
 
     def displayTiles(self): #타일 그리기
         #타일 그리기
@@ -460,12 +543,11 @@ def isWall(COLOR): # 그 색깔이 벽이면 True 아니면 False
         return False
     return True # 배경색과 다를 경우
 
-
-def changeRGB(changedRGB): #RGB 변경 시
+def backGroundApply():
     global backImage  
-    RGBList[changedRGB] = not RGBList[changedRGB]
     imgnumber = 8
-
+    
+    
     if RGBList == [0,0,0]:
         imgnumber = 0
     elif RGBList == [1,0,0]:
@@ -484,8 +566,17 @@ def changeRGB(changedRGB): #RGB 변경 시
         imgnumber = 7
     else:
         pass
-    
+
     backImage = pygame.transform.scale(pygame.image.load(f"./images/backgrounds/{backgroundImage}/colors/{imgnumber}.png"), (MAPTILESIZE*MAPSIZEX, MAPTILESIZE*MAPSIZEY))
+    return
+
+def changeRGB(changedRGB): #RGB 변경 시
+    if thisGameMode != "MultiPlay":
+        RGBList[changedRGB] = not RGBList[changedRGB]
+        backGroundApply()
+    return
+    
+    
 
 
 
@@ -530,11 +621,22 @@ def findWall(xLeft, xRight, yUp, yDown): # 지정한 범위 안쪽에 벽이 있
     return [False,[]]
 
 def activateSwitch(pos:pos): #스위치라면 발동시킨다
+    global wantRGB
+    global RGBList
     if TileList[pos.x][pos.y][0] == "switch": #그 좌표의 타일이 스위치라면
-        #print("switch", pos.x, pos.y)
-        for i in range(3): #R, G, B 마다 한번씩
-            if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
-                changeRGB(i) #RGB값중 하나 변경 
+        if thisGameMode != "MultiPlay":
+            for i in range(3): #R, G, B 마다 한번씩
+                if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
+                    changeRGB(i) #RGB값중 하나 변경
+        else: #멀티플레이 시
+            temp = RGBList
+            for i in range(3): #R, G, B 마다 한번씩
+                if TileList[pos.x][pos.y][2][i]: #스위치에 해당한다면
+                    temp[i] = not temp[i]
+            
+            wantRGB = [True, temp]
+
+
 
 def findSwitch(object:MovingObject): # 지정한 범위 안쪽에 스위치가 있으면 ~
     xStart = int(object.coordX-object.sizeX/2+0.1)
@@ -635,20 +737,25 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
 
 def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실행 함수
 
-    
+    print("runGame 입장")
+    print(mapName,gameMode,otherPlayers)
 
+    global thisGameMode
+    thisGameMode = gameMode
 
     user32 = ctypes.windll.user32
     global SCRSIZEX, SCRSIZEY
     SCRSIZEX = user32.GetSystemMetrics(0) #화면의 해상도 (픽셀수) 구하기 가로
     SCRSIZEY = user32.GetSystemMetrics(1)  #세로
 
+    print(SCRSIZEX, SCRSIZEY)
+
     size = (int(SCRSIZEX), int(SCRSIZEY)) # set screen size
     global screen
     screen = pygame.display.set_mode(size)
 
     if gameMode == "TestPlay":
-        SCRSIZEY =  SCRSIZEY * 7//8 #텍스트 넣을 공간 확보
+        SCRSIZEY = SCRSIZEY * 7//8 #텍스트 넣을 공간 확보
 
     global clear
     clear = False
@@ -670,22 +777,33 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         print(str(mapName)+ "로딩 실패")
         return
     
+    global RGBList #현재 화면 상태
+    RGBList = [False, False, False]
+    
+
     print(str(mapName)+" 로딩 완료")
+    global wantRGB
+    wantRGB = [False, [False,False,False]]
+
+    if gameMode == "MultiPlay":
+        if otherPlayers != None: #다른 플레이어가 있다면
+            for p in otherPlayers:
+                print(PPOS.x, PPOS.y, PSIZEX, PSIZEY)
+                globals()["p-"+p] = OtherPlayer(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/player") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
+
+                #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
+        global globalDone
+        globalDone = True
     
 
     #맵이 바뀌기 때문에, 맵 인스턴스 생성
 
     
 
-    if otherPlayers != None: #다른 플레이어가 있다면
-
-        for p in otherPlayers:
-
-            globals()["p-"+p] = showImage(PPOS.x, PPOS.y, PSIZEX, PSIZEY, "./images/Player.png") #p-플레이어 닉네임, 으로 무빙 오브젝트 추가 (변수 명임)
-
-            #conUdp에서 globals()["p-"+플레이어 이름].coordX, Y 등으로 계속 좌표값을 넣어 주면 된다잉
+    
 
     screen.fill(WHITE) # 화면 리셋
+    pygame.display.update()
     
     #배경 이미지 설정
     global backImage
@@ -715,12 +833,11 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
             temp.set_colorkey((255, 255, 255))
         switchImageList.append(pygame.transform.scale(temp, (MAPTILESIZE+1, MAPTILESIZE+1))) #크기 조정
 
-    
+    backGroundApply()
 
     while not done: # loop the game
 
         clock.tick(60) # FPS 적용
-        
 
         #배경사진 출력
         
@@ -737,13 +854,15 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         for image in sImages: # 모든 이미지 불러오기 
             image.display() # 이미지 일괄 출력
 
-        for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
-            object.display() # 움직이는 오브젝트 일괄 출력
-
-        if  gameMode == "MultiPlay":
+        if gameMode == "MultiPlay":
             if otherPlayers != None: #다른 플레이어가 있다면
                 for p in otherPlayers:
                     globals()["p-"+p].display()
+
+        for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
+            object.display() # 움직이는 오브젝트 일괄 출력
+
+        
 
 
         if gameMode == "TestPlay": #테스트 중이고 사망한 경우가 아니라면
@@ -809,13 +928,6 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
                         gameClear()
                     else:
                         findSwitch(maincharacter)
-
-                # if event.key == pygame.K_r: # R 변경
-                #     changeRGB(0)
-                # elif event.key == pygame.K_g: # G 변경
-                #     changeRGB(1)
-                # elif event.key == pygame.K_b: # B 변경
-                #     changeRGB(2)
 
         maincharacter.speedX = wantToMoveX*moveSpeed # 이동속도만큼 X좌표 속도 설정
 
