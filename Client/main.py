@@ -108,7 +108,7 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
 
         while True:
             
-            self.udpSock.sendto(f"S{self.nickName}!{temPos.x},{temPos.y}".encode(), (HOST, PORT))
+            self.udpSock.sendto(f"S{self.roomName}!{self.nickName}!{temPos.x},{temPos.y}".encode(), (HOST, PORT))
             #udp서버에 접속 설정 메세지전송, udp통신때 포트가 필요하기에 이런 과정을 거친다
             print(f"S{self.nickName}!{temPos.x},{temPos.y}")
 

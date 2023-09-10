@@ -869,13 +869,9 @@ class udpGame(threading.Thread):
         thread클래스에 의해 자동으로 실행되는 것
         '''
 
-        print("udp소켓을 여는 중")
-        self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #소켓 재사용 키기
-        self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
-        print("udp game server listening")
-
         volatile_standingBy = threading.Thread(target=self.standingBy)
+
+        volatile_standingBy.daemon = True
         volatile_standingBy.start() #플레이어 준비 받기
 
 
@@ -892,7 +888,7 @@ class udpGame(threading.Thread):
             msg = ""
             print("S 시작 기다리는중")
             while msg == "":
-                msg, fromAddr = self.udpSock.recvfrom(1024)
+                msg, fromAddr = udpHandler.res #res는 모든 메세지이므로 잘 구분해야함
 
             
             msg = msg.decode()
@@ -900,13 +896,18 @@ class udpGame(threading.Thread):
 
             if msg.startswith("S"):
                 msg = msg.replace("S", "").split("!") #!기준으로 나누기
-                self.clientAddr[msg[0]] = fromAddr #플레이어 주소 저장
-                self.clientPos[msg[0]] = msg[1]
-                self.readyStack += 1 #준비 인원 +!
-                self.room.castCmd("okUDP", self.room.whos[msg[0]]) #tcp로 확인 메세지 보내기
-                print(msg[0], "okUDP 보냄")
+                if msg[0] == self.room.roomName: #자기방의 메세지 일때만
+                    self.clientAddr[msg[1]] = fromAddr #플레이어 주소 저장
+                    self.clientPos[msg[1]] = msg[2]
+                    self.readyStack += 1 #준비 인원 +!
+                    self.room.castCmd("okUDP", self.room.whos[msg[1]]) #tcp로 확인 메세지 보내기
+                    print(msg[1], "okUDP 보냄")
 
-                msg = ""
+                    msg = ""
+
+                else:
+                    msg = ""
+                    pass
             else:
                 msg = ""
                 pass
@@ -928,7 +929,7 @@ class udpGame(threading.Thread):
     
     def recvMsg(self): #클라이언트로의 메세지를 분별 및 확인하여 전송
         while not self.done: #self.done (boolean)값은, 게임이 종료될때, True가 된다.   
-            msg, fromAddr = self.udpSock.recvfrom(1024)
+            msg, fromAddr = udpHandler.res
             msg = msg.decode()
             msg = msg.split('!') #!로 구분함  >  형식 : P방이름!위치정보!이름!애니메이션장면!방향(flip)
                                 # RGB변경시 메세지 > 형식 : R방이름!R,G,B!이름
@@ -959,13 +960,13 @@ class udpGame(threading.Thread):
 
             for c in self.clientAddr.keys(): #이름들을 c에 담아서 반복
                 res = ",".join(self.rgb)
-                self.udpSock.sendto(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
+                udpHandler.sendUdpMsg(f"R{res}".encode(), self.clientAddr[c]) #RGB값은, 플레이어 당 한명씩이니 1중 for문에
 
                 for t in self.clientAddr.keys():
                     if c == t:
                         pass
                     else:
-                        self.udpSock.sendto(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
+                        udpHandler.sendUdpMsg(f"P{c}!{self.clientPos[c]}!{self.clientStat[c][0]}!{self.clientStat[c][1]}".encode(), self.clientAddr[t])
                         
                         
                         
@@ -994,8 +995,6 @@ class udpGame(threading.Thread):
 
     def endGame(self):
         self.done = True
-        self.udpSock.close()
-
         del self
 
 
@@ -1005,8 +1004,8 @@ class udpGame(threading.Thread):
         self.clientPos.pop(targetC)
         
         if len(self.clientAddr.keys()) == 0: #연결 된 사람이 없다면
-            self.udpSock.close()
             print("소켓 닫음")
+            del self
 
 
 '''
@@ -1034,14 +1033,45 @@ class udpGame(threading.Thread):
 '''
                 
 
+
+
+
+class threadUdp():
     
+    def __init__(self):
+        
+        self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #   udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #소켓 재사용 키기
+        self.udpSock.bind((HOST, PORT)) #클래스 인스턴트를 만들면 udp소켓 열기
+        self.res = () #튜플이 반환값
+
+        recvUdpHandler = threading.Thread(target= recvUdpHandler)
+        recvUdpHandler.start()
+
+
+
+    def recvUdpMsg(self):
+        msg, fromAddr = self.udpSock.recvfrom(1024)
+        self.res = (msg, fromAddr)
+
+    def sendUdpMsg(self, msg: str, target: tuple):
+        (msg, target)
+        
+
+
 
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind((HOST, PORT))
 sock.listen()
+
+global udpHandler
+udpHandler = threadUdp()
+
+
 print("서버 시작")
+
 
 
 
@@ -1052,3 +1082,4 @@ while True:
     t.start()
 
 socket.close()
+
