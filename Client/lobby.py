@@ -1265,6 +1265,8 @@ def serverJoinedRoom(handler: classmethod):
                 print("게임 종료")
 
         if tcpHandler.wating and handler.isudp == False:
+            screen.fill(GREEN)
+            pygame.display.update()
             print("quitGame상태")
 
         if not tcpHandler.wating: #맵 다운이거나, 다른플레이 기다릴때 이게 작동됨
