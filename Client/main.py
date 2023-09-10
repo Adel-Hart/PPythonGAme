@@ -343,9 +343,8 @@ class OtherPlayer: #멀티에서 다른 플레이어를 표시하기 위한 객�
             displayImage = pygame.transform.flip(displayImage,True,False) #뒤집기
         rect = displayImage.get_rect()
         rect.center = (self.coordX*MAPTILESIZE+ORIGINPOINT.x,self.coordY*MAPTILESIZE+ORIGINPOINT.y) #중심좌표 설정
-
         screen.blit(displayImage, rect) #스크린에 출력
-        screen.blit(self.img, (self.coordX*MAPTILESIZE+ORIGINPOINT.x, self.coordY*MAPTILESIZE+ORIGINPOINT.y - self.sizeY*MAPTILESIZE // 2 - self.sizeY*MAPTILESIZE//5)) #텍스트 표시
+        screen.blit(self.img, (self.coordX*MAPTILESIZE+ORIGINPOINT.x - (self.sizeY*MAPTILESIZE//10 * len(self.name)) // 2, self.coordY*MAPTILESIZE+ORIGINPOINT.y - self.sizeY*MAPTILESIZE // 2 - self.sizeY*MAPTILESIZE//5)) #텍스트 표시
         #닉네임 출력
 
 
