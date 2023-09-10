@@ -44,7 +44,7 @@ SERVERCONNECT = False #핸들러 만들어짐 판단 여부
 
 globalDone = False #전역변수 만들어짐 여부
 
-
+notDisplayPlayers = []
 
 def multiGamePlay(players: list, roomName: str, name: str, mapCode: str):
     '''
@@ -244,7 +244,12 @@ class conUdp(): #실제 게임에서 쓰는udp통신, #김동훈 작성
                 self.rgb = temp
                 
                 
-        
+    def outPlayer(self, targetP): #플레이어를 제거하는 함수
+        if targetP == self.nickName: #나가게 한 사람이 자기자신이면
+            done = True #게임 종료
+
+        else:
+            notDisplayPlayers.append[targetP]
         
     
 
@@ -762,6 +767,9 @@ def isCollapse(object1, object2): #movingObject 또는 showImage 2개가 겹쳐�
 
 def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실행 함수
 
+    global notDisplayPlayers
+    
+
     print("runGame 입장")
     print(mapName,gameMode,otherPlayers)
 
@@ -886,7 +894,11 @@ def runGame(mapName, gameMode:str = None,otherPlayers:list = None): # 게임 실
         if gameMode == "MultiPlay":
             if otherPlayers != None: #다른 플레이어가 있다면
                 for p in otherPlayers:
-                    globals()["p-"+p].display()
+                    if p in notDisplayPlayers: #표시하지 않을 플레이어가 있다면
+                        pass #디스플레이 하지 않는다
+                    else:
+                        globals()["p-"+p].display()
+                    
 
         for object in mObjects: # 모든 움직이는 오브젝트 불러오기 
             object.display() # 움직이는 오브젝트 일괄 출력
