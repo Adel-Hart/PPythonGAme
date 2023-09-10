@@ -959,7 +959,6 @@ class udpGame(threading.Thread):
                                     #게임 종료 메세지 > @!
                 #방 이름이 없는데 요청한경우 오류가 나기 때문에.
                 if msg[0][0] == "P":
-                    print("P로 시작!")
                     if len(msg) > 5:
                         if self.rgb != msg[5].split(','):
                             self.rgb = msg[5].split(',')
