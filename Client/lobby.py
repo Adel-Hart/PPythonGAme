@@ -1267,7 +1267,11 @@ def serverJoinedRoom(handler: classmethod):
                 clear = 0
                 while clear == 0:
                     clear = main.runGame(handler.udpPlay.runGame, "MultiPlay", handler.udpPlay.otherPlayer)
+                handler.quitGame()
                 print("게임 종료")
+
+        if tcpHandler.wating and handler.isudp == False:
+            print("quitGame상태")
 
         if not tcpHandler.wating: #맵 다운이거나, 다른플레이 기다릴때 이게 작동됨
             clock.tick(60)
