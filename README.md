@@ -3,8 +3,15 @@
 #### pj-6, Veni Vedi Veci
 ----------
 
-## **KOR**
+## [**ENG**](#English)
+#### Click to go english ver page
+
+## [**KOR**](#Korean)
+#### 클릭해서 한국어 버전 보기
+
 ---
+#KOREAN
+
 ### 목차  
 [1.이 게임에 대하여](#about)<br/>
 [2.스토리](#story)<br/>
@@ -90,3 +97,81 @@
 # remark
 ### 6.이 게임에서 주목해야 할 점?
 
+---
+
+## [**ENG**](#English)
+#### Click to go english ver page
+
+## [**KOR**](#Korean)
+#### 클릭해서 한국어 버전 보기
+
+---
+
+
+#ENGLISH
+###   
+1. [About This Game](#1.About-This-Game)<br/>
+2. [Story](#2.Story)<br/>
+3. [Participant](#3.Participant)<br/>
+4. [Key Technologies](#4.Key-Technologies)<br/>
+5. [Uniqueness of This Game](#5.Uniqueness-of-This-Game)<br/>
+6. [What to Look Out for in This Game](#6.What-to-Look-Out-for-in-This-Game)<br/>
+---
+
+### 1.About This Game<br/>
+  
+> Light In Abyss is a puzzle game that utilizes the three primary colors of light, known as RGB.<br/>
+> In a nutshell, it employs the phenomenon where, when viewed through a red filter, objects that are red appear to be absent.<br/>
+> In this game, you manipulate the screen's colors through filters, making tiles of the same color appear to be nonexistent as you navigate through them.<br/>
+> There are RGB color switches and primary color combinations that you can activate strategically to reach your destination.<br/>
+  
+---
+
+### 2.Story
+  
+> In the year 20XX, a dark force had monopolized and controlled all colors of light, leading to a bleak existence where even people's emotions withered away.<br/>
+> This led to a war of light, further plunging the world into desolation.<br/>
+> The forces of darkness occupied cities and used colors to create obstacles in both urban and suburban areas.<br/>
+> Naturally, the average person lost all contact due to the loss of colors.<br/>
+> In this situation, the protagonist, a graduate student named 'Light,' finally developed a device capable of restoring colors within a 50-meter radius.<br/>
+> With this device, Light embarks on a journey to reclaim the occupied city and restore colors to the world...<br/>
+  
+---
+
+### 3.Participant<br/>
+  
+|Name|nickName|Role|Activity|
+|:---:|:---:|:---:|:---|
+|Dong Hoon Kim|Adel-Hart|Team Leader|80% Idea Contribution, Overall Protocol and Logic Design, Server Development|
+|Lok Hyun Ki|None(Not on GitHub)|Team Member|Character Design, Tile Design, Map Design|
+|Jung Won Kim|silverkjw|Team Member|Gameplay System Development, Gameplay System Idea Contribution, Participation in Server Development, Bug Fixer, Map Design|
+|Jae Yong Li|Plana095|Team Member|Map Design, Editor Development|
+
+---
+
+### 4.Key Technologies
+#### 4-1 Client - Physics Engine
+#### 4-2 Client - Interface
+#### 4-3 Client - Editor
+#### 4-4 Server
+> The server utilizes the parallel use of TCP and UDP, commonly used in game servers.
+> TCP communication protocol is used for communication with the server, except during gameplay, where UDP is employed due to its speed, even if packets are lost.
+> 
+> When the server file is executed, a UDP socket continuously runs in a separate thread, and TCP sockets are opened in the main thread. If a TCP connection is established (when the server accepts a connection), > a handler thread is created for each connection, assigned to one player. Each handler thread interacts with various players and handles requests. Room classes are defined, and when a room is created, the room > name, including the code, is stored in global variables. Therefore, when loading the room list, it involves retrieving the list of global variables and filtering them.
+> 
+> In the game, before it starts, all players send UDP communications and store their address values in a dictionary, allowing the server to actively send messages to each player later. Initially, the UDP thread > that is turned on discerns all UDP communications from the server and stores them separately by room. The room and game classes read this information and handle the game.
+>
+> In the game class, within a thread-opened function, information about RGB and player positions is received from each client using the UDP thread. The server stores this information in methods of the game
+> class. Simultaneously, a function that sends stored methods to client addresses received earlier is executed in a thread.
+>
+> Game termination is detected by the server when a trigger sent by the client is received via TCP communication. The server removes the room from the list and informs the remaining players. During this process,
+> if the number of players is zero, the game class is deleted, and the end-of-game signal is sent to the players. Players use a function that doesn't display the departed player when they receive the departed
+>  player's name. If the departed player's name is their own, they change their screen.
+
+---
+
+### 5.Uniqueness of This Game
+
+---
+
+### 6.What to Look Out for in This Game
