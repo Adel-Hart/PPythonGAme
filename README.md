@@ -3,10 +3,10 @@
 #### pj-6, Veni Vedi Veci
 ----------
 
-## [**ENG**](#English)
+## [**ENG**](#ENGLISH)
 #### Click to go english ver page
 
-## [**KOR**](#Korean)
+## [**KOR**](#KOREAN)
 #### 클릭해서 한국어 버전 보기
 
 ---
@@ -109,7 +109,8 @@
 
 
 #ENGLISH
-###   
+### Table of Contents
+
 1. [About This Game](#1.About-This-Game)<br/>
 2. [Story](#2.Story)<br/>
 3. [Participant](#3.Participant)<br/>
