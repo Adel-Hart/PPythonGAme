@@ -143,10 +143,10 @@
   
 |Name|nickName|Role|Activity|
 |:---:|:---:|:---:|:---|
-|Dong Hoon Kim|Adel-Hart|Team Leader|80% Idea Contribution, Overall Protocol and Logic Design, Server Development|
-|Lok Hyun Ki|None(Not on GitHub)|Team Member|Character Design, Tile Design, Map Design|
+|Dong Hoon Kim|Adel-Hart|Team Leader|Idea Contribution, Server Protocol and Logic Design, Bugs Development|
+|Luck Hyeon KiKiKiKiKi|luckhyoen|Team Member|Character Design, Tile Design|
 |Jung Won Kim|silverkjw|Team Member|Gameplay System Development, Gameplay System Idea Contribution, Participation in Server Development, Bug Fixer, Map Design|
-|Jae Yong Li|Plana095|Team Member|Map Design, Editor Development|
+|Jae Yong Lee|Plana095|Team Member|Map Design, Editor Development|
 
 ---
 
